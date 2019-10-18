@@ -146,5 +146,3 @@ class SEM_Tests(unittest.TestCase):
         intercepts = np.arange(p)
         sem = LGSEM(p,k,0,1,0,1, intercepts = intercepts)
         self.assertTrue((sem.intercepts == intercepts).all())
-
-    def test_sampling_1(self):
