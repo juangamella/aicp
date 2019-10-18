@@ -1,9 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-WEIGHT_TYPE = np.float64
-
-class LgSem:
+class LGSEM:
     """
     Represents an Linear Gaussian SEM. Initialization randomly
     generates a new SEM. sample() generates observational and
@@ -36,7 +34,7 @@ class LgSem:
         # Intercepts
         if intercepts is None:
             intercepts = np.zeros(len(A))
-            self.intercepts = intercepts
+        self.intercepts = intercepts
     
     def sample(self, n, do_interventions=None, noise_interventions=None):
         """Generate n samples from a given Linear Gaussian SEM, under the given
@@ -75,7 +73,10 @@ class LgSem:
             X[:,i] = X @ M[:,i]
             
         return X
-    
+
+
+# DAG Generating Functions
+
 def generate_dag_avg_deg(p, k, debug=False):
     """
     Generate a random graph with p nodes and average degree k
@@ -84,7 +85,7 @@ def generate_dag_avg_deg(p, k, debug=False):
     prob = k / (p-1)
     print("p = %d, k = %0.2f, P = %0.4f" % (p,k,prob)) if debug else None
     A = np.random.uniform(size = (p,p))
-    A = (A <= prob).astype(WEIGHT_TYPE)
+    A = (A <= prob).astype(float)
     A = np.triu(A, k=1)
     
     # Permute rows/columns according to random topological ordering
@@ -95,3 +96,55 @@ def generate_dag_avg_deg(p, k, debug=False):
     print("avg degree = %0.2f" % (np.sum(A) * 2 / len(A))) if debug else None
     
     return (A[permutation, :][:, permutation], ordering)
+
+
+# Unit testing
+
+import unittest
+import networkx as nx
+
+# Tests for the DAG generation
+class DAG_Tests(unittest.TestCase):
+    def test_dag(self):
+        for p in np.arange(2,100,5):
+            (A, ordering) = generate_dag_avg_deg(p, p/4)
+            G = nx.from_numpy_matrix(A, create_using = nx.DiGraph)
+            self.assertTrue(nx.is_directed_acyclic_graph(G))
+            perm = np.argsort(ordering)
+
+    def test_ordering(self):
+        for p in np.arange(2,100,5):
+            (A, ordering) = generate_dag_avg_deg(p, p/4)
+            B = A[ordering,:][:,ordering]
+            self.assertTrue((B == np.triu(B,1)).all())
+
+    def test_avg_degree(self):
+        p = 1000
+        for k in range(1,5):
+            (A, _) = generate_dag_avg_deg(p, k)
+            av_deg = np.sum(A) * 2 / p
+            self.assertEqual(len(A), p)
+            self.assertTrue(av_deg - k < 0.5)
+
+    def test_disconnected_graph(self):
+        (A, _) = generate_dag_avg_deg(10, 0)
+        self.assertEqual(np.sum(A), 0)
+
+# Tests for the SEM generation and sampling
+class SEM_Tests(unittest.TestCase):
+    def test_basic(self):
+        p = 10
+        k = 2
+        sem = LGSEM(p,k,1,1,1,1)
+        self.assertTrue((sem.variances == np.ones(p)).all())
+        self.assertTrue((sem.intercepts == np.zeros(p)).all())
+        self.assertTrue(np.sum((sem.W == 0).astype(float) + (sem.W == 1).astype(float)), p*p)
+
+    def test_intercepts(self):
+        p = 10
+        k = 2
+        intercepts = np.arange(p)
+        sem = LGSEM(p,k,0,1,0,1, intercepts = intercepts)
+        self.assertTrue((sem.intercepts == intercepts).all())
+
+    def test_sampling_1(self):
