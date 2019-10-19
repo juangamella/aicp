@@ -1,6 +1,34 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# DAG Generating Functions
+
+def generate_default(p, debug=False):
+    generate_dag_avg_deg(p, debug)
+
+def generate_dag_avg_deg(p, k=3, debug=False):
+    """
+    Generate a random graph with p nodes and average degree k
+    """
+    # Generate adjacency matrix as if top. ordering is 1..p
+    prob = k / (p-1)
+    print("p = %d, k = %0.2f, P = %0.4f" % (p,k,prob)) if debug else None
+    A = np.random.uniform(size = (p,p))
+    A = (A <= prob).astype(float)
+    A = np.triu(A, k=1)
+    
+    # Permute rows/columns according to random topological ordering
+    permutation = np.random.permutation(p)
+    ordering = np.argsort(permutation)
+    # Note the actual topological ordering is the "conjugate" of permutation eg. [3,1,2] -> [2,3,1]
+    print("ordering = %s" % ordering) if debug else None
+    print("avg degree = %0.2f" % (np.sum(A) * 2 / len(A))) if debug else None
+    
+    return (A[permutation, :][:, permutation], ordering)
+
+
+# LGSEM class
+
 class LGSEM:
     """
     Represents an Linear Gaussian SEM. Initialization randomly
@@ -8,20 +36,22 @@ class LGSEM:
     interventional samples from it
     """
     
-    def __init__(self, p, k, w_min, w_max, var_min, var_max, intercepts = None, debug=False):
+    def __init__(self, p, w_min, w_max, var_min, var_max, intercepts = None, debug=False, graph_gen=generate_default):
         """
         Generate a random linear gaussian SEM, given
-        - p,k: the number of nodes and avg. degree of the underlying DAG
+        - p: the number of variables in the SEM
         - w_min, w_max: lower and upper bounds for sampling weights
         - var_min, var_max: lower and upper bounds for sampling variances
         - intercepts: the "base value" of each variable (0 by default)
+        - graph_gen: the function used to generate the graph, by default
+          "generate_dag_avg_dev"
         return a "SEM" object
         """
         self.debug = debug
         self.p = p
         
         # Generate DAG
-        (A, ordering) = generate_dag_avg_deg(p,k, debug=debug)
+        (A, ordering) = graph_gen(p, debug=debug)
         self.ordering = ordering
         
         # Sample weights and update adjacency matrix
@@ -74,30 +104,6 @@ class LGSEM:
             
         return X
 
-
-# DAG Generating Functions
-
-def generate_dag_avg_deg(p, k, debug=False):
-    """
-    Generate a random graph with p nodes and average degree k
-    """
-    # Generate adjacency matrix as if top. ordering is 1..p
-    prob = k / (p-1)
-    print("p = %d, k = %0.2f, P = %0.4f" % (p,k,prob)) if debug else None
-    A = np.random.uniform(size = (p,p))
-    A = (A <= prob).astype(float)
-    A = np.triu(A, k=1)
-    
-    # Permute rows/columns according to random topological ordering
-    permutation = np.random.permutation(p)
-    ordering = np.argsort(permutation)
-    # Note the actual topological ordering is the "conjugate" of permutation eg. [3,1,2] -> [2,3,1]
-    print("ordering = %s" % ordering) if debug else None
-    print("avg degree = %0.2f" % (np.sum(A) * 2 / len(A))) if debug else None
-    
-    return (A[permutation, :][:, permutation], ordering)
-
-
 # Unit testing
 
 import unittest
@@ -134,17 +140,13 @@ class DAG_Tests(unittest.TestCase):
 class SEM_Tests(unittest.TestCase):
     def test_basic(self):
         p = 10
-        k = 2
-        sem = LGSEM(p,k,1,1,1,1)
+        sem = LGSEM(p,1,1,1,1)
         self.assertTrue((sem.variances == np.ones(p)).all())
         self.assertTrue((sem.intercepts == np.zeros(p)).all())
         self.assertTrue(np.sum((sem.W == 0).astype(float) + (sem.W == 1).astype(float)), p*p)
 
     def test_intercepts(self):
         p = 10
-        k = 2
         intercepts = np.arange(p)
-        sem = LGSEM(p,k,0,1,0,1, intercepts = intercepts)
+        sem = LGSEM(p,0,1,0,1, intercepts = intercepts)
         self.assertTrue((sem.intercepts == intercepts).all())
-
-        
