@@ -113,6 +113,7 @@ class LGSEM:
 
 import unittest
 import networkx as nx
+from scipy.stats import ttest_ind as ttest
 
 # Tests for the DAG generation
 class DAG_Tests(unittest.TestCase):
@@ -209,6 +210,7 @@ class SEM_Tests(unittest.TestCase):
                       [0, 0, 0, 0, 0, 0]])
         ordering = np.arange(p)
         sem = LGSEM(p,1,1,1,1,graph_gen = dag_custom(A, ordering))
+
         # Test observational data
         M = np.array([[1, 0, 0, 0, 0, 0],
                       [1, 1, 0, 0, 0, 0],
@@ -222,12 +224,14 @@ class SEM_Tests(unittest.TestCase):
         np.random.seed(42)
         samples = sem.sample(n)
         self.assertTrue(np.allclose(truth, samples))
+        
         # Test under do-interventions on X1
         np.random.seed(42)
         noise = np.random.normal([2,0,0,0,0,0], [0,1,1,1,1,1], size=(n,p))
         truth = noise @ M.T
         np.random.seed(42)
         samples = sem.sample(n, do_interventions = np.array([[0,2]]))
+
         # Test under do-intervention on X1 and noise interventions X2 and X5
         do_int = np.array([[0,2]])
         noise_int = np.array([[1, 2, 1], [4, 1, 4]])
