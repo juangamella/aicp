@@ -3,10 +3,7 @@ import matplotlib.pyplot as plt
 
 # DAG Generating Functions
 
-def dag_default(p, debug=False):
-    return dag_avg_deg(p, debug)
-
-def dag_avg_deg(p, k=3, debug=False):
+def dag_avg_deg(p, k, w_min, w_max, debug=False):
     """
     Generate a random graph with p nodes and average degree k
     """
@@ -16,6 +13,8 @@ def dag_avg_deg(p, k=3, debug=False):
     A = np.random.uniform(size = (p,p))
     A = (A <= prob).astype(float)
     A = np.triu(A, k=1)
+    weights = np.random.uniform(w_min, w_max, size=A.shape)
+    W = A * weights
     
     # Permute rows/columns according to random topological ordering
     permutation = np.random.permutation(p)
@@ -24,17 +23,15 @@ def dag_avg_deg(p, k=3, debug=False):
     print("ordering = %s" % ordering) if debug else None
     print("avg degree = %0.2f" % (np.sum(A) * 2 / len(A))) if debug else None
     
-    return (A[permutation, :][:, permutation], ordering)
+    return (W[permutation, :][:, permutation], ordering)
 
-def dag_full(p, debug=False):
+def dag_full(p, w_min=1, w_max=1, debug=False):
     """Creates a fully connected DAG (ie. upper triangular adj. matrix
     with all ones) and causal ordering same as variable indices"""
-    return (np.triu(np.ones((p,p)), k=1), np.arange(p))
-
-def dag_custom(A, ordering):
-    """Returns a generator for the DAG specified by the adjacency matrix and ordering"""
-    gen = lambda p, debug=False: (A, ordering)
-    return gen
+    A = np.triu(np.ones((p,p)), k=1)
+    weights = np.random.uniform(w_min, w_max, size=A.shape)
+    W = A * weights
+    return (W, np.arange(p))
 
 # LGSEM class
 
@@ -45,34 +42,37 @@ class LGSEM:
     interventional samples from it
     """
     
-    def __init__(self, p, w_min, w_max, var_min, var_max, intercepts = None, debug=False, graph_gen=dag_default):
-        """
-        Generate a random linear gaussian SEM, given
-        - p: the number of variables in the SEM
-        - w_min, w_max: lower and upper bounds for sampling weights
-        - var_min, var_max: lower and upper bounds for sampling variances
-        - intercepts: the "base value" of each variable (0 by default)
+    def __init__(self, W, ordering, variances, intercepts = None, debug=False):
+        """Generate a random linear gaussian SEM, given
+        - W: weight matrix
+        - ordering: causal ordering of the variables
+        - variances: either a vector of variances or a tuple
+          indicating range for uniform sampling
+        - intercepts: either a vector of intercepts, a tuple
+          indicating the range for uniform sampling or None (zero
+          intercepts)
         - graph_gen: the function used to generate the graph, by default
           "generate_dag_avg_dev"
         return a "SEM" object
+
         """
-        self.p = p
-        
-        # Generate DAG
-        (A, ordering) = graph_gen(p, debug=debug)
+        self.W = W
         self.ordering = ordering
-        
-        # Sample weights and update adjacency matrix
-        weights = np.random.uniform(w_min, w_max, size=A.shape)
-        self.W = A * weights
-        
-        # Sample variances for noise
-        self.variances = np.random.uniform(var_min, var_max, size=len(A))
-        
-        # Intercepts
+        self.p = len(W)
+
+        # Set variances
+        if isinstance(variances, tuple):
+            self.variances = np.random.uniform(variances[0], variances[1], size=self.p)
+        else:
+            self.variances = variances
+            
+        # Set intercepts
         if intercepts is None:
-            intercepts = np.zeros(len(A))
-        self.intercepts = intercepts
+            self.intercepts = np.zeros(self.p)
+        elif isinstance(intercepts, tuple):
+            self.intercepts = np.random.uniform(intercepts[0], intercepts[1], size=self.p)
+        else:
+            self.intercepts = intercepts
     
     def sample(self, n, do_interventions=None, noise_interventions=None, debug=False):
         """Generate n samples from a given Linear Gaussian SEM, under the given
@@ -86,14 +86,14 @@ class LGSEM:
 
         # Perform do interventions
         if do_interventions is not None:
-            targets = do_interventions[:,0]
+            targets = do_interventions[:,0].astype(int)
             variances[targets] = 0
             intercepts[targets] = do_interventions[:,1]
             W[:,targets] = 0
             
         # Perform noise interventions
         if noise_interventions is not None:
-            targets = noise_interventions[:,0]
+            targets = noise_interventions[:,0].astype(int)
             intercepts[targets] = noise_interventions[:,1]
             variances[targets] = noise_interventions[:,2]
             W[:,targets] = 0
@@ -119,49 +119,52 @@ from scipy.stats import ttest_ind as ttest
 class DAG_Tests(unittest.TestCase):
     def test_dag(self):
         for p in np.arange(2,100,5):
-            (A, ordering) = dag_avg_deg(p, p/4)
-            G = nx.from_numpy_matrix(A, create_using = nx.DiGraph)
+            (W, ordering) = dag_avg_deg(p, p/4, 0, 1)
+            G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
             self.assertTrue(nx.is_directed_acyclic_graph(G))
             perm = np.argsort(ordering)
 
     def test_ordering(self):
         for p in np.arange(2,100,5):
-            (A, ordering) = dag_avg_deg(p, p/4)
-            B = A[ordering,:][:,ordering]
+            (W, ordering) = dag_avg_deg(p, p/4, 0, 1)
+            B = W[ordering,:][:,ordering]
             self.assertTrue((B == np.triu(B,1)).all())
 
     def test_avg_degree(self):
         p = 1000
         for k in range(1,5):
-            (A, _) = dag_avg_deg(p, k)
-            av_deg = np.sum(A) * 2 / p
-            self.assertEqual(len(A), p)
+            (W, _) = dag_avg_deg(p, k, 1, 2)
+            av_deg = np.sum(W > 0) * 2 / p
+            self.assertEqual(len(W), p)
             self.assertTrue(av_deg - k < 0.5)
 
     def test_disconnected_graph(self):
-        (A, _) = dag_avg_deg(10, 0)
-        self.assertEqual(np.sum(A), 0)
+        (W, _) = dag_avg_deg(10, 0, 1, 1)
+        self.assertEqual(np.sum(W), 0)
 
 # Tests for the SEM generation and sampling
 class SEM_Tests(unittest.TestCase):
     def test_basic(self):
         p = 10
-        sem = LGSEM(p,1,1,1,1)
+        (W, ordering) = dag_avg_deg(p, p/4, 1, 1)
+        sem = LGSEM(W, ordering, (1,1))
         self.assertTrue((sem.variances == np.ones(p)).all())
         self.assertTrue((sem.intercepts == np.zeros(p)).all())
         self.assertTrue(np.sum((sem.W == 0).astype(float) + (sem.W == 1).astype(float)), p*p)
 
     def test_intercepts(self):
         p = 10
+        (W, ordering) = dag_avg_deg(p, p/4, 1, 1)
         intercepts = np.arange(p)
-        sem = LGSEM(p,0,1,0,1, intercepts = intercepts)
+        sem = LGSEM(W, ordering, (0,1), intercepts = intercepts)
         self.assertTrue((sem.intercepts == intercepts).all())
 
     def test_sampling_1(self):
         # Test sampling with one variable
         p = 1
         n = 100
-        sem = LGSEM(p,1,1,1,1, graph_gen=dag_full)
+        (W, ordering) = dag_full(p)
+        sem = LGSEM(W, ordering, (1,1))
         # Observational data
         np.random.seed(42)
         truth = np.random.normal(0,1,size=(n,1))
@@ -185,7 +188,8 @@ class SEM_Tests(unittest.TestCase):
         # using the path method
         p = 4
         n = 100
-        sem = LGSEM(p,1,1,1,1, graph_gen=dag_full)
+        (W, ordering) = dag_full(p)
+        sem = LGSEM(W, ordering, (1,1))
         np.random.seed(42)
         noise = np.random.normal([0,0,0,0],[1,1,1,1], size=(n,4))
         truth = np.zeros((n,p))
@@ -202,14 +206,14 @@ class SEM_Tests(unittest.TestCase):
         # with results obtained via the path method
         p = 6
         n = 25
-        A = np.array([[0, 1, 1, 0, 0, 0],
+        W = np.array([[0, 1, 1, 0, 0, 0],
                       [0, 0, 0, 0, 1, 1],
                       [0, 0, 0, 1, 0, 0],
                       [0, 0, 0, 0, 1, 1],
                       [0, 0, 0, 0, 0, 1],
                       [0, 0, 0, 0, 0, 0]])
         ordering = np.arange(p)
-        sem = LGSEM(p,1,1,1,1,graph_gen = dag_custom(A, ordering))
+        sem = LGSEM(W, ordering, (1,1))
 
         # Test observational data
         M = np.array([[1, 0, 0, 0, 0, 0],
@@ -227,11 +231,12 @@ class SEM_Tests(unittest.TestCase):
         
         # Test under do-interventions on X1
         np.random.seed(42)
-        noise = np.random.normal([2,0,0,0,0,0], [0,1,1,1,1,1], size=(n,p))
+        noise = np.random.normal([2.1,0,0,0,0,0], [0,1,1,1,1,1], size=(n,p))
         truth = noise @ M.T
         np.random.seed(42)
-        samples = sem.sample(n, do_interventions = np.array([[0,2]]))
-
+        samples = sem.sample(n, do_interventions = np.array([[0,2.1]]))
+        self.assertTrue(np.allclose(truth, samples))
+        
         # Test under do-intervention on X1 and noise interventions X2 and X5
         do_int = np.array([[0,2]])
         noise_int = np.array([[1, 2, 1], [4, 1, 4]])
