@@ -53,20 +53,18 @@ def icp(environments, target, alpha=0.05, max_predictors=None, debug=False):
     max_size = 0
     while max_size <= max_predictors and len(S) > 0:
         print("Evaluating candidate sets with length %d" % max_size) if debug else None
-        candidates = itertools.permutations(base, max_size)
+        candidates = itertools.combinations(base, max_size)
         for s in candidates:
             # Find linear coefficients on pooled data
             beta = regress(s, data)
             assert((beta[list(base.difference(s))] == 0).all())
             p_value = test_hypothesis(beta, data, debug=debug)
-            if p_value >= alpha:
-                S = S.intersection(s)
-                beta_str = np.array_str(beta, precision=2)
-                print("%s - %s (p=%0.2f) - S = %s %s" % (s, True, p_value, S, beta_str)) if debug else None
-            else:
-                print("%s - %s (p=%0.2f) - S = %s" % (s, False, p_value, S)) if debug else None
-            if len(S) == 0:
-                    break;
+            rejected = p_value < alpha
+            S = S.intersection(s) if not rejected else S
+            beta_str = np.array_str(beta, precision=2)
+            print("%s - %s (p=%0.2f) - S = %s %s" % (s, not rejected, p_value, S, beta_str)) if debug else None
+            #if len(S) == 0:
+            #        break;
         max_size += 1
     return S
 
