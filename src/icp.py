@@ -37,6 +37,7 @@ from sklearn.linear_model import LinearRegression
 from functools import reduce
 import itertools
 
+import copy
 #---------------------------------------------------------------------
 # "Public" API: icp function
 
@@ -148,6 +149,7 @@ class Data():
             samples for that environment and p is the number of variables.
           - target: the index of the target variable
         """
+        environments = copy.deepcopy(environments) # ensure the stored data is immutable
         self.N = np.array(list(map(len, environments)))
         self.p = environments[0].shape[1]
         self.n = np.sum(self.N)
@@ -210,6 +212,13 @@ class DataTests(unittest.TestCase):
         self.assertEqual(data.p, self.p)
         self.assertEqual(data.target, self.target)
         self.assertEqual(data.n_env, len(self.environments))
+
+    def test_memory(self):
+        environments = copy.deepcopy(self.environments)
+        data = Data(environments, self.target)
+        environments[0][0,0] = -100
+        data_pooled = data.pooled_data()
+        self.assertFalse(data_pooled[0,0] == environments[0][0,0])
         
     def test_targets(self):
         data = Data(self.environments, self.target)
