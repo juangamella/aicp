@@ -135,6 +135,33 @@ def f_test(X,Y):
     F = np.var(X, ddof=1) / np.var(Y, ddof=1)
     p = f.cdf(F, len(X)-1, len(Y)-1)
     return  2*min(p, 1-p)
+
+def confidence_intervals(s, beta, data, alpha):
+    """Compute the confidence intervals of the regression coefficients
+    (beta) of a predictor set s, given the level alpha.
+
+    Under Gaussian errors, the confidence intervals are given by
+    beta +/- delta, where
+
+    delta = quantile * variance of residuals @ diag(inv. corr. matrix)
+
+    and variance and corr. matrix of residuals are estimates
+    """
+    s = list(s)
+    supp = s + [data.p] # Support is pred. set + intercept
+    beta = beta[supp]
+    # Quantile term
+    dof = data.n - len(s) - 1
+    quantile = t.ppf(1-alpha/2/len(s), dof)
+    # Residual variance term
+    Xs = data.pooled_data()[:,supp]
+    residuals = data.pooled_targets() - Xs @ beta
+    variance = np.var(residuals)
+    # Corr. matrix term
+    sigma = np.diag(np.linalg.inv(Xs.T @ Xs))
+    # Compute interval
+    delta = quantile * variance * sigma
+    return (beta - delta, beta + delta)
     
 #---------------------------------------------------------------------
 # Data class and its support functions
