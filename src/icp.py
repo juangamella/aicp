@@ -37,6 +37,7 @@ import numpy as np
 
 from scipy.stats import ttest_ind as ttest
 from scipy.stats import f
+from scipy.stats import t
 
 from sklearn.linear_model import LinearRegression
 
@@ -112,7 +113,7 @@ def regress(s, data, pooling=True, debug=False):
     """
     Perform linear regression of data.target over the variables indexed by s
     """
-    supp = list(s) + [data.p] # support is s + intercept
+    supp = list(s) + [data.p] # support is pred. set + intercept
     if pooling:
         X = data.pooled_data()[:,supp]
         Y = data.pooled_targets()
@@ -134,7 +135,7 @@ def f_test(X,Y):
     F = np.var(X, ddof=1) / np.var(Y, ddof=1)
     p = f.cdf(F, len(X)-1, len(Y)-1)
     return  2*min(p, 1-p)
-
+    
 #---------------------------------------------------------------------
 # Data class and its support functions
 
@@ -202,6 +203,43 @@ def pool(arrays, axis):
         stack_fun = np.vstack if axis==0 else np.hstack
         return reduce(lambda acc, array: stack_fun([acc, array]), arrays)
 
+
+#---------------------------------------------------------------------
+# Confidence intervals class
+class ConfIntervals():
+    """Class to keep and update confidence intervals for the regression
+    coefficients of every variable. The final confidence intervals are
+    the union of the intervals returned in every accepted set
+    
+    Parameters:
+      - lwr: lower bounds
+      - upr: upper bounds
+      - p: number of variables (not including intercept)
+    """
+
+    def __init__(self, p):
+        """Initializes the arrays used to store the lower and upper bounds"""
+        size = p+1
+        self.p = p
+        self.lwr = np.ones(size) * np.inf
+        self.upr = np.ones(size) * -np.inf
+
+    def update(self, s, bounds):
+        """Given a set of variables s and new bounds, update the stored bounds
+        by taking the union. Note that "bounds" also include the bounds for
+        the intercept, although it is not specified in s
+        """
+        (lwr, upr) = bounds
+        supp = list(s) + [self.p] # support is predictor set s + intercept
+        # Check that there is overlap between the new and old bounds
+        unset = np.isinf(self.upr[supp]) # both bounds should be finite or not
+        overlap = np.logical_and(lwr <= self.upr[supp], upr >= self.lwr[supp])
+        if not np.logical_or(overlap, unset).all():
+            print("WARNING: No overlap between confidence intervals. Merging")
+        self.lwr[supp] = np.minimum(self.lwr[supp], lwr)
+        self.upr[supp] = np.maximum(self.upr[supp], upr)
+        return (self.lwr, self.upr)
+    
 #---------------------------------------------------------------------
 # Unit testing
 
@@ -278,3 +316,30 @@ class DataTests(unittest.TestCase):
             self.assertTrue((truth_rt == rt).all())
             self.assertTrue((truth_rd == rd).all())
             last += ne
+
+class ConfIntervalsTests(unittest.TestCase):
+
+    def test_init(self):
+        P = [1,2,3,4]
+        # remember the bound for the intercept is also stored (ie. p+1 bounds)
+        for p in P:
+            conf_intervals = ConfIntervals(p)
+            self.assertTrue((conf_intervals.lwr == np.ones(p+1) * np.inf).all())
+            self.assertTrue((conf_intervals.upr == np.ones(p+1) * -np.inf).all())
+            self.assertEqual(p, conf_intervals.p)
+
+    def test_update(self):
+        p = 3
+        conf_intervals = ConfIntervals(p)
+        # Update 1
+        conf_intervals.update(set([2]), (np.array([-3, 0]), np.array([3, 0])))
+        self.assertTrue((conf_intervals.lwr == np.array([np.inf, np.inf, -3, 0])).all())
+        self.assertTrue((conf_intervals.upr == np.array([-np.inf, -np.inf, 3, 0])).all())
+        # Update 2
+        conf_intervals.update(set([0,1]), (np.array([-1,-1,-1]), np.array([.5, .5, .5])))
+        self.assertTrue((conf_intervals.lwr == np.array([-1, -1, -3, -1])).all())
+        self.assertTrue((conf_intervals.upr == np.array([.5, .5, 3, .5])).all())
+        # Update 4
+        conf_intervals.update(set([0,1,2]), (np.array([-4,-4,-4,-4]), np.array([1,1,1,1])))
+        self.assertTrue((conf_intervals.lwr == np.ones(p + 1) * -4).all())
+        self.assertTrue((conf_intervals.upr == np.array([1, 1, 3, 1])).all())
