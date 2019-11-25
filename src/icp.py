@@ -62,6 +62,7 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
     S = base.copy()
     accepted = set()
     max_size = 0
+    conf_intervals = ConfIntervals(data.p)
     while max_size <= max_predictors and (len(S) > 0 or not stop_early):
         print("Evaluating candidate sets with length %d" % max_size) if debug else None
         candidates = itertools.combinations(base, max_size)
@@ -74,17 +75,20 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
             if not rejected:
                 S = S.intersection(s)
                 accepted.add(s)
+                if max_size !=0:
+                    intervals = confidence_intervals(s, beta, data, alpha)
+                    print(intervals)
+                    conf_intervals.update(s, intervals)
             if debug:
                 color = "red" if rejected else "green"
                 beta_str = np.array_str(beta, precision=2)
                 set_str = "rejected" if rejected else "accepted"
                 msg = colored("%s %s" % (s, set_str), color) + " - (p=%0.2f) - S = %s %s" % (p_value, S, beta_str)
                 print(msg)
-                #print("%s - %s (p=%0.2f) - S = %s %s" % (s, not rejected, p_value, S, beta_str))
             if len(S) == 0 and stop_early:
                 break;
         max_size += 1
-    return (S, accepted)
+    return (S, accepted, conf_intervals)
 
 # Support functions to icp
 
@@ -122,13 +126,13 @@ def regress(s, data, pooling=True, debug=False):
     return beta
 
 def t_test(X,Y):
-    """Return the test statistic and p-value of the two sample f-test for
+    """Return the p-value of the two sample f-test for
     the given sample"""
     result = ttest(X, Y, equal_var=False)
     return result.pvalue
 
 def f_test(X,Y):
-    """Return the test statistic and p-value of the two sample g-test for
+    """Return the p-value of the two sample g-test for
     the given sample"""
     X = X[np.isfinite(X)]
     Y = Y[np.isfinite(Y)]
@@ -160,7 +164,7 @@ def confidence_intervals(s, beta, data, alpha):
     # Corr. matrix term
     sigma = np.diag(np.linalg.inv(Xs.T @ Xs))
     # Compute interval
-    delta = quantile * variance * sigma
+    delta = quantile * np.sqrt(variance) * sigma
     return (beta - delta, beta + delta)
     
 #---------------------------------------------------------------------
@@ -235,21 +239,17 @@ def pool(arrays, axis):
 # Confidence intervals class
 class ConfIntervals():
     """Class to keep and update confidence intervals for the regression
-    coefficients of every variable. The final confidence intervals are
-    the union of the intervals returned in every accepted set
+    coefficients of every variable
     
     Parameters:
-      - lwr: lower bounds
-      - upr: upper bounds
-      - p: number of variables (not including intercept)
+    - 
     """
 
     def __init__(self, p):
         """Initializes the arrays used to store the lower and upper bounds"""
-        size = p+1
-        self.p = p
-        self.lwr = np.ones(size) * np.inf
-        self.upr = np.ones(size) * -np.inf
+        self.p = p 
+        self.lwr = []
+        self.upr = []
 
     def update(self, s, bounds):
         """Given a set of variables s and new bounds, update the stored bounds
@@ -258,14 +258,29 @@ class ConfIntervals():
         """
         (lwr, upr) = bounds
         supp = list(s) + [self.p] # support is predictor set s + intercept
-        # Check that there is overlap between the new and old bounds
-        unset = np.isinf(self.upr[supp]) # both bounds should be finite or not
-        overlap = np.logical_and(lwr <= self.upr[supp], upr >= self.lwr[supp])
-        if not np.logical_or(overlap, unset).all():
-            print("WARNING: No overlap between confidence intervals. Merging")
-        self.lwr[supp] = np.minimum(self.lwr[supp], lwr)
-        self.upr[supp] = np.maximum(self.upr[supp], upr)
+        lwr_new = np.ones(self.p+1)*np.nan
+        upr_new = np.ones(self.p+1)*np.nan
+        lwr_new[supp] = lwr
+        upr_new[supp] = upr
+        self.lwr.append(lwr_new)
+        self.upr.append(upr_new)
         return (self.lwr, self.upr)
+
+    def lower_bound(self):
+        lower_bounds = np.array(self.lwr)
+        return np.nanmin(lower_bounds, axis=0)
+
+    def upper_bound(self):
+        upper_bounds = np.array(self.upr)
+        return np.nanmax(upper_bounds, axis=0)
+
+    def maxmin(self):
+        lower_bounds = np.array(self.lwr)
+        return np.nanmax(lower_bounds, axis=0)
+
+    def minmax(self):
+        upper_bounds = np.array(self.upr)
+        return np.nanmin(upper_bounds, axis=0)
     
 #---------------------------------------------------------------------
 # Unit testing
@@ -345,28 +360,33 @@ class DataTests(unittest.TestCase):
             last += ne
 
 class ConfIntervalsTests(unittest.TestCase):
-
-    def test_init(self):
-        P = [1,2,3,4]
-        # remember the bound for the intercept is also stored (ie. p+1 bounds)
-        for p in P:
-            conf_intervals = ConfIntervals(p)
-            self.assertTrue((conf_intervals.lwr == np.ones(p+1) * np.inf).all())
-            self.assertTrue((conf_intervals.upr == np.ones(p+1) * -np.inf).all())
-            self.assertEqual(p, conf_intervals.p)
-
+    
     def test_update(self):
         p = 3
         conf_intervals = ConfIntervals(p)
         # Update 1
         conf_intervals.update(set([2]), (np.array([-3, 0]), np.array([3, 0])))
-        self.assertTrue((conf_intervals.lwr == np.array([np.inf, np.inf, -3, 0])).all())
-        self.assertTrue((conf_intervals.upr == np.array([-np.inf, -np.inf, 3, 0])).all())
+        print(conf_intervals.lower_bound())
+        self.assertTrue(nan_equal(conf_intervals.lower_bound(), np.array([np.nan, np.nan, -3, 0])))
+        self.assertTrue(nan_equal(conf_intervals.upper_bound(), np.array([np.nan, np.nan, 3, 0])))
+        self.assertTrue(nan_equal(conf_intervals.maxmin(), np.array([np.nan, np.nan, -3, 0])))
+        self.assertTrue(nan_equal(conf_intervals.minmax(), np.array([np.nan, np.nan, 3, 0])))
         # Update 2
         conf_intervals.update(set([0,1]), (np.array([-1,-1,-1]), np.array([.5, .5, .5])))
-        self.assertTrue((conf_intervals.lwr == np.array([-1, -1, -3, -1])).all())
-        self.assertTrue((conf_intervals.upr == np.array([.5, .5, 3, .5])).all())
+        self.assertTrue(nan_equal(conf_intervals.lower_bound(), np.array([-1, -1, -3, -1])))
+        self.assertTrue(nan_equal(conf_intervals.upper_bound(), np.array([.5, .5, 3, .5])))
+        self.assertTrue(nan_equal(conf_intervals.maxmin(), np.array([-1, -1, -3, 0])))
+        self.assertTrue(nan_equal(conf_intervals.minmax(), np.array([.5, .5, 3, 0])))
         # Update 4
         conf_intervals.update(set([0,1,2]), (np.array([-4,-4,-4,-4]), np.array([1,1,1,1])))
-        self.assertTrue((conf_intervals.lwr == np.ones(p + 1) * -4).all())
-        self.assertTrue((conf_intervals.upr == np.array([1, 1, 3, 1])).all())
+        self.assertTrue(nan_equal(conf_intervals.lower_bound(), np.ones(p + 1) * -4))
+        self.assertTrue(nan_equal(conf_intervals.upper_bound(), np.array([1, 1, 3, 1])))
+        self.assertTrue(nan_equal(conf_intervals.maxmin(), np.array([-1, -1, -3, 0])))
+        self.assertTrue(nan_equal(conf_intervals.minmax(), np.array([.5, .5, 1, 0])))
+
+def nan_equal(a,b):
+    try:
+        np.testing.assert_equal(a,b)
+    except AssertionError:
+        return False
+    return True
