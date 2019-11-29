@@ -327,22 +327,20 @@ class SEM_Tests(unittest.TestCase):
                       [0, 0, 1],
                       [0, 0, 0]])
         ordering = np.arange(3)
-        n = 100000
-        variances = np.array([1,2,3])
+        n = round(1e6)
+        variances = np.array([1,2,3])*0.1
         intercepts = np.array([1,2,3])
         sem = LGSEM(W, ordering, variances, intercepts)
-
+        np.random.seed(42)
         # Test observational data
         # Build truth
-        np.random.seed(42)
         noise = np.random.normal(intercepts, variances**0.5, size=(n,3))
         truth = np.zeros_like(noise)
         truth[:,0] = noise[:,0]
         truth[:,1] = truth[:,0]*W[0,1] + noise[:,1]
         truth[:,2] = truth[:,0]*W[0,2] + truth[:,1]*W[1,2] + noise[:,2]
-        np.random.seed(42)
         samples = sem.sample(n)
-        self.assertTrue(np.allclose(truth, samples))
+        self.assertTrue(same_normal(truth, samples))
         # Test that variances/means are as expected
         true_vars, true_means = np.zeros(3), np.zeros(3)
         true_vars[0] = variances[0]
@@ -354,17 +352,15 @@ class SEM_Tests(unittest.TestCase):
         self.assertTrue(np.allclose(true_vars, np.var(samples, axis=0), atol=1e-2))
         self.assertTrue(np.allclose(true_means, np.mean(samples, axis=0), atol=1e-2))
         
-        # Test under intervention on X1 <- N(0,1)
-        np.random.seed(42)
-        variances = np.array([1., 1., 3.])
+        # Test under intervention on X1 <- N(0,0.1)
+        variances = np.array([1., 1., 3.])*0.1
         intercepts = np.array([1., 0., 3.])
         noise = np.random.normal(intercepts, variances**0.5, size=(n,3))
         truth[:,0] = noise[:,0]
         truth[:,1] = noise[:,1]
         truth[:,2] = truth[:,0]*W[0,2] + truth[:,1]*W[1,2] + noise[:,2]
-        np.random.seed(42)
-        samples = sem.sample(n, noise_interventions = np.array([[1,0,1]]))
-        self.assertTrue(np.allclose(truth, samples))
+        samples = sem.sample(n, noise_interventions = np.array([[1,0,0.1]]))
+        self.assertTrue(same_normal(truth, samples))
         # Test that variances/means are as expected
         true_vars, true_means = np.zeros(3), np.zeros(3)
         true_vars[0] = variances[0]
@@ -377,16 +373,14 @@ class SEM_Tests(unittest.TestCase):
         self.assertTrue(np.allclose(true_means, np.mean(samples, axis=0), atol=1e-2))
         
         # Test under intervention on do(X0 = 0)
-        variances = np.array([0., 2., 3.])
+        variances = np.array([0., 2., 3.])*0.1
         intercepts = np.array([0., 2., 3.])
-        np.random.seed(42)
         noise = np.random.normal(intercepts, variances**0.5, size=(n,3))
         truth[:,0] = noise[:,0]
         truth[:,1] = truth[:,0]*W[0,1] + noise[:,1]
         truth[:,2] = truth[:,0]*W[0,2] + truth[:,1]*W[1,2] + noise[:,2]
-        np.random.seed(42)
         samples = sem.sample(n, do_interventions = np.array([[0,0]]))
-        self.assertTrue(np.allclose(truth, samples))
+        self.assertTrue(same_normal(truth, samples))
         # Test that variances/means are as expected
         true_vars, true_means = np.zeros(3), np.zeros(3)
         true_vars[0] = variances[0]
