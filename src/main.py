@@ -17,28 +17,37 @@ from sampling import LGSEM
 from icp import icp
 import numpy as np
 
-W = np.array([[0, 1, -1, 0, 0],
-              [0, 0, 0, 1, 0],
-              [0, 0, 0, 1, 0],
-              [0, 0, 0, 0, 1],
-              [0, 0, 0, 0, 0]])
+# W = np.array([[0, 1, -1, 0, 0],
+#               [0, 0, 0, 1, 0],
+#               [0, 0, 0, 1, 0],
+#               [0, 0, 0, 0, 1],
+#               [0, 0, 0, 0, 0]])
+
+W = np.array([[0, 1, -1, 0, 0, 0],
+              [0, 0, 0, 1, 0, 0],
+              [0, 0, 0, 1, 0, 0],
+              [0, 0, 0, 0, 1, 0],
+              [0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 1, 0]])
+
 p = len(W)
 ordering = np.arange(p)
 sem = LGSEM(W,ordering,(1,1))
-n = round(1e5)
+n = round(1e6)
 e = sem.sample(n)
-e0 = sem.sample(n, noise_interventions = np.array([[0,5,1]]))
-e1 = sem.sample(n, noise_interventions = np.array([[1,5,1]]))
-e2 = sem.sample(n, do_interventions = np.array([[2,5,1]]))
-e4 = sem.sample(n, do_interventions = np.array([[4,5,1]]))
+e0 = sem.sample(n, noise_interventions = np.array([[0,10,1]]))
+e1 = sem.sample(n, noise_interventions = np.array([[1,10,1]]))
+e2 = sem.sample(n, do_interventions = np.array([[2,10,1]]))
+e4 = sem.sample(n, do_interventions = np.array([[4,10,1]]))
+e5 = sem.sample(n, do_interventions = np.array([[5,10,1]]))
 print(sem.W)
-#_ = plot_graph(sem)
+_ = plot_graph(sem)
 
-environments = [e, e1]#, e2, e3, e4
+environments = [e, e0]#, e2, e3, e4
 target = 3
 
-(S, accepted,conf_intervals) = icp(environments, target, alpha=0.01, max_predictors=None, debug=True, stop_early=False)
-
+(S, accepted, mses, conf_intervals) = icp(environments, target, alpha=0.01, max_predictors=None, debug=True, stop_early=False)
+print("Intersection: %s" % S)
 
 
 class RandomPolicy():
@@ -84,4 +93,10 @@ def ratios(p, accepted):
         one_hot[i, s] = 1
     return one_hot.sum(axis=0) / len(accepted)
         
-ratios(p, accepted)
+R = ratios(p, accepted)
+for i,r in enumerate(R):
+    print("X%d = %d/%d=%0.2f" % (i, r*p, p, r))
+
+mses = np.array(mses)
+for i in np.argsort(mses):
+    print("%s %0.5f" % (accepted[i], mses[i]))
