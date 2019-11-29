@@ -72,9 +72,14 @@ class LGSEM:
         else:
             self.intercepts = intercepts.copy()
     
-    def sample(self, n, do_interventions=None, noise_interventions=None, debug=False):
-        """Generate n samples from a given Linear Gaussian SEM, under the given
-        interventions (by default samples observational data)
+    def sample(self, n=round(1e5), population=False, do_interventions=None, noise_interventions=None, debug=False):
+        """
+        If population is set to False:
+          - Generate n samples from a given Linear Gaussian SEM, under the given
+            interventions (by default samples observational data)
+        if set to True:
+          - Return the "symbolic" joint distribution under the given
+            interventions (see class NormalDistribution)
         """
         # Must copy as they can be changed by intervention, but we
         # still want to keep the observational SEM
@@ -96,17 +101,15 @@ class LGSEM:
             variances[targets] = noise_interventions[:,2]
             W[:,targets] = 0
             
-        # Sample
-        # First fill X with the noise variables + intercepts
-        print("Variances = %s, Intercepts = %s" % (variances, intercepts)) if debug else None
-        X = np.random.normal(intercepts, variances**0.5, size=(n,self.p))
-        M = W + np.eye(self.p)
-        print(X) if debug else None
-        for i in self.ordering:
-            print("Sampling variable %d. Weights %s" % (i,M[:,i])) if debug else None
-            X[:,i] = X @ M[:,i]
-        return X
-
+        # Sampling by building the joint distribution
+        A = sampling_matrix(W, self.ordering)
+        mean = A @ intercepts
+        covariance = A @ np.diag(variances) @ A.T
+        distribution = NormalDistribution(mean, covariance)
+        if not population:
+            return distribution.sample(n)
+        else:
+            return distribution
 
 class NormalDistribution():
     def __init__(self, mean, covariance):
@@ -413,6 +416,42 @@ class SEM_Tests(unittest.TestCase):
             # Test
             self.assertTrue(same_normal(X_sem, X_distr))
 
+    def test_distribution(self):
+        # Test "population" sampling
+        W = np.array([[0,0,1,0],
+                      [0,0,1,0],
+                      [0,0,0,1],
+                      [0,0,0,0]])
+        ordering = np.arange(4)
+        # Build SEM with unit weights and standard normal noise
+        # variables
+        sem = LGSEM(W, ordering, (1,1))
+        # Observational Distribution
+        distribution = sem.sample(population=True)
+        true_cov = np.array([[1,0,1,1],
+                             [0,1,1,1],
+                             [1,1,3,3],
+                             [1,1,3,4]])
+        self.assertTrue((distribution.mean==np.zeros(4)).all())
+        self.assertTrue((distribution.covariance==true_cov).all())
+        # Do intervention on X1 <- 0
+        distribution = sem.sample(population=True, do_interventions = np.array([[0,1]]))
+        true_cov = np.array([[0,0,0,0],
+                             [0,1,1,1],
+                             [0,1,2,2],
+                             [0,1,2,3]])
+        self.assertTrue((distribution.mean==np.array([1,0,1,1])).all())
+        self.assertTrue((distribution.covariance==true_cov).all())
+        # Noise interventions on X1 <- N(0,2), X2 <- N(1,2)
+        interventions = np.array([[0,0,2], [1,1,2]])
+        distribution = sem.sample(population=True, noise_interventions=interventions)
+        true_cov = np.array([[2,0,2,2],
+                             [0,2,2,2],
+                             [2,2,5,5],
+                             [2,2,5,6]])
+        self.assertTrue((distribution.mean==np.array([0,1,1,1])).all())
+        self.assertTrue((distribution.covariance==true_cov).all())
+        
 def same_normal(sample_a, sample_b, atol=1e-2, debug=False):
     """
     Test (crudely, by L1 dist. of means and covariances) if samples
