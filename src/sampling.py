@@ -113,12 +113,22 @@ class LGSEM:
 
 class NormalDistribution():
     def __init__(self, mean, covariance):
+        self.p = len(mean)
         self.mean = mean
         self.covariance = covariance
 
     def sample(self, n):
         return np.random.multivariate_normal(self.mean, self.covariance, size=n)
 
+    def marginal(self, X):
+        idx = np.zeros(self.p)
+        idx[X] = 1
+        idx = np.outer(idx, idx).astype(bool)
+        return NormalDistribution(self.mean[X], self.covariance[idx])
+
+    def conditional(self, Y, X, x):
+        # TODO
+        return NormalDistribution(1,1)
 
 def sampling_matrix(W, ordering):
     """Given the weighted adjacency matrix and ordering of a DAG, return
