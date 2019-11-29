@@ -60,7 +60,8 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
     base = set(range(data.p))
     base.remove(target)
     S = base.copy()
-    accepted = set()
+    accepted = [] # To store the accepted sets
+    mses = [] # To store the MSE of the accepted sets
     max_size = 0
     conf_intervals = ConfIntervals(data.p)
     while max_size <= max_predictors and (len(S) > 0 or not stop_early):
@@ -68,13 +69,14 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
         candidates = itertools.combinations(base, max_size)
         for s in candidates:
             # Find linear coefficients on pooled data
-            beta = regress(s, data)
+            (beta, error) = regress(s, data)
             assert((beta[list(base.difference(s))] == 0).all())
             p_value = test_hypothesis(beta, data, debug=debug)
             rejected = p_value < alpha
             if not rejected:
                 S = S.intersection(s)
-                accepted.add(s)
+                accepted.append(s)
+                mses.append(error)
                 if max_size !=0:
                     intervals = confidence_intervals(s, beta, data, alpha)
                     print(intervals)
@@ -83,12 +85,12 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
                 color = "red" if rejected else "green"
                 beta_str = np.array_str(beta, precision=2)
                 set_str = "rejected" if rejected else "accepted"
-                msg = colored("%s %s" % (s, set_str), color) + " - (p=%0.2f) - S = %s %s" % (p_value, S, beta_str)
+                msg = colored("%s %s" % (s, set_str), color) + " - (p=%0.2f) - S = %s %s MSE: %0.4f" % (p_value, S, beta_str, error)
                 print(msg)
             if len(S) == 0 and stop_early:
                 break;
         max_size += 1
-    return (S, accepted, conf_intervals)
+    return (S, accepted, mses, conf_intervals)
 
 # Support functions to icp
 
@@ -115,7 +117,7 @@ def test_hypothesis(beta, data, debug=False):
 
 def regress(s, data, pooling=True, debug=False):
     """
-    Perform linear regression of data.target over the variables indexed by s
+    Perform the linear regression of data.target over the variables indexed by s
     """
     supp = list(s) + [data.p] # support is pred. set + intercept
     if pooling:
@@ -123,7 +125,11 @@ def regress(s, data, pooling=True, debug=False):
         Y = data.pooled_targets()
     beta = np.zeros(data.p+1)
     beta[supp] = LinearRegression(fit_intercept=False).fit(X, Y).coef_
-    return beta
+    error = mse(Y, data.pooled_data() @ beta)
+    return beta, error
+
+def mse(true, pred):
+    return np.sum((true - pred)**2) / len(true)
 
 def t_test(X,Y):
     """Return the p-value of the two sample f-test for
