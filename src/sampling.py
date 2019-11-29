@@ -107,6 +107,30 @@ class LGSEM:
             X[:,i] = X @ M[:,i]
         return X
 
+
+class NormalDistribution():
+    def __init__(self, mean, covariance):
+        self.mean = mean
+        self.covariance = covariance
+
+    def sample(self, n):
+        return np.random.multivariate_normal(self.mean, self.covariance, size=n)
+
+
+def sampling_matrix(W, ordering):
+    """Given the weighted adjacency matrix and ordering of a DAG, return
+    the matrix A such that the DAG generates samples
+      A @ diag(var)^1/2 @ Z + mu
+    where Z is an isotropic normal, and var/mu are the variances/means
+    of the noise variables of the graph.
+    """
+    p = len(W)
+    A = np.eye(p)
+    W = W + A # set diagonal of W to 1
+    for i in range(p):
+        A[i,:] = np.sum(W[:,[i]] * A, axis=0)
+    return A
+
 #---------------------------------------------------------------------
 # DAG Generating Functions
 
@@ -177,6 +201,7 @@ class DAG_Tests(unittest.TestCase):
 # Tests for the SEM generation and sampling
 class SEM_Tests(unittest.TestCase):
     def test_basic(self):
+        # Test the initialization of an LGSEM object
         p = 10
         (W, ordering) = dag_avg_deg(p, p/4, 1, 1)
         sem = LGSEM(W, ordering, (1,1))
@@ -203,6 +228,7 @@ class SEM_Tests(unittest.TestCase):
         self.assertFalse((ordering == sem.ordering).all())
         
     def test_intercepts(self):
+        # Test that intercepts are set correctly
         p = 10
         (W, ordering) = dag_avg_deg(p, p/4, 1, 1)
         intercepts = np.arange(p)
@@ -210,52 +236,49 @@ class SEM_Tests(unittest.TestCase):
         self.assertTrue((sem.intercepts == intercepts).all())
 
     def test_sampling_1(self):
-        # Test sampling with one variable
+        # Test sampling of DAG with one variable
+        np.random.seed(42)
         p = 1
-        n = 100
+        n = round(1e6)
         (W, ordering) = dag_full(p)
         sem = LGSEM(W, ordering, (1,1))
         # Observational data
-        np.random.seed(42)
         truth = np.random.normal(0,1,size=(n,1))
-        np.random.seed(42)
         samples = sem.sample(n)
-        self.assertTrue((truth == samples).all())
+        self.assertTrue(same_normal(truth, samples, atol=1e-1))
         # Under do intervention
         truth = np.ones((n,1))
         samples = sem.sample(n, do_interventions = np.array([[0, 1]]))
         self.assertTrue((truth == samples).all())
         # Under noise intervention
-        np.random.seed(42)
         truth = np.random.normal(1,2,size=(n,1))
-        np.random.seed(42)
         samples = sem.sample(n, noise_interventions = np.array([[0, 1, 4]]))
-        self.assertTrue((truth == samples).all())
+        self.assertTrue(same_normal(truth, samples, atol=1e-1))
 
     def test_sampling_2(self):
         # Test that the distribution of a 4 variable DAG with upper
         # triangular, all ones adj. matrix matches what we expect
         # using the path method
         p = 4
-        n = 100
+        n = round(1e6)
         (W, ordering) = dag_full(p)
-        sem = LGSEM(W, ordering, (1,1))
+        sem = LGSEM(W, ordering, (0.16,0.16))
         np.random.seed(42)
-        noise = np.random.normal([0,0,0,0],[1,1,1,1], size=(n,4))
+        noise = np.random.normal([0,0,0,0],[.4, .4, .4, .4], size=(n,4))
         truth = np.zeros((n,p))
         truth[:,0] = noise[:,0]
         truth[:,1] = noise[:,0] + noise[:,1]
         truth[:,2] = 2*noise[:,0] + noise[:,1] + noise[:,2]
         truth[:,3] = 4*noise[:,0] + 2*noise[:,1] + noise[:,2] + noise[:,3]
-        np.random.seed(42)
         samples = sem.sample(n)
-        self.assertTrue(np.allclose(truth, samples))
+        self.assertTrue(same_normal(truth, samples))
         
     def test_interventions_1(self):
         # Test sampling and interventions on a custom DAG, comparing
         # with results obtained via the path method
+        np.random.seed(42)
         p = 6
-        n = 25
+        n = round(1e6)
         W = np.array([[0, 1, 1, 0, 0, 0],
                       [0, 0, 0, 0, 1, 1],
                       [0, 0, 0, 1, 0, 0],
@@ -263,7 +286,7 @@ class SEM_Tests(unittest.TestCase):
                       [0, 0, 0, 0, 0, 1],
                       [0, 0, 0, 0, 0, 0]])
         ordering = np.arange(p)
-        sem = LGSEM(W, ordering, (1,1))
+        sem = LGSEM(W, ordering, (0.16,0.16))
 
         # Test observational data
         M = np.array([[1, 0, 0, 0, 0, 0],
@@ -272,26 +295,21 @@ class SEM_Tests(unittest.TestCase):
                       [1, 0, 1, 1, 0, 0],
                       [2, 1, 1, 1, 1, 0],
                       [4, 2, 2, 2, 1, 1]])
-        np.random.seed(42)
-        noise = np.random.normal(np.zeros(p), np.ones(p), size=(n,p))
+        noise = np.random.normal(np.zeros(p), np.ones(p)*0.4, size=(n,p))
         truth = noise @ M.T
-        np.random.seed(42)
         samples = sem.sample(n)
-        self.assertTrue(np.allclose(truth, samples))
+        self.assertTrue(same_normal(truth, samples))
         
         # Test under do-interventions on X1
-        np.random.seed(42)
-        noise = np.random.normal([2.1,0,0,0,0,0], [0,1,1,1,1,1], size=(n,p))
+        noise = np.random.normal([2.1,0,0,0,0,0], [0,.4, .4, .4, .4, .4], size=(n,p))
         truth = noise @ M.T
-        np.random.seed(42)
         samples = sem.sample(n, do_interventions = np.array([[0,2.1]]))
-        self.assertTrue(np.allclose(truth, samples))
+        self.assertTrue(same_normal(truth, samples))
         
         # Test under do-intervention on X1 and noise interventions X2 and X5
         do_int = np.array([[0,2]])
-        noise_int = np.array([[1, 2, 1], [4, 1, 4]])
-        np.random.seed(42)
-        noise = np.random.normal([2,2,0,0,1,0], [0,1,1,1,2,1], size=(n,p))
+        noise_int = np.array([[1, 2, 0.25], [4, 1, 0.25]])
+        noise = np.random.normal([2,2,0,0,1,0], [0,.5,.4,.4,.5,.4], size=(n,p))
         M = np.array([[1, 0, 0, 0, 0, 0],
                       [0, 1, 0, 0, 0, 0],
                       [1, 0, 1, 0, 0, 0],
@@ -299,11 +317,12 @@ class SEM_Tests(unittest.TestCase):
                       [0, 0, 0, 0, 1, 0],
                       [1, 1, 1, 1, 1, 1]])
         truth = noise @ M.T
-        np.random.seed(42)
         samples = sem.sample(n, do_interventions=do_int, noise_interventions = noise_int)
-        self.assertTrue(np.allclose(truth, samples))
+        self.assertTrue(same_normal(truth, samples))
 
     def test_interventions_2(self):
+        # Test that the means and variances of variables in the joint
+        # distribution are what is expected via the path method
         W = np.array([[0, 1, 1],
                       [0, 0, 1],
                       [0, 0, 0]])
@@ -378,3 +397,36 @@ class SEM_Tests(unittest.TestCase):
         true_means[2] = (W[0,1] * W[1,2] + W[0,2]) * intercepts[0] + W[1,2] * intercepts[1] + intercepts[2]
         self.assertTrue(np.allclose(true_vars, np.var(samples, axis=0), atol=1e-2))
         self.assertTrue(np.allclose(true_means, np.mean(samples, axis=0), atol=1e-2))
+
+    def test_sampling_matrix_fun(self):
+        # Test that sampling by building the multivariate normal
+        # distribution works correctly (ie. NormalDistribution and sampling_matrix)
+        P = [4,8,16]
+        n = round(1e6)
+        for p in P:
+            (W, ordering) = dag_avg_deg(p, 3, -0.1, 0.1)
+            variances = np.random.uniform(0.1, 0.2, p)
+            intercepts = np.random.uniform(-1,1,p)
+            # Generate samples through SEM
+            X_sem = np.random.normal(intercepts, variances**0.5, size=(n,p))
+            M = W + np.eye(p)
+            for i in ordering:
+                X_sem[:,i] = X_sem @ M[:,i]
+            # Generate samples from Multivariate Normal
+            A = sampling_matrix(W, ordering)
+            distribution = NormalDistribution(A @ intercepts, A @ np.diag(variances) @ A.T)
+            X_distr = distribution.sample(n)
+            # Test
+            self.assertTrue(same_normal(X_sem, X_distr))
+
+def same_normal(sample_a, sample_b, atol=1e-2, debug=False):
+    """
+    Test (crudely, by L1 dist. of means and covariances) if samples
+    from two distributions come from the same Gaussian
+    """
+    mean_a, mean_b = np.mean(sample_a, axis=0), np.mean(sample_b, axis=0)
+    cov_a, cov_b = np.cov(sample_a, rowvar=False), np.cov(sample_b, rowvar=False)
+    print("MEANS\n%s\n%s\n\nCOVARIANCES\n%s\n%s" % (mean_a, mean_b, cov_a, cov_b)) if debug else None
+    means = np.allclose(mean_a, mean_b, atol=atol)
+    covariances = np.allclose(cov_a, cov_b, atol=atol)
+    return means and covariances
