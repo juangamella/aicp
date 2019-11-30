@@ -35,12 +35,9 @@ def matrix_block(M, rows, cols):
     Select a block of a matrix given by the row and column indices
     """
     (n,m) = M.shape
-    idx_rows = np.zeros(n)
-    idx_rows[rows] = 1
-    idx_cols = np.zeros(m)
-    idx_cols[cols] = 1
-    mask = np.outer(idx_rows, idx_cols).astype(bool)
-    return M[mask].reshape(len(rows), len(cols))
+    idx_rows = np.tile(np.array([rows]).T,len(cols)).flatten()
+    idx_cols = np.tile(cols, (len(rows),1)).flatten()
+    return M[idx_rows, idx_cols].reshape(len(rows), len(cols))
 
 class NormalDistribution():
     """Symbolic representation of a normal distribution that allows for
@@ -101,7 +98,14 @@ class UtilsTests(unittest.TestCase):
                  (range(4), [1], M[:,[1]]),
                  ([2], range(4), M[[2],:]),
                  ([0,1], [0,1], np.array([[11, 12], [21, 22]])),
-                 ([0,1], [1,3], np.array([[12,14], [22, 24]]))]
+                 ([0,1], [1,3], np.array([[12,14], [22, 24]])),
+                 # Test order of indices is also respected
+                 (range(3,-1,-1), range(3,-1,-1), M[::-1,::-1]),
+                 (range(3,-1,-1), range(4), M[::-1,:]),
+                 (range(3,-1,-1), [1], M[::-1,[1]]),
+                 ([2], range(3,-1,-1), M[[2],::-1]),
+                 ([1,0], [0,1], np.array([[21, 22], [11, 12]])),
+                 ([0,1], [3,1], np.array([[14,12], [24, 22]]))]
         for test in tests:
             (A, B, truth) = test
             #print(A, B, truth, matrix_block(M, A, B))
