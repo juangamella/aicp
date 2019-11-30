@@ -111,7 +111,33 @@ class LGSEM:
         else:
             return distribution
 
+def sampling_matrix(W, ordering):
+    """Given the weighted adjacency matrix and ordering of a DAG, return
+    the matrix A such that the DAG generates samples
+      A @ diag(var)^1/2 @ Z + mu
+    where Z is an isotropic normal, and var/mu are the variances/means
+    of the noise variables of the graph.
+    """
+    p = len(W)
+    A = np.eye(p)
+    W = W + A # set diagonal of W to 1
+    for i in range(p):
+        A[i,:] = np.sum(W[:,[i]] * A, axis=0)
+    return A        
+
+#---------------------------------------------------------------------
+# NormalDistribution class
+
 class NormalDistribution():
+    """Symbolic representation of a normal distribution that allows for
+    marginalization, conditioning and sampling
+    
+    Attributes:
+      - mean: mean vector
+      - covariance: covariance matrix
+      - p: number of variables
+
+    """
     def __init__(self, mean, covariance):
         self.p = len(mean)
         self.mean = mean.copy()
@@ -154,20 +180,6 @@ def matrix_block(M, rows, cols):
     idx_cols[cols] = 1
     mask = np.outer(idx_rows, idx_cols).astype(bool)
     return M[mask].reshape(len(rows), len(cols))
-    
-def sampling_matrix(W, ordering):
-    """Given the weighted adjacency matrix and ordering of a DAG, return
-    the matrix A such that the DAG generates samples
-      A @ diag(var)^1/2 @ Z + mu
-    where Z is an isotropic normal, and var/mu are the variances/means
-    of the noise variables of the graph.
-    """
-    p = len(W)
-    A = np.eye(p)
-    W = W + A # set diagonal of W to 1
-    for i in range(p):
-        A[i,:] = np.sum(W[:,[i]] * A, axis=0)
-    return A
 
 #---------------------------------------------------------------------
 # DAG Generating Functions
