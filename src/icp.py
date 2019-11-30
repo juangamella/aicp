@@ -69,23 +69,23 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
         candidates = itertools.combinations(base, max_size)
         for s in candidates:
             # Find linear coefficients on pooled data
-            (beta, error) = regress(s, data)
-            assert((beta[list(base.difference(s))] == 0).all())
-            p_value = test_hypothesis(beta, data, debug=debug)
+            (coefs, error) = regress(s, data)
+            assert((coefs[list(base.difference(s))] == 0).all())
+            p_value = test_hypothesis(coefs, data, debug=debug)
             rejected = p_value < alpha
             if not rejected:
                 S = S.intersection(s)
                 accepted.append(s)
                 mses.append(error)
                 if max_size !=0:
-                    intervals = confidence_intervals(s, beta, data, alpha)
+                    intervals = confidence_intervals(s, coefs, data, alpha)
                     print(intervals)
                     conf_intervals.update(s, intervals)
             if debug:
                 color = "red" if rejected else "green"
-                beta_str = np.array_str(beta, precision=2)
+                coefs_str = np.array_str(coefs, precision=2)
                 set_str = "rejected" if rejected else "accepted"
-                msg = colored("%s %s" % (s, set_str), color) + " - (p=%0.2f) - S = %s %s MSE: %0.4f" % (p_value, S, beta_str, error)
+                msg = colored("%s %s" % (s, set_str), color) + " - (p=%0.2f) - S = %s %s MSE: %0.4f" % (p_value, S, coefs_str, error)
                 print(msg)
             if len(S) == 0 and stop_early:
                 break;
@@ -94,8 +94,8 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
 
 # Support functions to icp
 
-def test_hypothesis(beta, data, debug=False):
-    """Test hypothesis for a vector of coefficients beta, using the t-test for the mean
+def test_hypothesis(coefs, data, debug=False):
+    """Test hypothesis for a vector of coefficients coefs, using the t-test for the mean
     and f-test for the variances, and returning the p-value
 
     """
@@ -103,8 +103,8 @@ def test_hypothesis(beta, data, debug=False):
     var_pvalues = np.zeros(data.n_env)
     for i in range(data.n_env):
         (env_targets, env_data, others_targets, others_data) = data.split(i)
-        residuals_env = env_targets - env_data @ beta
-        residuals_others = others_targets - others_data @ beta
+        residuals_env = env_targets - env_data @ coefs
+        residuals_others = others_targets - others_data @ coefs
         mean_pvalues[i] = t_test(residuals_env, residuals_others)
         var_pvalues[i] = f_test(residuals_env, residuals_others)
         assert(mean_pvalues[i] <= 1)
@@ -123,10 +123,10 @@ def regress(s, data, pooling=True, debug=False):
     if pooling:
         X = data.pooled_data()[:,supp]
         Y = data.pooled_targets()
-    beta = np.zeros(data.p+1)
-    beta[supp] = LinearRegression(fit_intercept=False).fit(X, Y).coef_
-    error = mse(Y, data.pooled_data() @ beta)
-    return beta, error
+    coefs = np.zeros(data.p+1)
+    coefs[supp] = LinearRegression(fit_intercept=False).fit(X, Y).coef_
+    error = mse(Y, data.pooled_data() @ coefs)
+    return coefs, error
 
 def mse(true, pred):
     return np.sum((true - pred)**2) / len(true)
@@ -138,7 +138,7 @@ def t_test(X,Y):
     return result.pvalue
 
 def f_test(X,Y):
-    """Return the p-value of the two sample g-test for
+    """Return the p-value of the two sample t-test for
     the given sample"""
     X = X[np.isfinite(X)]
     Y = Y[np.isfinite(Y)]
@@ -146,12 +146,12 @@ def f_test(X,Y):
     p = f.cdf(F, len(X)-1, len(Y)-1)
     return  2*min(p, 1-p)
 
-def confidence_intervals(s, beta, data, alpha):
+def confidence_intervals(s, coefs, data, alpha):
     """Compute the confidence intervals of the regression coefficients
-    (beta) of a predictor set s, given the level alpha.
+    (coefs) of a predictor set s, given the level alpha.
 
     Under Gaussian errors, the confidence intervals are given by
-    beta +/- delta, where
+    coefs +/- delta, where
 
     delta = quantile * variance of residuals @ diag(inv. corr. matrix)
 
@@ -159,19 +159,19 @@ def confidence_intervals(s, beta, data, alpha):
     """
     s = list(s)
     supp = s + [data.p] # Support is pred. set + intercept
-    beta = beta[supp]
+    coefs = coefs[supp]
     # Quantile term
     dof = data.n - len(s) - 1
     quantile = t.ppf(1-alpha/2/len(s), dof)
     # Residual variance term
     Xs = data.pooled_data()[:,supp]
-    residuals = data.pooled_targets() - Xs @ beta
+    residuals = data.pooled_targets() - Xs @ coefs
     variance = np.var(residuals)
     # Corr. matrix term
     sigma = np.diag(np.linalg.inv(Xs.T @ Xs))
     # Compute interval
     delta = quantile * np.sqrt(variance) * sigma
-    return (beta - delta, beta + delta)
+    return (coefs - delta, coefs + delta)
     
 #---------------------------------------------------------------------
 # Data class and its support functions
