@@ -41,3 +41,28 @@ def matrix_block(M, rows, cols):
     idx_cols[cols] = 1
     mask = np.outer(idx_rows, idx_cols).astype(bool)
     return M[mask].reshape(len(rows), len(cols))
+
+
+#---------------------------------------------------------------------
+# Unit testing
+
+import unittest
+
+class UtilsTests(unittest.TestCase):
+    def test_matrix_block(self):
+        M = np.array([[11, 12, 13, 14],
+                      [21, 22, 23, 24],
+                      [31, 32, 33, 34],
+                      [41, 42, 43, 44]])
+        # Tests
+        tests = [(range(4), range(4), M),
+                 ([1,2], [3], np.array([[24, 34]]).T),
+                 (range(4), [1], M[:,[1]]),
+                 ([2], range(4), M[[2],:]),
+                 ([0,1], [0,1], np.array([[11, 12], [21, 22]])),
+                 ([0,1], [1,3], np.array([[12,14], [22, 24]]))]
+        for test in tests:
+            (A, B, truth) = test
+            #print(A, B, truth, matrix_block(M, A, B))
+            self.assertTrue((matrix_block(M, A, B) == truth).all())
+
