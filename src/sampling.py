@@ -29,6 +29,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 import numpy as np
 import matplotlib.pyplot as plt
+from utils import matrix_block
 
 #---------------------------------------------------------------------
 # LGSEM class
@@ -168,18 +169,6 @@ class NormalDistribution():
         mean = mean_y + cov_yx @ np.linalg.inv(cov_x) @ (x - mean_x)
         covariance = cov_y - cov_yx @ np.linalg.inv(cov_x) @ cov_xy
         return NormalDistribution(mean,covariance)
-
-def matrix_block(M, rows, cols):
-    """
-    Select a block of a matrix given by the row and column indices
-    """
-    (n,m) = M.shape
-    idx_rows = np.zeros(n)
-    idx_rows[rows] = 1
-    idx_cols = np.zeros(m)
-    idx_cols[cols] = 1
-    mask = np.outer(idx_rows, idx_cols).astype(bool)
-    return M[mask].reshape(len(rows), len(cols))
 
 #---------------------------------------------------------------------
 # DAG Generating Functions
