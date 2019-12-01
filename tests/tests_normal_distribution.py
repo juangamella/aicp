@@ -35,7 +35,7 @@ os.chdir('/home/juan/ETH/code_semester_project/src')
 
 import unittest
 import numpy as np
-from utils import sampling_matrix
+from utils import sampling_matrix, all_but
 
 from normal_distribution import NormalDistribution
 
@@ -165,7 +165,6 @@ class NormalDistributionTests(unittest.TestCase):
         covariance = A @ A.T
         mean = np.random.uniform(size=p)
         joint = NormalDistribution(mean, covariance)
-        all_but = lambda k: [i for i in range(p) if i != k]
         # Tests
         tests = []
         # When no regressors, the MSE is just the marginal variance
@@ -180,7 +179,7 @@ class NormalDistributionTests(unittest.TestCase):
         tests += [(i, pa, 1) for i,pa in enumerate(parents)]
         # Regressing on additional variables to the Markov Blanket
         # should give the same result
-        tests += [(i, all_but(i), joint.mse(i, mb)) for i,mb in enumerate(markov_blankets)]
+        tests += [(i, all_but(i, p), joint.mse(i, mb)) for i,mb in enumerate(markov_blankets)]
         self.run_mse_tests(joint, tests)
         # Changing the mean of the noise variables should not change
         # the MSE
@@ -197,7 +196,6 @@ class NormalDistributionTests(unittest.TestCase):
         covariance = A @ A.T
         mean = np.random.uniform(size=p)
         joint = NormalDistribution(mean, covariance)
-        all_but = lambda k: [i for i in range(p) if i != k]
         # Tests
         # Regressing on the parents should return their weights as coefficients
         for i,pa in enumerate(parents):
@@ -217,7 +215,7 @@ class NormalDistributionTests(unittest.TestCase):
         # Regressing on all variables except target should yield Markov blanket
         for i,mb in enumerate(markov_blankets):
             mb.sort()
-            (coefs, intercept) = joint.regress(i, all_but(i))
+            (coefs, intercept) = joint.regress(i, all_but(i, p))
             non_mb = [i for i in range(p) if i not in mb]
             # Check vars. outside MB have 0 coefficient
             truth = np.zeros(len(non_mb))

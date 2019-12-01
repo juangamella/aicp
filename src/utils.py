@@ -52,3 +52,7 @@ def sampling_matrix(W, ordering):
     for i in range(p):
         A[i,:] = np.sum(W[:,[i]] * A, axis=0)
     return A
+
+def all_but(k,p):
+    """Return [0,...,p-1] without k"""
+    return [i for i in range(p) if i != k]
