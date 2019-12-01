@@ -29,5 +29,62 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
+import itertools
+from termcolor import colored
+from utils import all_but
 
+def population_icp(distributions, target, debug=False, selection='all'):
+    """Perform ICP over a set of Gaussian Distributions, each
+    representing a different environment
+    """
+    p = distributions[0].p
+    base.remove(target)
+    if selection=='markov_blanket':
+        mb = markov_blanket(target, distributions[0])
+        base = set(mb)
+    elif selection=='all':
+        base = set(range(p))
+        base.remove(target)
+    S = base.copy()
+    accepted = []
+    mses = []
+    candidates = itertools.combinations(base)
+    for s in candidates:
+        (pooled_coefs, pooled_mse) = pooled_regression(target, s, distributions)
+        rejected = is_generalizable(s, target, distributions)
+        if rejected:
+            accepted.append(s)
+            mses.append(pooled_mse)
+            S = S.intersection(s)
+        if debug:
+            color = "red" if rejected else "green"
+            coefs_str = np.array_str(pooled_coefs, precision=2)
+            set_str = "rejected" if rejected else "accepted"
+            msg = colored("%s %s" % (s, set_str), color) + " - %s MSE: %0.4f" % (coef_str, error)
+    return (S, accepted, mses)
 
+def markov_blanket(i, dist, tol=1e-10):
+    """Return the Markov blanket of variable i wrt. the given
+    distribution. HOW IT WORKS: In the population setting, the
+    regression coefficients of all variables outside the Markov
+    Blanket are 0. Taking into account numerical issues (that's what
+    tol is for), use this to compute the Markov blanket.
+    """
+    (coefs, _) = dist.regress(i, all_but(i, dist.p))
+    (mb,) = np.where(np.abs(coefs) > tol)
+    return mb
+
+def pooled_regression(i, S, distributions):
+    pooled_mse = mixture_mse(i, S, distributions)
+    coefs = []
+    return (coefs, pooled_mse)
+
+def mixture_mse(i, S, distributions):
+    """Return the MSE over the mixture of given Gaussian distributions.
+    Assuming they are weighted equally its the average of the MSE for each
+    distribution.
+    """
+    mse = 0
+    for dist in distributions:
+        mse += dist.mse(i,S)
+    return mse/len(distributions)
