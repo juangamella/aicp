@@ -30,25 +30,4 @@
 
 import numpy as np
 
-def matrix_block(M, rows, cols):
-    """
-    Select a block of a matrix given by the row and column indices
-    """
-    (n,m) = M.shape
-    idx_rows = np.tile(np.array([rows]).T,len(cols)).flatten()
-    idx_cols = np.tile(cols, (len(rows),1)).flatten()
-    return M[idx_rows, idx_cols].reshape(len(rows), len(cols))
 
-def sampling_matrix(W, ordering):
-    """Given the weighted adjacency matrix and ordering of a DAG, return
-    the matrix A such that the DAG generates samples
-      A @ diag(var)^1/2 @ Z + mu
-    where Z is an isotropic normal, and var/mu are the variances/means
-    of the noise variables of the graph.
-    """
-    p = len(W)
-    A = np.eye(p)
-    W = W + A # set diagonal of W to 1
-    for i in range(p):
-        A[i,:] = np.sum(W[:,[i]] * A, axis=0)
-    return A
