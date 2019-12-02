@@ -31,7 +31,7 @@
 import numpy as np
 import itertools
 from termcolor import colored
-from utils import all_but
+from src.utils import all_but
 
 def population_icp(distributions, target, debug=False, selection='all'):
     """Perform ICP over a set of Gaussian Distributions, each

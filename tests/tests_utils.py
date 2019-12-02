@@ -28,17 +28,19 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-os.chdir('/home/juan/ETH/code_semester_project/src')
+#os.chdir('/home/juan/ETH/code_semester_project/src')
 
 #---------------------------------------------------------------------
 # Unit testing for module utils
 
 import unittest
 import numpy as np
-from sampling import dag_avg_deg
 
-from utils import matrix_block, sampling_matrix
+from .context import src
+from src.sampling import dag_avg_deg
 
+# Tested functions
+from src.utils import matrix_block, sampling_matrix
 
 class UtilsTests(unittest.TestCase):
     def test_matrix_block(self):

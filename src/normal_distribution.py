@@ -29,7 +29,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
-from utils import matrix_block
+from src.utils import matrix_block
 
 class NormalDistribution():
     """Symbolic representation of a normal distribution that allows for

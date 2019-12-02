@@ -28,16 +28,18 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-os.chdir('/home/juan/ETH/code_semester_project/src')
-
 #---------------------------------------------------------------------
 # Unit testing for module normal_distribution.py
 
 import unittest
 import numpy as np
-from utils import sampling_matrix, all_but
 
-from normal_distribution import NormalDistribution
+from .context import src
+
+from src.utils import sampling_matrix, all_but
+
+# Tested functions
+from src.normal_distribution import NormalDistribution
 
 class NormalDistributionTests(unittest.TestCase):
     def test_initialization(self):

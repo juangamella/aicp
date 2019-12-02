@@ -1,6 +1,9 @@
-os.chdir('/home/juan/ETH/code_semester_project/src')
 import networkx as nx
 import matplotlib.pyplot as plt
+from src.sampling import LGSEM
+from src.icp import icp
+import numpy as np
+
 def plot_graph(sem):
     G = nx.from_numpy_matrix(sem.W, create_using = nx.DiGraph)
     pos = {}
@@ -12,10 +15,6 @@ def plot_graph(sem):
     labels = nx.get_edge_attributes(G,'weight')
     nx.draw_networkx_edge_labels(G,pos,edge_labels=labels)
     plt.show(block = False)
-
-from sampling import LGSEM
-from icp import icp
-import numpy as np
 
 W = np.array([[0, 1, -1, 0, 0],
               [0, 0, 0, 1, 0],

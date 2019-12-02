@@ -28,9 +28,9 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-os.chdir('/home/juan/ETH/code_semester_project/src')
-
 #---------------------------------------------------------------------
 # Unit testing for module population_icp.py
 
 import unittest
+
+from .context import src

@@ -36,13 +36,14 @@ TO CHANGE BEFORE PUBLISHING:
 #---------------------------------------------------------------------
 # Unit tests for module icp.py
 
-os.chdir('/home/juan/ETH/code_semester_project/src')
-
 import unittest
 import numpy as np
 import copy
 
-from icp import Data, ConfIntervals
+from .context import src
+
+# Tested functions
+from src.icp import Data, ConfIntervals
 
 class DataTests(unittest.TestCase):
 

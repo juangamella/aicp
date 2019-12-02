@@ -28,8 +28,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-os.chdir('/home/juan/ETH/code_semester_project/src')
-
 #---------------------------------------------------------------------
 # Unit testing for module sampling.py
 
@@ -37,11 +35,12 @@ import unittest
 
 import numpy as np
 import networkx as nx
-from utils import sampling_matrix
-from normal_distribution import NormalDistribution
+from .context import src
+from src.utils import sampling_matrix
+from src.normal_distribution import NormalDistribution
 
-from sampling import dag_full, dag_avg_deg, LGSEM
-
+# Tested functions
+from src.sampling import dag_full, dag_avg_deg, LGSEM
 
 # Tests for the DAG generation
 class DAG_Tests(unittest.TestCase):

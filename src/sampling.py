@@ -29,8 +29,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
-from normal_distribution import NormalDistribution
-from utils import sampling_matrix
+from src.normal_distribution import NormalDistribution
+from src.utils import sampling_matrix
 
 #---------------------------------------------------------------------
 # LGSEM class
