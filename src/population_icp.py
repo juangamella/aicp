@@ -75,6 +75,9 @@ def markov_blanket(i, dist, tol=1e-10):
     return mb
 
 def pooled_regression(i, S, distributions):
+    """Return the coefficients of the linear regressor that minimize the
+    MSE over the mixture distribution of environments
+    """
     pooled_mse = mixture_mse(i, S, distributions)
     coefs = []
     return (coefs, pooled_mse)
