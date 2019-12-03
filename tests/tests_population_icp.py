@@ -32,5 +32,56 @@
 # Unit testing for module population_icp.py
 
 import unittest
+import numpy as np
 
 from .context import src
+
+from src.normal_distribution import NormalDistribution
+from src.utils import all_but, sampling_matrix
+
+# Tested functions
+from src.population_icp import pooled_regression
+
+class PopulationICPTests(unittest.TestCase):
+
+    def test_regression_comparison_1(self):
+        # Regression over a single environment should yield same
+        # results as regressing over that distribution
+        graphs = [src.utils.eg1(), src.utils.eg2(), src.utils.eg3(), src.utils.eg4()]
+        for g,graph in enumerate(graphs):
+            W, ordering, _, _ = graph
+            p = len(W)
+            A = sampling_matrix(W, ordering)
+            dist = NormalDistribution(np.arange(p), A@A.T)
+            envs = [dist]
+            for i in range(p):
+                for l in range(p+1):
+                    S = [k for k in range(l) if k != i]
+                    #print("eg%d: y=%d, S=%s" % (g+1,i,S))
+                    (true_coefs, true_intercept) = dist.regress(i, S)
+                    true_mse = dist.mse(i, S)
+                    (pooled_coefs, pooled_intercept, pooled_mse) = pooled_regression(i,S,envs)
+                    self.assertTrue(np.allclose(true_coefs, pooled_coefs))
+                    self.assertTrue(np.allclose(true_intercept, pooled_intercept))
+                    self.assertTrue(np.allclose(true_mse, pooled_mse))
+
+    def test_regression_comparison_1(self):
+        # Regression over copies of the same environment should yield
+        # same results as regressing over that distribution
+        graphs = [src.utils.eg1(), src.utils.eg2(), src.utils.eg3(), src.utils.eg4()]
+        for g,graph in enumerate(graphs):
+            W, ordering, _, _ = graph
+            p = len(W)
+            A = sampling_matrix(W, ordering)
+            dist = NormalDistribution(np.arange(p), A@A.T)
+            envs = [dist, dist, dist]
+            for i in range(p):
+                for l in range(p+1):
+                    S = [k for k in range(l) if k != i]
+                    #print("eg%d: y=%d, S=%s" % (g+1,i,S))
+                    (true_coefs, true_intercept) = dist.regress(i, S)
+                    true_mse = dist.mse(i, S)
+                    (pooled_coefs, pooled_intercept, pooled_mse) = pooled_regression(i,S,envs)
+                    self.assertTrue(np.allclose(true_coefs, pooled_coefs))
+                    self.assertTrue(np.allclose(true_intercept, pooled_intercept))
+                    self.assertTrue(np.allclose(true_mse, pooled_mse))

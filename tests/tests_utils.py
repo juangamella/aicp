@@ -40,7 +40,7 @@ from .context import src
 from src.sampling import dag_avg_deg
 
 # Tested functions
-from src.utils import matrix_block, sampling_matrix
+from src.utils import matrix_block, sampling_matrix, nonzero, all_but
 
 class UtilsTests(unittest.TestCase):
     def test_matrix_block(self):
@@ -77,3 +77,11 @@ class UtilsTests(unittest.TestCase):
                           [1,1,1,0],
                           [1,1,1,1]])
         self.assertTrue((truth == sampling_matrix(W, range(4))).all())
+
+    def test_nonzero(self):
+        tol = 1e-12
+        A = np.array([0, 1, tol, -1, tol/2, -tol*2])
+        self.assertTrue((np.array([1,3,5]) == nonzero(A)).all())
+
+    def test_all_but(self):
+        self.assertTrue([0, 1, 3, 4] == all_but(2,5))
