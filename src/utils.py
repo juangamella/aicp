@@ -56,3 +56,90 @@ def sampling_matrix(W, ordering):
 def all_but(k,p):
     """Return [0,...,p-1] without k"""
     return [i for i in range(p) if i != k]
+
+# Example graphs
+
+def eg1():
+    W = np.array([[0, 1, -1, 0, 0],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 1],
+                  [0, 0, 0, 0, 0]])
+    markov_blankets = [[1,2],
+                       [0,3,2],
+                       [0,3,1],
+                       [1,2,4],
+                       [3]]
+    parents = [[],
+               [0],
+               [0],
+               [1,2],
+               [3]]
+    ordering = np.arange(5)
+    return W, ordering, parents, markov_blankets
+
+def eg2():
+    W = np.array([[0, 1, -1, 0, 0, 0],
+                  [0, 0, 0, 1, 0, 0],
+                  [0, 0, 0, 1, 0, 0],
+                  [0, 0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 1, 0]])
+    markov_blankets = [[1,2],
+                       [0,3,2],
+                       [0,3,1],
+                       [1,2,4,5],
+                       [3,5],
+                       [3,4]]
+    parents = [[],
+               [0],
+               [0],
+               [1,2],
+               [3,5],
+               []]
+    ordering = np.arange(6)
+    return W, ordering, parents, markov_blankets
+
+def eg3():
+    W = np.array([[0, 1, -1, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 1, 0, 0, 0, 0],
+                  [0, 0, 0, 1, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 1, 0, 0, 0],
+                  [0, 0, 0, 0, 0, 0, 0, 1],
+                  [0, 0, 0, 0, 1, 0, 1, 0],
+                  [0, 0, 0, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0, 0, 0, 0]])
+    markov_blankets = [[1,2],
+                       [0,3,2],
+                       [0,3,1],
+                       [1,2,4,5],
+                       [3,5,7],
+                       [3,4,6],
+                       [5],
+                       [4]]
+    parents = [[],
+               [0],
+               [0],
+               [1,2],
+               [3,5],
+               [],
+               [5],
+               [4]]
+    ordering = np.arange(8)
+    return W, ordering, parents, markov_blankets
+
+def eg4():
+    W = np.array([[0,0,1,0],
+                  [0,0,1,0],
+                  [0,0,0,1],
+                  [0,0,0,0]])
+    markov_blankets = [[1,2],
+                       [0,2],
+                       [0,1,3],
+                       [2]]
+    parents = [[],
+               [],
+               [0,1],
+               [2]]
+    ordering = np.arange(4)
+    return W, ordering, parents, markov_blankets
