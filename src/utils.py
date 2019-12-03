@@ -57,6 +57,9 @@ def all_but(k,p):
     """Return [0,...,p-1] without k"""
     return [i for i in range(p) if i != k]
 
+def nonzero(A, tol=1e-12):
+    return np.where(np.abs(A) > tol)[0]
+
 # Example graphs
 
 def eg1():
