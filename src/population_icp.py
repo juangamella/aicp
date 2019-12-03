@@ -31,14 +31,13 @@
 import numpy as np
 import itertools
 from termcolor import colored
-from src.utils import all_but, matrix_block
+from src import utils
 
-def population_icp(distributions, target, debug=False, selection='all'):
+def population_icp(distributions, target, debug=False, selection='all', test='coefficients'):
     """Perform ICP over a set of Gaussian Distributions, each
     representing a different environment
     """
     p = distributions[0].p
-    base.remove(target)
     if selection=='markov_blanket':
         mb = markov_blanket(target, distributions[0])
         base = set(mb)
@@ -48,20 +47,42 @@ def population_icp(distributions, target, debug=False, selection='all'):
     S = base.copy()
     accepted = []
     mses = []
-    candidates = itertools.combinations(base)
-    for s in candidates:
-        rejected = is_generalizable(s, target, distributions)
-        (coefs, intercept, pooled_mse) = pooled_regression(target, s, distributions)
-        if not rejected:
-            accepted.append(s)
-            S = S.intersection(s)
-            mses.append(pooled_mse)
-        if debug:
-            color = "red" if rejected else "green"
-            coefs_str = np.array_str(pooled_coefs, precision=2)
-            set_str = "rejected" if rejected else "accepted"
-            msg = colored("%s %s" % (s, set_str), color) + " - %s MSE: %0.4f" % (coef_str, error)
+    for set_size in range(p):
+        candidates = itertools.combinations(base, set_size)
+        for s in candidates:
+            s = set(s)
+            rejected = reject_hypothesis(s, target, distributions)
+            (pooled_coefs, pooled_intercept, pooled_mse) = pooled_regression(target, list(s), distributions)
+            if not rejected:
+                accepted.append(s)
+                S = S.intersection(s)
+                mses.append(pooled_mse)
+            if debug:
+                color = "red" if rejected else "green"
+                coefs_str = np.array_str(np.hstack([pooled_coefs, pooled_intercept]), precision=2)
+                set_str = "rejected" if rejected else "accepted"
+                msg = colored("%s %s" % (s, set_str), color) + " Pooled: %s MSE: %0.4f" % (coefs_str, pooled_mse)
+                print(msg)
     return (S, accepted, mses)
+
+def reject_hypothesis(S, y, distributions):
+    """Sets are stable if their regression coefficients are the same for
+    all observed environments. NOTE: The empty set will always
+    satisify this requirement as long as the interventions do not
+    shift the mean of the target => for the empty set, check
+    additionally if the variance of the target has changed.
+    """
+    S = list(S)
+    (coefs, intercept) = distributions[0].regress(y,S)
+    rejected = False
+    i = 1
+    while not rejected and i < len(distributions):
+        (new_coefs, new_intercept) = distributions[i].regress(y,S)
+        rejected = not np.allclose(coefs, new_coefs) or not np.allclose(intercept, new_intercept)
+        if not S and distributions[i].marginal(y).covariance != distributions[i-1].marginal(y).covariance:
+            rejected = True
+        i += 1
+    return rejected
 
 def markov_blanket(i, dist, tol=1e-10):
     """Return the Markov blanket of variable i wrt. the given
@@ -70,9 +91,8 @@ def markov_blanket(i, dist, tol=1e-10):
     Blanket are 0. Taking into account numerical issues (that's what
     tol is for), use this to compute the Markov blanket.
     """
-    (coefs, _) = dist.regress(i, all_but(i, dist.p))
-    (mb,) = np.where(np.abs(coefs) > tol)
-    return mb
+    (coefs, _) = dist.regress(i, utils.all_but(i, dist.p))
+    return utils.nonzero(coefs, tol)
 
 def pooled_regression(y, S, distributions):
     """Return the coefficients of the linear regressor that minimize the
@@ -92,7 +112,7 @@ def pooled_regression(y, S, distributions):
         for i,dist in enumerate(distributions):
             mean_xs = np.hstack([dist.mean[S], 1])
             # Build correlation of Xs term
-            corr_xs[0:len(S), 0:len(S), i] = matrix_block(dist.covariance, S, S)
+            corr_xs[0:len(S), 0:len(S), i] = utils.matrix_block(dist.covariance, S, S)
             corr_xs[:,:,i] += np.outer(mean_xs, mean_xs)
             # Build correlation of Y with Xs term
             corr_yxs[i, 0:len(S)] = dist.covariance[y, S]
@@ -113,3 +133,50 @@ def mixture_mse(i, S, distributions):
     for dist in distributions:
         mse += dist.mse(i,S)
     return mse/len(distributions)
+
+def stable_blanket(accepted, mses):
+    """The stable blanket is intervention stable (therefore accepted) and
+    regression optimal wrt. the observed environments => the set with
+    lower MSE is the stable blanket; if ties pick smallest
+    """
+    mses = np.array(mses)
+    accepted = np.array(accepted)
+    optimals = accepted[mses == min(mses)] # Sets with lowest MSE
+    lengths = np.array(map(len, accepted))
+    return optimals[lengths.argmin()]
+    
+
+from src import sampling
+from functools import reduce
+y = 3
+W, ordering, _, _ = utils.eg3()
+sem = sampling.LGSEM(W, ordering, (1,1))
+e = sem.sample(population=True)
+v = 2
+e0 = sem.sample(population=True, noise_interventions=np.array([[0,0.1,v]]))
+e1 = sem.sample(population=True, noise_interventions=np.array([[1,0.2,v]]))
+e2 = sem.sample(population=True, noise_interventions=np.array([[2,0.3,v]]))
+e3 = sem.sample(population=True, noise_interventions=np.array([[3,0.4,v]]))
+e4 = sem.sample(population=True, noise_interventions=np.array([[4,0.5,v]]))
+e5 = sem.sample(population=True, noise_interventions=np.array([[5,0.5,v]]))
+
+print()
+print(pooled_regression(y, [], [e0]))
+print(pooled_regression(y, [], [e1]))
+print(pooled_regression(y, [], [e2]))
+print(pooled_regression(y, [], [e3]))
+print(pooled_regression(y, [], [e4]))
+
+print()
+S = []
+s = np.random.uniform(size=len(S))
+print(e0.conditional(y, S, s).mean, e0.conditional(y, S, s).covariance)
+print(e1.conditional(y, S, s).mean, e1.conditional(y, S, s).covariance)
+print(e2.conditional(y, S, s).mean, e2.conditional(y, S, s).covariance)
+print(e3.conditional(y, S, s).mean, e3.conditional(y, S, s).covariance)
+print(e4.conditional(y, S, s).mean, e4.conditional(y, S, s).covariance)
+
+(S, accepted, mses) = population_icp([e, e5], y, debug=True, selection='markov_blanket')
+print(S, accepted, mses)
+print("Stable blanket :", stable_blanket(accepted, mses))
+print("Nint:", reduce(lambda acc,x: acc.union(x), accepted))

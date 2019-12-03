@@ -40,7 +40,7 @@ from src.normal_distribution import NormalDistribution
 from src.utils import all_but, sampling_matrix
 
 # Tested functions
-from src.population_icp import pooled_regression
+from src.population_icp import pooled_regression, markov_blanket
 
 class PopulationICPTests(unittest.TestCase):
 
@@ -65,7 +65,7 @@ class PopulationICPTests(unittest.TestCase):
                     self.assertTrue(np.allclose(true_intercept, pooled_intercept))
                     self.assertTrue(np.allclose(true_mse, pooled_mse))
 
-    def test_regression_comparison_1(self):
+    def test_regression_comparison_2(self):
         # Regression over copies of the same environment should yield
         # same results as regressing over that distribution
         graphs = [src.utils.eg1(), src.utils.eg2(), src.utils.eg3(), src.utils.eg4()]
@@ -85,3 +85,16 @@ class PopulationICPTests(unittest.TestCase):
                     self.assertTrue(np.allclose(true_coefs, pooled_coefs))
                     self.assertTrue(np.allclose(true_intercept, pooled_intercept))
                     self.assertTrue(np.allclose(true_mse, pooled_mse))
+
+    def test_markov_blanket(self):
+        graphs = [src.utils.eg1(), src.utils.eg2(), src.utils.eg3(), src.utils.eg4()]
+        for g,graph in enumerate(graphs):
+            W, ordering, _, mb = graph
+            p = len(W)
+            A = sampling_matrix(W, ordering)
+            dist = NormalDistribution(np.arange(p), A@A.T)
+            for i in range(p):
+                truth = set(mb[i])
+                result = set(markov_blanket(i, dist, tol=1e-10))
+                # print(truth, result)
+                self.assertEqual(truth, result)
