@@ -52,6 +52,9 @@ class NormalDistribution():
 
     def marginal(self, X):
         """Return the marginal distribution of the variables with indices X"""
+        # Parse params
+        X = np.atleast_1d(X)
+        # Compute marginal mean/variance
         mean = self.mean[X].copy()
         covariance = matrix_block(self.covariance, X, X).copy()
         return NormalDistribution(mean, covariance)
@@ -61,6 +64,12 @@ class NormalDistribution():
         given observations x of the variables with indices X
 
         """
+        # Parse params
+        Y = np.atleast_1d(Y)
+        X = np.atleast_1d(X)
+        x = np.atleast_1d(x)
+        if len(X) == 0:
+            return self.marginal(Y)
         # See https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Conditional_distributions
         cov_y = matrix_block(self.covariance, Y, Y)
         cov_x = matrix_block(self.covariance, X, X)
@@ -99,4 +108,6 @@ class NormalDistribution():
         # Computing the MSE
         mse = var_y + coefs_xs @ cov @ coefs_xs.T - 2 * cov[y,:] @ coefs_xs.T
         return mse
-    
+
+    def equal(self, dist, tol=1e-7):
+        return np.allclose(self.mean, dist.mean) and np.allclose(self.covariance, dist.covariance)

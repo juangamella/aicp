@@ -57,6 +57,43 @@ class NormalDistributionTests(unittest.TestCase):
         self.assertTrue(not (mean == distribution.mean).all())
         self.assertTrue(not (covariance == distribution.covariance).all())
 
+    def test_equal(self):
+        covariance = np.array([[11,12,13],
+                               [21,22,23],
+                               [31,32,33]])
+        mean = np.array([1,2,3])
+        dist1 = NormalDistribution(mean, covariance)
+        dist2 = NormalDistribution(mean, covariance)
+        self.assertTrue(dist1.equal(dist2))
+        self.assertTrue(dist2.equal(dist1))
+        tol = 1e-7
+        dist3 = NormalDistribution(mean + tol/2, covariance + tol/2)
+        self.assertTrue(dist1.equal(dist3))
+        self.assertTrue(dist2.equal(dist3))
+        self.assertTrue(dist3.equal(dist1))
+        self.assertTrue(dist3.equal(dist2))
+        
+    def test_parameters(self):
+        covariance = np.array([[11,12,13],
+                               [21,22,23],
+                               [31,32,33]])
+        mean = np.array([1,2,3])
+        dist = NormalDistribution(mean, covariance)
+        # Marginalization
+        dist_a = dist.marginal(0)
+        dist_b = dist.marginal([0])
+        self.assertTrue(dist_a.equal(dist_b))
+        # Conditioning 1
+        dist_a = dist.conditional(0, 1, 0)
+        dist_b = dist.conditional([0], [1], [0])
+        self.assertTrue(dist_a.equal(dist_b))
+        # Conditioning 2
+        dist_a = dist.conditional(0, [], [])
+        dist_b = dist.conditional(0, [], [1, 2])
+        dist_c = dist.marginal(0)
+        self.assertTrue(dist_a.equal(dist_b))
+        self.assertTrue(dist_b.equal(dist_c))
+        
     def test_marginalization(self):
         # Test marginalization logic
         covariance = np.array([[11,12,13],
