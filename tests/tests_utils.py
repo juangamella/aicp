@@ -130,10 +130,10 @@ class UtilsTests(unittest.TestCase):
                    {3,4,0,7},
                    {0,4,5,2,3,6}]
         for i in range(len(W)):
-            print("Testing info for node %d" %i)
+            #print("Testing info for node %d" %i)
             graph_info(i, W)
             (parents, children, poc, mb) = graph_info(i, W)
-            print(parents, children, poc, mb)
+            #print(parents, children, poc, mb)
             self.assertEqual(parents, true_parents[i])
             self.assertEqual(children, true_children[i])
             self.assertEqual(poc, true_poc[i])

@@ -104,12 +104,12 @@ class PopulationICPTests(unittest.TestCase):
     def test_blankets(self):
         np.random.seed(42)
         for p in range(2,8):
-            print("Testing random graph of size %d" %p)
+            #print("Testing random graph of size %d" %p)
             W, ordering = sampling.dag_avg_deg(p,2.5,-1,1)
             sem = sampling.LGSEM(W, ordering, (0.1,2))
             dist = sem.sample(population=True)
             for i in range(p):
-                print("Testing markov and stable blankets of X_%d" %i)
+                #print("Testing markov and stable blankets of X_%d" %i)
                 (_,_,_,true_mb) = utils.graph_info(i, W)
                 # Test markov blanket
                 estimated_mb = set(markov_blanket(i, dist, tol=1e-10))
@@ -117,6 +117,4 @@ class PopulationICPTests(unittest.TestCase):
                 # Stable blanket for one env. should be markov blanket
                 (S, accepted, mses, all_sets) = population_icp([dist], i, debug=False, selection='all')
                 estimated_sb = stable_blanket(accepted, mses)
-                print((true_mb, estimated_sb))
-                print(W)
                 self.assertEqual(true_mb, estimated_sb)
