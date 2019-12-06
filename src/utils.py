@@ -64,7 +64,7 @@ def nonzero(A, tol=1e-12):
     """Return the indices of the nonzero (up to tol) elements in A"""
     return np.where(np.abs(A) > tol)[0]
 
-def plot_graph(W, ordering, with_labels=False, latex=False):
+def plot_graph(W, ordering):
     G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
     pos = nx.drawing.layout.planar_layout(G, scale=0.5)
     edge_labels = nx.get_edge_attributes(G,'weight')
@@ -72,11 +72,16 @@ def plot_graph(W, ordering, with_labels=False, latex=False):
     node_labels = dict(zip(np.arange(p), map(lambda i: "$X_%d$" %i, range(p))))
     # Plot
     fig = plt.figure()
-    #    nx.draw(G, pos, with_labels=with_labels, node_color="#45fc03", edge_color="#45fc03", node_size=1500)
-    nx.draw_networkx_nodes(G,pos, node_color='white', edgecolors = 'black', node_size=900, linewidths=1.5)
-    nx.draw_networkx_edges(G,pos,width=1.5,alpha=1, arrowsize=20, arrowstyle='-|>', min_target_margin=1000)
-    nx.draw_networkx_labels(G,pos,labels=node_labels, font_size=18, font_family='serif')
-    #nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels)
+    params = {'node_color': 'white',
+              'edgecolors': 'black',
+              'node_size': 900,
+              'linewidths': 1.5,
+              'width': 1.5,
+              'arrowsize': 20,
+              'arrowstyle': '->',
+              'min_target_margin': 1000,
+              'labels': node_labels}
+    nx.draw(G,pos, **params)
     fig.set_facecolor("white")
     plt.show(block = False)
 
