@@ -29,6 +29,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+import network2tikz as tikz
 
 def matrix_block(M, rows, cols):
     """
@@ -58,8 +61,42 @@ def all_but(k,p):
     return [i for i in range(p) if i != k]
 
 def nonzero(A, tol=1e-12):
+    """Return the indices of the nonzero (up to tol) elements in A"""
     return np.where(np.abs(A) > tol)[0]
 
+def plot_graph(W, ordering, with_labels=False, latex=False):
+    G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
+    pos = nx.drawing.layout.planar_layout(G, scale=0.5)
+    edge_labels = nx.get_edge_attributes(G,'weight')
+    p = len(W)
+    node_labels = dict(zip(np.arange(p), map(lambda i: "$X_%d$" %i, range(p))))
+    # Plot
+    fig = plt.figure()
+    #    nx.draw(G, pos, with_labels=with_labels, node_color="#45fc03", edge_color="#45fc03", node_size=1500)
+    nx.draw_networkx_nodes(G,pos, node_color='white', edgecolors = 'black', node_size=900, linewidths=1.5)
+    nx.draw_networkx_edges(G,pos,width=1.5,alpha=1, arrowsize=20, arrowstyle='-|>', min_target_margin=1000)
+    nx.draw_networkx_labels(G,pos,labels=node_labels, font_size=18, font_family='serif')
+    #nx.draw_networkx_edge_labels(G,pos,edge_labels=edge_labels)
+    fig.set_facecolor("white")
+    plt.show(block = False)
+
+def graph_to_latex(W, ordering, name):
+    p = len(W)
+    G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
+    pos = nx.drawing.layout.planar_layout(G)
+    # Plotting parameters
+    visual_style = {}
+    visual_style['vertex_size'] = 0.5
+    visual_style['vertex_color'] = 'white'
+    visual_style['vertex_opacity'] = 1
+    labels = list(map(lambda i: "X_%d" %i, range(p)))
+    visual_style['vertex_label'] = labels
+    visual_style['node_math_mode'] = True
+    visual_style['edge_width'] = 0.8
+    visual_style['edge_color'] = 'black'
+    tikz.plot(G, name + ".tex", layout=pos, canvas=(12,12), margin=0.5, **visual_style)
+
+    
 # Example graphs
 
 def eg1():
