@@ -52,13 +52,14 @@ def sampling_matrix(W, ordering):
     p = len(W)
     A = np.eye(p)
     W = W + A # set diagonal of W to 1
-    for i in range(p):
+    for i in ordering:
         A[i,:] = np.sum(W[:,[i]] * A, axis=0)
     return A
 
 def all_but(k,p):
     """Return [0,...,p-1] without k"""
-    return [i for i in range(p) if i != k]
+    k = np.atleast_1d(k)
+    return [i for i in range(p) if not i in k]
 
 def nonzero(A, tol=1e-12):
     """Return the indices of the nonzero (up to tol) elements in A"""
