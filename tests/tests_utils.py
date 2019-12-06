@@ -40,7 +40,7 @@ from .context import src
 from src.sampling import dag_avg_deg
 
 # Tested functions
-from src.utils import matrix_block, sampling_matrix, nonzero, all_but
+from src.utils import matrix_block, sampling_matrix, nonzero, all_but, graph_info
 
 class UtilsTests(unittest.TestCase):
     def test_matrix_block(self):
@@ -85,3 +85,56 @@ class UtilsTests(unittest.TestCase):
 
     def test_all_but(self):
         self.assertTrue([0, 1, 3, 4] == all_but(2,5))
+        self.assertTrue([0, 3, 4] == all_but([1,2],5))
+
+    def test_graph_info_1(self):
+        W = np.array([[0., 1., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 1., 0., 1., 0., 1., 0., 0.],
+                      [0., 1., 0., 0., 0., 1., 1., 0.],
+                      [1., 0., 0., 0., 0., 0., 1., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0.],
+                      [1., 0., 0., 0., 0., 0., 0., 0.],
+                      [1., 0., 0., 0., 1., 1., 0., 0.]])
+        ordering = np.array([7, 4, 2, 3, 6, 5, 0, 1])
+        true_parents = [{4,6,7},
+                        {0,2,3},
+                        set(),
+                        {2},
+                        {7},
+                        {2,3,7},
+                        {3,4},
+                        set()]
+        true_children = [{1},
+                         set(),
+                         {1,3,5},
+                         {1,5,6},
+                         {0,6},
+                         set(),
+                         {0},
+                         {0,4,5}]
+        true_poc = [{2,3},
+                    set(),
+                    {0,3,7},
+                    {0,2,4,7},
+                    {3,6,7},
+                    set(),
+                    {4,7},
+                    {2,3,4,6}]
+        true_mb = [{4,6,7,1,2,3},
+                   {0,2,3},
+                   {1,3,5,0,7},
+                   {0,1,2,4,5,6,7},
+                   {7,0,6,7,3},
+                   {2,3,7},
+                   {3,4,0,7},
+                   {0,4,5,2,3,6}]
+        for i in range(len(W)):
+            print("Testing info for node %d" %i)
+            graph_info(i, W)
+            (parents, children, poc, mb) = graph_info(i, W)
+            print(parents, children, poc, mb)
+            self.assertEqual(parents, true_parents[i])
+            self.assertEqual(children, true_children[i])
+            self.assertEqual(poc, true_poc[i])
+            self.assertEqual(mb, true_mb[i])

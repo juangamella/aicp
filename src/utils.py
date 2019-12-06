@@ -65,6 +65,20 @@ def nonzero(A, tol=1e-12):
     """Return the indices of the nonzero (up to tol) elements in A"""
     return np.where(np.abs(A) > tol)[0]
 
+def graph_info(i, W):
+    """Returns the parents, children, parents of children and markov
+    blanket of variable i in DAG W, using the graph structure
+    """
+    G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
+    parents = set(G.predecessors(i))
+    children = set(G.successors(i))
+    parents_of_children = set()
+    for child in children:
+        parents_of_children.update(G.predecessors(child))
+    if len(children) > 0: parents_of_children.remove(i)
+    mb = parents.union(children, parents_of_children)
+    return (parents, children, parents_of_children, mb)
+
 def plot_graph(W, ordering):
     G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
     pos = nx.drawing.layout.planar_layout(G, scale=0.5)
@@ -188,4 +202,40 @@ def eg4():
                [0,1],
                [2]]
     ordering = np.arange(4)
+    return W, ordering, parents, markov_blankets
+
+def eg5():
+    W = np.array([[0., 1., 0., 0., 0., 0., 0., 0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0.],
+                  [0., 1., 0., 1., 0., 1., 0., 0.],
+                  [0., 1., 0., 0., 0., 1., 1., 0.],
+                  [1., 0., 0., 0., 0., 0., 1., 0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0.],
+                  [1., 0., 0., 0., 0., 0., 0., 0.],
+                  [1., 0., 0., 0., 1., 1., 0., 0.]])
+    ordering = np.array([7, 4, 2, 3, 6, 5, 0, 1])
+    parents = [[4,6,7],
+               [0,2,3],
+               [],
+               [2],
+               [7],
+               [2,3,7],
+               [3,4],
+               []]
+    children = [[1],
+                [],
+                [1,3,5],
+                [1,5,6],
+                [0,6],
+                [],
+                [0],
+                [0,4,5]]
+    markov_blankets = [[4,6,7,1,2,3],
+                       [0,2,3],
+                       [1,3,5,0,7],
+                       [0,1,2,4,5,6,7],
+                       [7,0,6,7,3],
+                       [2,3,7],
+                       [3,4,0,7],
+                       [0,4,5,2,3,6]]
     return W, ordering, parents, markov_blankets
