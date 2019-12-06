@@ -47,10 +47,12 @@ def population_icp(distributions, target, debug=False, selection='all', test='co
     S = base.copy()
     accepted = []
     mses = []
+    all_sets = []
     for set_size in range(p):
         candidates = itertools.combinations(base, set_size)
         for s in candidates:
             s = set(s)
+            all_sets.append(s)
             rejected = reject_hypothesis(s, target, distributions)
             (pooled_coefs, pooled_intercept, pooled_mse) = pooled_regression(target, list(s), distributions)
             if not rejected:
@@ -63,7 +65,7 @@ def population_icp(distributions, target, debug=False, selection='all', test='co
                 set_str = "rejected" if rejected else "accepted"
                 msg = colored("%s %s" % (s, set_str), color) + " Pooled: %s MSE: %0.4f" % (coefs_str, pooled_mse)
                 print(msg)
-    return (S, accepted, mses)
+    return (S, accepted, mses, all_sets)
 
 def reject_hypothesis(S, y, distributions):
     """Sets are stable if their regression coefficients are the same for
@@ -134,49 +136,57 @@ def mixture_mse(i, S, distributions):
         mse += dist.mse(i,S)
     return mse/len(distributions)
 
-def stable_blanket(accepted, mses):
+def stable_blanket(accepted, mses, tol=1e-15):
     """The stable blanket is intervention stable (therefore accepted) and
     regression optimal wrt. the observed environments => the set with
     lower MSE is the stable blanket; if ties pick smallest
     """
     mses = np.array(mses)
     accepted = np.array(accepted)
-    optimals = accepted[mses == min(mses)] # Sets with lowest MSE
+    optimals = accepted[mses < min(mses) + tol] # Sets with lowest MSE
     lengths = np.array(map(len, accepted))
     return optimals[lengths.argmin()]
-    
 
-from src import sampling
-from functools import reduce
-y = 3
-W, ordering, _, _ = utils.eg3()
-sem = sampling.LGSEM(W, ordering, (1,1))
-e = sem.sample(population=True)
-v = 2
-e0 = sem.sample(population=True, noise_interventions=np.array([[0,0.1,v]]))
-e1 = sem.sample(population=True, noise_interventions=np.array([[1,0.2,v]]))
-e2 = sem.sample(population=True, noise_interventions=np.array([[2,0.3,v]]))
-e3 = sem.sample(population=True, noise_interventions=np.array([[3,0.4,v]]))
-e4 = sem.sample(population=True, noise_interventions=np.array([[4,0.5,v]]))
-e5 = sem.sample(population=True, noise_interventions=np.array([[5,0.5,v]]))
+# from src import sampling
+# from functools import reduce
+# y = 3
+# #W, ordering, _, _ = utils.eg3()
+# W, ordering = sampling.dag_avg_deg(8,2.5,1,1,debug=True,random_state=2)
+# sem = sampling.LGSEM(W, ordering, (1,1))
+# e = sem.sample(population=True)
+# e_obs = sem.sample(n=round(1e6))
+# v = 2
 
-print()
-print(pooled_regression(y, [], [e0]))
-print(pooled_regression(y, [], [e1]))
-print(pooled_regression(y, [], [e2]))
-print(pooled_regression(y, [], [e3]))
-print(pooled_regression(y, [], [e4]))
+# e0 = sem.sample(population=True, noise_interventions=np.array([[0,0,v]]))
+# e1 = sem.sample(population=True, noise_interventions=np.array([[1,0,v]]))
+# e2 = sem.sample(population=True, noise_interventions=np.array([[2,0,v]]))
+# e3 = sem.sample(population=True, noise_interventions=np.array([[3,0,v]]))
+# e4 = sem.sample(population=True, noise_interventions=np.array([[4,0,v]]))
+# e5 = sem.sample(population=True, noise_interventions=np.array([[5,0,v]]))
+# e6 = sem.sample(population=True, noise_interventions=np.array([[6,0,v]]))
+# e7 = sem.sample(population=True, noise_interventions=np.array([[7,0,v]]))
 
-print()
-S = []
-s = np.random.uniform(size=len(S))
-print(e0.conditional(y, S, s).mean, e0.conditional(y, S, s).covariance)
-print(e1.conditional(y, S, s).mean, e1.conditional(y, S, s).covariance)
-print(e2.conditional(y, S, s).mean, e2.conditional(y, S, s).covariance)
-print(e3.conditional(y, S, s).mean, e3.conditional(y, S, s).covariance)
-print(e4.conditional(y, S, s).mean, e4.conditional(y, S, s).covariance)
+# e24 = sem.sample(population=True, noise_interventions=np.array([[2,0.3,v], [4, 0.3, v]]))
 
-(S, accepted, mses) = population_icp([e, e5], y, debug=True, selection='markov_blanket')
-print(S, accepted, mses)
-print("Stable blanket :", stable_blanket(accepted, mses))
-print("Nint:", reduce(lambda acc,x: acc.union(x), accepted))
+# print()
+# print(pooled_regression(y, [], [e0]))
+# print(pooled_regression(y, [], [e1]))
+# print(pooled_regression(y, [], [e2]))
+# print(pooled_regression(y, [], [e3]))
+# print(pooled_regression(y, [], [e4]))
+
+# print()
+# S = []
+# s = np.random.uniform(size=len(S))
+# print(e0.conditional(y, S, s).mean, e0.conditional(y, S, s).covariance)
+# print(e1.conditional(y, S, s).mean, e1.conditional(y, S, s).covariance)
+# print(e2.conditional(y, S, s).mean, e2.conditional(y, S, s).covariance)
+# print(e3.conditional(y, S, s).mean, e3.conditional(y, S, s).covariance)
+# print(e4.conditional(y, S, s).mean, e4.conditional(y, S, s).covariance)
+
+# (S, accepted, mses, all_sets) = population_icp([e], y, debug=True, selection='all')
+# print(S, accepted, mses)
+# print("Stable blanket :", stable_blanket(accepted, mses))
+# print("Nint:", reduce(lambda acc,x: acc.union(x), accepted))
+
+# #utils.plot_graph(W, ordering)

@@ -37,10 +37,12 @@ import numpy as np
 from .context import src
 
 from src.normal_distribution import NormalDistribution
+from src import sampling
+from src import utils
 from src.utils import all_but, sampling_matrix
 
 # Tested functions
-from src.population_icp import pooled_regression, markov_blanket
+from src.population_icp import pooled_regression, markov_blanket, stable_blanket, population_icp
 
 class PopulationICPTests(unittest.TestCase):
 
@@ -98,3 +100,23 @@ class PopulationICPTests(unittest.TestCase):
                 result = set(markov_blanket(i, dist, tol=1e-10))
                 # print(truth, result)
                 self.assertEqual(truth, result)
+
+    def test_blankets(self):
+        np.random.seed(42)
+        for p in range(2,8):
+            print("Testing random graph of size %d" %p)
+            W, ordering = sampling.dag_avg_deg(p,2.5,-1,1)
+            sem = sampling.LGSEM(W, ordering, (0.1,2))
+            dist = sem.sample(population=True)
+            for i in range(p):
+                print("Testing markov and stable blankets of X_%d" %i)
+                (_,_,_,true_mb) = utils.graph_info(i, W)
+                # Test markov blanket
+                estimated_mb = set(markov_blanket(i, dist, tol=1e-10))
+                self.assertEqual(true_mb, estimated_mb)
+                # Stable blanket for one env. should be markov blanket
+                (S, accepted, mses, all_sets) = population_icp([dist], i, debug=False, selection='all')
+                estimated_sb = stable_blanket(accepted, mses)
+                print((true_mb, estimated_sb))
+                print(W)
+                self.assertEqual(true_mb, estimated_sb)
