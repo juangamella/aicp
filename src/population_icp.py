@@ -136,7 +136,7 @@ def mixture_mse(i, S, distributions):
         mse += dist.mse(i,S)
     return mse/len(distributions)
 
-def stable_blanket(accepted, mses, tol=1e-15):
+def stable_blanket(accepted, mses, tol=1e-14):
     """The stable blanket is intervention stable (therefore accepted) and
     regression optimal wrt. the observed environments => the set with
     lower MSE is the stable blanket; if ties pick smallest
