@@ -116,10 +116,11 @@ class LGSEM:
 #---------------------------------------------------------------------
 # DAG Generating Functions
 
-def dag_avg_deg(p, k, w_min, w_max, debug=False):
+def dag_avg_deg(p, k, w_min, w_max, debug=False, random_state=None):
     """
     Generate a random graph with p nodes and average degree k
     """
+    np.random.seed(random_state) if random_state is not None else None
     # Generate adjacency matrix as if top. ordering is 1..p
     prob = k / (p-1)
     print("p = %d, k = %0.2f, P = %0.4f" % (p,k,prob)) if debug else None
