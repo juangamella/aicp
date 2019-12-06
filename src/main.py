@@ -4,17 +4,7 @@ from src.sampling import LGSEM
 from src.icp import icp
 import numpy as np
 
-def plot_graph(sem):
-    G = nx.from_numpy_matrix(sem.W, create_using = nx.DiGraph)
-    pos = {}
-    for i,node in enumerate(sem.ordering):
-        x = (-1.1)**i
-        y = -i*0.5
-        pos[node] = (x,y)
-    nx.draw(G, pos, with_labels=True)
-    labels = nx.get_edge_attributes(G,'weight')
-    nx.draw_networkx_edge_labels(G,pos,edge_labels=labels)
-    plt.show(block = False)
+
 
 W = np.array([[0, 1, -1, 0, 0],
               [0, 0, 0, 1, 0],
