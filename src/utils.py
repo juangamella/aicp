@@ -79,7 +79,7 @@ def graph_info(i, W):
     mb = parents.union(children, parents_of_children)
     return (parents, children, parents_of_children, mb)
 
-def plot_graph(W, ordering):
+def plot_graph(W, ordering, block=False):
     G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
     pos = nx.drawing.layout.planar_layout(G, scale=0.5)
     edge_labels = nx.get_edge_attributes(G,'weight')
@@ -98,7 +98,7 @@ def plot_graph(W, ordering):
               'labels': node_labels}
     nx.draw(G,pos, **params)
     fig.set_facecolor("white")
-    plt.show(block = False)
+    plt.show(block = block)
 
 def graph_to_latex(W, ordering, name):
     p = len(W)
