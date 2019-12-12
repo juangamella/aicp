@@ -68,25 +68,32 @@ def population_icp(distributions, target, debug=False, selection='all', test='co
     return (S, accepted, mses, all_sets)
 
 def reject_hypothesis(S, y, distributions):
-    """Sets are stable if their regression coefficients are the same for
-    all observed environments. NOTE: The empty set will always
-    satisify this requirement as long as the interventions do not
-    shift the mean of the target => for the empty set, check
-    additionally if the variance of the target has changed.
+    """A set is generalizable if the conditional distribution Y|Xs remains
+    invariant across the observed environments. Because we are dealing
+    with normal distributions, if the mean and variance are the same, the
+    distributions are the same.
+    
+    The mean is the same if the regression coefficients are the same.
     """
     S = list(S)
     (coefs, intercept) = distributions[0].regress(y,S)
+    cov = distributions[0].conditional(y, S, np.zeros_like(S)).covariance
     rejected = False
     i = 1
     while not rejected and i < len(distributions):
         (new_coefs, new_intercept) = distributions[i].regress(y,S)
-        rejected = not np.allclose(coefs, new_coefs) or not np.allclose(intercept, new_intercept)
-        if not S and distributions[i].marginal(y).covariance != distributions[i-1].marginal(y).covariance:
+        if np.allclose(coefs, new_coefs) and np.allclose(intercept, new_intercept):
+            new_cov = distributions[i].conditional(y, S, np.zeros_like(S)).covariance
+            if np.allclose(cov, new_cov):
+                i += 1
+            else:
+                rejected = True
+        else:
             rejected = True
-        i += 1
     return rejected
 
 def markov_blanket(i, dist, tol=1e-10):
+
     """Return the Markov blanket of variable i wrt. the given
     distribution. HOW IT WORKS: In the population setting, the
     regression coefficients of all variables outside the Markov
@@ -151,7 +158,7 @@ def stable_blanket(accepted, mses, tol=1e-14):
 # from functools import reduce
 # y = 3
 # #W, ordering, _, _ = utils.eg3()
-# W, ordering = sampling.dag_avg_deg(8,2.5,1,1,debug=True,random_state=2)
+# W, ordering = sampling.dag_avg_deg(8,2.5,1,2,debug=True,random_state=2)
 # sem = sampling.LGSEM(W, ordering, (1,1))
 # e = sem.sample(population=True)
 # e_obs = sem.sample(n=round(1e6))
@@ -159,7 +166,7 @@ def stable_blanket(accepted, mses, tol=1e-14):
 
 # e0 = sem.sample(population=True, noise_interventions=np.array([[0,0,v]]))
 # e1 = sem.sample(population=True, noise_interventions=np.array([[1,0,v]]))
-# e2 = sem.sample(population=True, noise_interventions=np.array([[2,0,v]]))
+# e2 = sem.sample(population=True, noise_interventions=np.array([[2,1,v]]))
 # e3 = sem.sample(population=True, noise_interventions=np.array([[3,0,v]]))
 # e4 = sem.sample(population=True, noise_interventions=np.array([[4,0,v]]))
 # e5 = sem.sample(population=True, noise_interventions=np.array([[5,0,v]]))
@@ -184,9 +191,9 @@ def stable_blanket(accepted, mses, tol=1e-14):
 # print(e3.conditional(y, S, s).mean, e3.conditional(y, S, s).covariance)
 # print(e4.conditional(y, S, s).mean, e4.conditional(y, S, s).covariance)
 
-# (S, accepted, mses, all_sets) = population_icp([e], y, debug=True, selection='all')
+# (S, accepted, mses, all_sets) = population_icp([e, e2], y, debug=True, selection='all')
 # print(S, accepted, mses)
 # print("Stable blanket :", stable_blanket(accepted, mses))
 # print("Nint:", reduce(lambda acc,x: acc.union(x), accepted))
 
-# #utils.plot_graph(W, ordering)
+# utils.plot_graph(W, ordering)
