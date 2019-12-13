@@ -32,6 +32,7 @@ import numpy as np
 import itertools
 from termcolor import colored
 from src import utils
+from src import icp
 
 def population_icp(distributions, target, debug=False, selection='all', test='coefficients'):
     """Perform ICP over a set of Gaussian Distributions, each
@@ -46,26 +47,28 @@ def population_icp(distributions, target, debug=False, selection='all', test='co
         base.remove(target)
     S = base.copy()
     accepted = []
+    rejected = []
     mses = []
-    all_sets = []
     for set_size in range(p):
         candidates = itertools.combinations(base, set_size)
         for s in candidates:
             s = set(s)
-            all_sets.append(s)
-            rejected = reject_hypothesis(s, target, distributions)
+            reject = reject_hypothesis(s, target, distributions)
             (pooled_coefs, pooled_intercept, pooled_mse) = pooled_regression(target, list(s), distributions)
-            if not rejected:
+            if reject:
+                rejected.append(s)
+            else:
                 accepted.append(s)
                 S = S.intersection(s)
                 mses.append(pooled_mse)
             if debug:
-                color = "red" if rejected else "green"
+                color = "red" if reject else "green"
                 coefs_str = np.array_str(np.hstack([pooled_coefs, pooled_intercept]), precision=2)
-                set_str = "rejected" if rejected else "accepted"
+                set_str = "rejected" if reject else "accepted"
                 msg = colored("%s %s" % (s, set_str), color) + " Pooled: %s MSE: %0.4f" % (coefs_str, pooled_mse)
                 print(msg)
-    return (S, accepted, mses, all_sets)
+    result = icp.Result(S, accepted, rejected, mses)
+    return result
 
 def reject_hypothesis(S, y, distributions):
     """A set is generalizable if the conditional distribution Y|Xs remains
@@ -154,46 +157,3 @@ def stable_blanket(accepted, mses, tol=1e-14):
     lengths = np.array(map(len, accepted))
     return optimals[lengths.argmin()]
 
-# from src import sampling
-# from functools import reduce
-# y = 3
-# #W, ordering, _, _ = utils.eg3()
-# W, ordering = sampling.dag_avg_deg(8,2.5,1,2,debug=True,random_state=2)
-# sem = sampling.LGSEM(W, ordering, (1,1))
-# e = sem.sample(population=True)
-# e_obs = sem.sample(n=round(1e6))
-# v = 2
-
-# e0 = sem.sample(population=True, noise_interventions=np.array([[0,0,v]]))
-# e1 = sem.sample(population=True, noise_interventions=np.array([[1,0,v]]))
-# e2 = sem.sample(population=True, noise_interventions=np.array([[2,1,v]]))
-# e3 = sem.sample(population=True, noise_interventions=np.array([[3,0,v]]))
-# e4 = sem.sample(population=True, noise_interventions=np.array([[4,0,v]]))
-# e5 = sem.sample(population=True, noise_interventions=np.array([[5,0,v]]))
-# e6 = sem.sample(population=True, noise_interventions=np.array([[6,0,v]]))
-# e7 = sem.sample(population=True, noise_interventions=np.array([[7,0,v]]))
-
-# e24 = sem.sample(population=True, noise_interventions=np.array([[2,0.3,v], [4, 0.3, v]]))
-
-# print()
-# print(pooled_regression(y, [], [e0]))
-# print(pooled_regression(y, [], [e1]))
-# print(pooled_regression(y, [], [e2]))
-# print(pooled_regression(y, [], [e3]))
-# print(pooled_regression(y, [], [e4]))
-
-# print()
-# S = []
-# s = np.random.uniform(size=len(S))
-# print(e0.conditional(y, S, s).mean, e0.conditional(y, S, s).covariance)
-# print(e1.conditional(y, S, s).mean, e1.conditional(y, S, s).covariance)
-# print(e2.conditional(y, S, s).mean, e2.conditional(y, S, s).covariance)
-# print(e3.conditional(y, S, s).mean, e3.conditional(y, S, s).covariance)
-# print(e4.conditional(y, S, s).mean, e4.conditional(y, S, s).covariance)
-
-# (S, accepted, mses, all_sets) = population_icp([e, e2], y, debug=True, selection='all')
-# print(S, accepted, mses)
-# print("Stable blanket :", stable_blanket(accepted, mses))
-# print("Nint:", reduce(lambda acc,x: acc.union(x), accepted))
-
-# utils.plot_graph(W, ordering)

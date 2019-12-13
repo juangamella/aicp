@@ -61,6 +61,7 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
     base.remove(target)
     S = base.copy()
     accepted = [] # To store the accepted sets
+    rejected = [] # To store the sets that were rejected
     mses = [] # To store the MSE of the accepted sets
     max_size = 0
     conf_intervals = ConfIntervals(data.p)
@@ -68,29 +69,32 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
         print("Evaluating candidate sets with length %d" % max_size) if debug else None
         candidates = itertools.combinations(base, max_size)
         for s in candidates:
+            s = set(s)
             # Find linear coefficients on pooled data
             (beta, error) = regress(s, data)
             assert((beta[list(base.difference(s))] == 0).all())
             p_value = test_hypothesis(beta, data, debug=debug)
-            rejected = p_value < alpha
-            if not rejected:
-                S = S.intersection(s)
+            reject = p_value < alpha
+            if reject:
+                rejected.append(s)
+            else:
                 accepted.append(s)
+                S = S.intersection(s)
                 mses.append(error)
                 if max_size !=0:
                     intervals = confidence_intervals(s, beta, data, alpha)
                     print(intervals)
                     conf_intervals.update(s, intervals)
             if debug:
-                color = "red" if rejected else "green"
+                color = "red" if reject else "green"
                 beta_str = np.array_str(beta, precision=2)
-                set_str = "rejected" if rejected else "accepted"
+                set_str = "rejected" if reject else "accepted"
                 msg = colored("%s %s" % (s, set_str), color) + " - (p=%0.2f) - S = %s %s MSE: %0.4f" % (p_value, S, beta_str, error)
                 print(msg)
             if len(S) == 0 and stop_early:
                 break;
         max_size += 1
-    return (S, accepted, mses, conf_intervals)
+    return Result(S, accepted, rejected, mses, conf_intervals)
 
 # Support functions to icp
 
@@ -287,3 +291,15 @@ class ConfIntervals():
     def minmax(self):
         upper_bounds = np.array(self.upr)
         return np.nanmin(upper_bounds, axis=0)
+
+#---------------------------------------------------------------------
+# Results class
+
+class Result():
+    """Class to hold the estimate produced by ICP and any additional information"""
+    def __init__(self, estimate, accepted, rejected, mses, conf_intervals=None):
+        self.estimate = estimate # The estimate produced by ICP ie. intersection of accepted sets
+        self.accepted = accepted # Accepted sets
+        self.rejected = rejected # Rejected sets
+        self.mses = np.array(mses) # MSE of the accepted sets
+        self.conf_intervals = conf_intervals # Confidence intervals
