@@ -30,7 +30,8 @@
 
 import time
 import numpy as np
-from src import icp, population_icp, utils
+from functools import reduce
+from src import icp, population_icp, utils, normal_distribution
 
 # --------------------------------------------------------------------
 # Policy evaluation
@@ -42,9 +43,9 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False,  r
     np.random.seed(random_seed)
     results = []
     for i,case in enumerate(cases):
-        print("%0.2f%% Evaluating policy on test case %d..." % (i/len(cases)*100, i)) if debug else None
+        print("%0.2f%% Evaluating policy \"%s\" on test case %d..." % (i/len(cases)*100, name, i)) if debug else None
         result = run_policy(policy, case, name=name, n=n, population=population, debug=debug)
-        print(" done (%0.2f seconds)" % result.time) if debug else None
+        print(" done (%0.2f seconds). truth: %s estimate: %s" % (result.time, case.truth, result.estimate)) if debug else None
         results.append(result)
     return results
 
@@ -58,11 +59,11 @@ def run_policy(policy, case, name=None, n=round(1e5), population=False, debug=Fa
     e = case.sem.sample(n, population)
     envs = [e]
     start = time.time()
-    (next_intervention, initial_estimate) = policy.first(e)
-    history.append((None, initial_estimate, next_intervention))
+    (next_intervention, current_estimate) = policy.first(e)
+    history.append((None, current_estimate, next_intervention))
     i = 1
     while next_intervention is not None:
-        print("  %d: intervention %s" % (i, next_intervention)) if debug else None
+        print("  %d current estimate: %s next intervention: %s" % (i, current_estimate, next_intervention)) if debug else None
         new_env = case.sem.sample(n, population, noise_interventions = next_intervention)
         envs.append(new_env)
         result = icp(envs, case.target, debug=False)
@@ -156,3 +157,73 @@ class RandomPolicy(Policy):
             self.interventions.append(i)
             return np.array([[i, 0, 10]])
 
+class MBPolicy(Policy):
+    """Markov Blanket policy: only considers subsets (and intervenes on
+    variables) of the Markov blanket """
+
+    def __init__(self, target, p, name, alpha=0.01):
+        self.interventions = []
+        self.alpha = alpha # significance level for estimating the MB
+        Policy.__init__(self, target, p, name)
+
+    def first(self, e):
+        if isinstance(e, normal_distribution.NormalDistribution):
+            self.mb = set(population_icp.markov_blanket(self.target, e))
+            return (self.pick_intervention(), set())
+        else:
+            raise Exception("Not yet implemented")
+
+    def next(self, result):
+        # Estimate is the intersection of all sets which are subsets
+        # of the Markov blanket
+        accepted = list(filter(lambda s: set.intersection(s, self.mb) == s, result.accepted))
+        estimate = reduce(lambda acc, s: set.intersection(acc, s), accepted, set(range(self.p)))
+        if [estimate] == accepted:
+            return (None, estimate)
+        else:
+            return (self.pick_intervention(), estimate)
+    
+    def pick_intervention(self):
+        choice = [i for i in self.mb if i not in self.interventions]
+        if not choice: # ie. all variables already intervened on
+            return None
+        else:
+            i = np.random.choice(choice)
+            self.interventions.append(i)
+            return np.array([[i, 0, 10]])
+
+class SBPopPolicy(Policy):
+    """Using stable blanket and derived theoretical results"""
+
+    def __init__(self, target, p, name, alpha=0.01, full=False):
+        self.interventions = []
+        self.full = full
+        Policy.__init__(self, target, p, name)
+
+    def first(self, e):
+        self.mb = set(population_icp.markov_blanket(self.target, e))
+        self.sb = self.mb.copy()
+        return (self.pick_intervention(), set())
+
+    def next(self, result):
+        if self.full:
+            raise Exception("Not yet implemented")
+        else:
+            # Estimate is the intersection of all sets which are subsets
+            # of the stable blanket
+            self.sb = population_icp.stable_blanket(result.accepted, result.mses)
+            accepted = list(filter(lambda s: set.intersection(s, self.sb) == s, result.accepted))
+            estimate = reduce(lambda acc, s: set.intersection(acc, s), accepted, set(range(self.p)))
+            if [estimate] == accepted:
+                return (None, estimate)
+            else:
+                return (self.pick_intervention(), estimate)
+
+    def pick_intervention(self):
+        choice = [i for i in self.sb if i not in self.interventions]
+        if not choice: # ie. all variables already intervened on
+            return None
+        else:
+            i = np.random.choice(choice)
+            self.interventions.append(i)
+            return np.array([[i, 0, 10]])
