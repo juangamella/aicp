@@ -82,7 +82,7 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
                 S = S.intersection(s)
                 mses.append(error)
                 if max_size !=0:
-                    intervals = confidence_intervals(s, coefs, data, alpha)
+                    intervals = confidence_intervals(s, beta, data, alpha)
                     print(intervals)
                     conf_intervals.update(s, intervals)
             if debug:
