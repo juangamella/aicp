@@ -28,24 +28,72 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import pickle
+import time
+import numpy as np
+from datetime import datetime
 from src import sampling, policy, utils
+
+
+def save_results(results, filename=None):
+    if filename is None:
+        filename = "experiments/results_%d.pickle" % time.time()
+    f = open(filename, "wb")
+    pickle.dump(results, f)
+    pickle.dump(results, f)
+    f.close()
+    return filename
+
+def load_results(filename):
+    f = open(filename, "rb")
+    return pickle.load(f)
 
 # --------------------------------------------------------------------
 # Test cases
 
-# Test case 1
-W, ordering = sampling.dag_avg_deg(8,2.5,1,2,random_state=2,debug=False)
-# utils.plot_graph(W, ordering)
-sem = sampling.LGSEM(W, ordering, (1,1))
-target = 3
-truth = {2}
-case_1 = policy.TestCase(sem, target, truth)
+def gen_cases(n, p, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_max=0, random_state=42):
+    np.random.seed(random_state)
+    cases = []
+    for i in range(n):
+        W, ordering = sampling.dag_avg_deg(p, k, w_min, w_max)
+        sem = sampling.LGSEM(W, ordering, (var_min, var_max), (int_min, int_max))
+        target = np.random.choice(range(p))
+        (truth, _, _, _) = utils.graph_info(target, W)
+        cases.append(policy.TestCase(sem, target, truth))
+    return cases
 
-cases = [case_1]
+# # Test case 1
+# W, ordering = sampling.dag_avg_deg(8,2,1,2,random_state=2,debug=False)
+# #utils.plot_graph(W, ordering)
+# sem = sampling.LGSEM(W, ordering, (1,1))
+# target = 3
+# truth = {2}
+# case_1 = policy.TestCase(sem, target, truth)
+
+# cases = [case_1]
+
+cases = gen_cases(15, 10, 1.7)
 
 # --------------------------------------------------------------------
 # Evaluation
+
+start = time.time()
+print("\n\nBeggining experiments at %s\n\n" % datetime.now())
+
 pop_rand_results = policy.evaluate_policy(policy.RandomPolicy, cases, name="random", population=True, debug=True)
+print()
+pop_mb_results = policy.evaluate_policy(policy.MBPolicy, cases, name="markov blanket", population=True, debug=True)
+print()
+pop_sb_results = policy.evaluate_policy(policy.SBPopPolicy, cases, name="stable blanket", population=True, debug=True)
+
+end = time.time()
+print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
+
+# Save results
+results = [pop_rand_results, pop_mb_results]
+filename = save_results(results)
+print("Saved to file \"%s\"" % filename)
+
 
 # --------------------------------------------------------------------
 # Plotting
