@@ -106,6 +106,16 @@ class SEM_Tests(unittest.TestCase):
         sem = LGSEM(W, ordering, (0,1), intercepts = intercepts)
         self.assertTrue((sem.intercepts == intercepts).all())
 
+    def test_sampling_args(self):
+        variances = np.array([1,2,3])
+        intercepts = np.array([3,4,5])
+        W = np.eye(3)
+        ordering = np.arange(3)
+        sem = LGSEM(W, ordering, variances, intercepts)
+        self.assertEqual(np.ndarray, type(sem.sample(n=1)))
+        self.assertEqual(NormalDistribution, type(sem.sample(n=1, population=True)))
+        self.assertEqual(NormalDistribution, type(sem.sample(population=True)))
+        
     def test_sampling_1(self):
         # Test sampling of DAG with one variable
         np.random.seed(42)
