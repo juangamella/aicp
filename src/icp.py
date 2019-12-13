@@ -61,6 +61,7 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
     base.remove(target)
     S = base.copy()
     accepted = [] # To store the accepted sets
+    rejected = [] # To store the sets that were rejected
     mses = [] # To store the MSE of the accepted sets
     max_size = 0
     conf_intervals = ConfIntervals(data.p)
@@ -68,29 +69,32 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
         print("Evaluating candidate sets with length %d" % max_size) if debug else None
         candidates = itertools.combinations(base, max_size)
         for s in candidates:
+            s = set(s)
             # Find linear coefficients on pooled data
-            (coefs, error) = regress(s, data)
-            assert((coefs[list(base.difference(s))] == 0).all())
-            p_value = test_hypothesis(coefs, data, debug=debug)
-            rejected = p_value < alpha
-            if not rejected:
-                S = S.intersection(s)
+            (beta, error) = regress(s, data)
+            assert((beta[list(base.difference(s))] == 0).all())
+            p_value = test_hypothesis(beta, data, debug=debug)
+            reject = p_value < alpha
+            if reject:
+                rejected.append(s)
+            else:
                 accepted.append(s)
+                S = S.intersection(s)
                 mses.append(error)
                 if max_size !=0:
                     intervals = confidence_intervals(s, coefs, data, alpha)
                     print(intervals)
                     conf_intervals.update(s, intervals)
             if debug:
-                color = "red" if rejected else "green"
-                coefs_str = np.array_str(coefs, precision=2)
-                set_str = "rejected" if rejected else "accepted"
-                msg = colored("%s %s" % (s, set_str), color) + " - (p=%0.2f) - S = %s %s MSE: %0.4f" % (p_value, S, coefs_str, error)
+                color = "red" if reject else "green"
+                beta_str = np.array_str(beta, precision=2)
+                set_str = "rejected" if reject else "accepted"
+                msg = colored("%s %s" % (s, set_str), color) + " - (p=%0.2f) - S = %s %s MSE: %0.4f" % (p_value, S, beta_str, error)
                 print(msg)
             if len(S) == 0 and stop_early:
                 break;
         max_size += 1
-    return (S, accepted, mses, conf_intervals)
+    return Result(S, accepted, rejected, mses, conf_intervals)
 
 # Support functions to icp
 
@@ -287,112 +291,15 @@ class ConfIntervals():
     def minmax(self):
         upper_bounds = np.array(self.upr)
         return np.nanmin(upper_bounds, axis=0)
-    
+
 #---------------------------------------------------------------------
-# Unit testing
+# Results class
 
-import unittest
-class DataTests(unittest.TestCase):
-
-    def setUp(self):
-        self.p = 20
-        self.N = [2, 3, 4]
-        self.n = np.sum(self.N)
-        self.target = 3
-        environments = []
-        for i,ne in enumerate(self.N):
-            e = np.tile(np.ones(self.p), (ne, 1))
-            e *= (i+1)
-            e[:, self.target] *= -1
-            environments.append(e)
-        self.environments = environments
-
-    def test_basic(self):
-        data = Data(self.environments, self.target)
-        self.assertEqual(data.n, self.n)
-        self.assertTrue((data.N == self.N).all())
-        self.assertEqual(data.p, self.p)
-        self.assertEqual(data.target, self.target)
-        self.assertEqual(data.n_env, len(self.environments))
-
-    def test_memory(self):
-        environments = copy.deepcopy(self.environments)
-        data = Data(environments, self.target)
-        environments[0][0,0] = -100
-        data_pooled = data.pooled_data()
-        self.assertFalse(data_pooled[0,0] == environments[0][0,0])
-        
-    def test_targets(self):
-        data = Data(self.environments, self.target)
-        truth = [-(i+1)*np.ones(ne) for i,ne in enumerate(self.N)]
-        truth_pooled = []
-        for i,target in enumerate(data.targets):
-            self.assertTrue((target == truth[i]).all())
-            truth_pooled = np.hstack([truth_pooled, truth[i]])
-        self.assertTrue((truth_pooled == data.pooled_targets()).all())
-        
-    def test_data(self):
-        data = Data(self.environments, self.target)
-        truth_pooled = []
-        for i,ne in enumerate(self.N):
-            sample = np.ones(self.p+1)
-            sample[:-1] *= (i+1)
-            sample[self.target] *= -1
-            truth = np.tile(sample, (ne, 1))
-            self.assertTrue((truth == data.data[i]).all())
-            truth_pooled = truth if i==0 else np.vstack([truth_pooled, truth])
-        self.assertTrue((truth_pooled == data.pooled_data()).all())
-
-    def test_split(self):
-        data = Data(self.environments, self.target)
-        last = 0
-        for i,ne in enumerate(self.N):
-            (et, ed, rt, rd) = data.split(i)
-            # Test that et and ed are correct
-            self.assertTrue((et == data.targets[i]).all())
-            self.assertTrue((ed == data.data[i]).all())
-            # Same as two previous assertions but truth built differently
-            truth_et = data.pooled_targets()[last:last+ne]
-            truth_ed = data.pooled_data()[last:last+ne, :]
-            self.assertTrue((truth_et == et).all())
-            self.assertTrue((truth_ed == ed).all())
-            # Test that rt and rd are correct
-            idx = np.arange(self.n)
-            idx = np.logical_or(idx < last, idx >= last+ne)
-            truth_rt = data.pooled_targets()[idx]
-            truth_rd = data.pooled_data()[idx, :]
-            self.assertTrue((truth_rt == rt).all())
-            self.assertTrue((truth_rd == rd).all())
-            last += ne
-
-class ConfIntervalsTests(unittest.TestCase):
-    
-    def test_update(self):
-        p = 3
-        conf_intervals = ConfIntervals(p)
-        # Update 1
-        conf_intervals.update(set([2]), (np.array([-3, 0]), np.array([3, 0])))
-        print(conf_intervals.lower_bound())
-        self.assertTrue(nan_equal(conf_intervals.lower_bound(), np.array([np.nan, np.nan, -3, 0])))
-        self.assertTrue(nan_equal(conf_intervals.upper_bound(), np.array([np.nan, np.nan, 3, 0])))
-        self.assertTrue(nan_equal(conf_intervals.maxmin(), np.array([np.nan, np.nan, -3, 0])))
-        self.assertTrue(nan_equal(conf_intervals.minmax(), np.array([np.nan, np.nan, 3, 0])))
-        # Update 2
-        conf_intervals.update(set([0,1]), (np.array([-1,-1,-1]), np.array([.5, .5, .5])))
-        self.assertTrue(nan_equal(conf_intervals.lower_bound(), np.array([-1, -1, -3, -1])))
-        self.assertTrue(nan_equal(conf_intervals.upper_bound(), np.array([.5, .5, 3, .5])))
-        self.assertTrue(nan_equal(conf_intervals.maxmin(), np.array([-1, -1, -3, 0])))
-        self.assertTrue(nan_equal(conf_intervals.minmax(), np.array([.5, .5, 3, 0])))
-        # Update 4
-        conf_intervals.update(set([0,1,2]), (np.array([-4,-4,-4,-4]), np.array([1,1,1,1])))
-        self.assertTrue(nan_equal(conf_intervals.lower_bound(), np.ones(p + 1) * -4))
-        self.assertTrue(nan_equal(conf_intervals.upper_bound(), np.array([1, 1, 3, 1])))
-        self.assertTrue(nan_equal(conf_intervals.maxmin(), np.array([-1, -1, -3, 0])))
-        self.assertTrue(nan_equal(conf_intervals.minmax(), np.array([.5, .5, 1, 0])))
-
-def nan_equal(a,b):
-    try:
-        np.testing.assert_equal(a,b)
-    except AssertionError:
-        return False
-    return True
+class Result():
+    """Class to hold the estimate produced by ICP and any additional information"""
+    def __init__(self, estimate, accepted, rejected, mses, conf_intervals=None):
+        self.estimate = estimate # The estimate produced by ICP ie. intersection of accepted sets
+        self.accepted = accepted # Accepted sets
+        self.rejected = rejected # Rejected sets
+        self.mses = np.array(mses) # MSE of the accepted sets
+        self.conf_intervals = conf_intervals # Confidence intervals
