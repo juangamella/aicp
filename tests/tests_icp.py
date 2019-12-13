@@ -43,7 +43,7 @@ import copy
 from .context import src
 
 # Tested functions
-from src.icp import Data, ConfIntervals
+from src.icp import Data, ConfIntervals, Result
 
 class DataTests(unittest.TestCase):
 
@@ -149,3 +149,18 @@ def nan_equal(a,b):
     except AssertionError:
         return False
     return True
+
+class ResultTests(unittest.TestCase):
+
+    def test_init(self):
+        mses = [0.1, 0.2, 0.3]
+        accepted = [{1}, {2}, {3}]
+        rejected = [{4}, {5}, {6}]
+        estimate = set()
+        result = Result(estimate, accepted, rejected, mses)
+        self.assertTrue(isinstance(result.mses, np.ndarray))
+        self.assertTrue(np.allclose(result.mses, np.array([0.1, 0.2, 0.3])))
+        self.assertEqual(accepted, result.accepted)
+        self.assertEqual(rejected, result.rejected)
+        self.assertEqual(None, result.conf_intervals)
+            
