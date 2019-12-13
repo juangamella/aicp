@@ -34,7 +34,7 @@ from src import sampling, policy, utils
 # Test cases
 
 # Test case 1
-W, ordering = sampling.dag_avg_deg(8,2.5,1,2,debug=True,random_state=2)
+W, ordering = sampling.dag_avg_deg(8,2.5,1,2,random_state=2,debug=False)
 # utils.plot_graph(W, ordering)
 sem = sampling.LGSEM(W, ordering, (1,1))
 target = 3
