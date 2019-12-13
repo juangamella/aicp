@@ -35,115 +35,68 @@ print(sem.W)
 environments = [e, e1, e0]#, e2, e3, e4
 target = 3
 
-(S, accepted, mses, conf_intervals) = icp(environments, target, alpha=0.01, max_predictors=None, debug=True, stop_early=False)
-print("Intersection: %s" % S)
+result = icp(environments, target, alpha=0.01, max_predictors=None, debug=True, stop_early=False)
+print("Intersection: %s" % result.estimate)
 
 def ratios(p, accepted):
     one_hot = np.zeros((len(accepted), p))
     for i,s in enumerate(accepted):
-        one_hot[i, s] = 1
+        one_hot[i, list(s)] = 1
     return one_hot.sum(axis=0) / len(accepted)
         
-R = ratios(p, accepted)
+R = ratios(p, result.accepted)
 for i,r in enumerate(R):
     print("X%d = %d/%d=%0.2f" % (i, r*p, p, r))
 
-mses = np.array(mses)
-for i in np.argsort(mses):
-    print("%s %0.5f" % (accepted[i], mses[i]))
+for i in np.argsort(result.mses):
+    print("%s %0.5f" % (result.accepted[i], result.mses[i]))
 
 
-# class RandomPolicy():
-#     def __init__(self, p, target):
-#         self.p = p
-#         self.target = target
-#         self.vars = [i for i in range(p) if i != target]
 
-#     def first(self, obs_data):
-#         return np.random.choice(self.vars)
-    
-#     def next(self, accepted, intervened):
-#         not_intervened = [i for i in self.vars if i not in intervened]
-#         if not not_intervened: # ie. not_intervened is empty
-#             return None
-#         else:
-#             return np.random.choice(not_intervened)
+##--------------------------------------------------------------------
 
-# def test_policy(policy, sem, target, alpha = 0.01, n=round(1e5), n_i = round(1e5), max_iter = 100):
-#     obs_data = sem.sample(n) # sample observational data
-#     next_intervention = policy.first(obs_data) # get first intervention
-#     i = 0
-#     done = False
-#     environments = [obs_data]
-#     intervened = []
-#     Accepted = []
-#     while (i < max_iter) and next_intervention is not None:
-#         print("\nIntervening on %d\n" % next_intervention)
-#         e = sem.sample(n_i, do_interventions= np.array([[next_intervention, 10]]))
-#         environments.append(e)
-#         (S, accepted, conf_intervals) = icp(environments, target, alpha, max_predictors=None, debug=False, stop_early=False)
-#         intervened.append(next_intervention)
-#         next_intervention = policy.next(accepted, intervened)
-#         Accepted.append(accepted)
-#     return intervened, Accepted
-    
-    
-# #test_policy(RandomPolicy(p, target), sem, target, max_iter=6)
+from src import sampling
+from src import population_icp
+from src import utils
+from functools import reduce
+y = 3
+#W, ordering, _, _ = utils.eg3()
+W, ordering = sampling.dag_avg_deg(8,2.5,1,2,debug=True,random_state=2)
+sem = sampling.LGSEM(W, ordering, (1,1))
+e = sem.sample(population=True)
+e_obs = sem.sample(n=round(1e6))
+v = 2
 
+e0 = sem.sample(population=True, noise_interventions=np.array([[0,0,v]]))
+e1 = sem.sample(population=True, noise_interventions=np.array([[1,0,v]]))
+e2 = sem.sample(population=True, noise_interventions=np.array([[2,1,v]]))
+e3 = sem.sample(population=True, noise_interventions=np.array([[3,0,v]]))
+e4 = sem.sample(population=True, noise_interventions=np.array([[4,0,v]]))
+e5 = sem.sample(population=True, noise_interventions=np.array([[5,0,v]]))
+e6 = sem.sample(population=True, noise_interventions=np.array([[6,0,v]]))
+e7 = sem.sample(population=True, noise_interventions=np.array([[7,0,v]]))
 
-class PolicyEvaluationResults():
-    """Class to contain all information resulting from evaluating a policy
-    over a set of cases"""
+e24 = sem.sample(population=True, noise_interventions=np.array([[2,0.3,v], [4, 0.3, v]]))
 
-    def __init__(self, policy, cases):
-        self.policy = policy
-        self.cases = cases
-        # Info
-        self.estimates = [] # estimate produced by the policy
-        self.interventions = [] # interventions used by the policy
-        self.scores = None # score of the estimate (using metric)
-        self.times = [] # time used by the policy
-        
-    def compute_scores(metric=None):
-        """Compute (and store) the scores of the estimates wrt. to a given
-        metric
-        """
-        if metric is None:
-            metric = jaccard_distance
-        scores = []
-        for i,case in enumerate(self.cases):
-            scores.append(metric(case.truth, estimates[i]))
-        self.scores = scores.copy()
-        return scores
-        
-class TestCase():
-    """Object that represents a test case
-    ie. SEM + target + expected result
-    """
-    def __init(self, sem, target, truth):
-        self.sem = sem
-        self.target = target
-        self.truth = truth
+print()
+print(population_icp.pooled_regression(y, [], [e0]))
+print(population_icp.pooled_regression(y, [], [e1]))
+print(population_icp.pooled_regression(y, [], [e2]))
+print(population_icp.pooled_regression(y, [], [e3]))
+print(population_icp.pooled_regression(y, [], [e4]))
 
-def jaccard_distance(A, B):
-    """Compute the jaccard distance between sets A and B"""
-    return len(set.intersection(A,B)) / len(set.union(A,B))
+print()
+S = []
+s = np.random.uniform(size=len(S))
+print(e0.conditional(y, S, s).mean, e0.conditional(y, S, s).covariance)
+print(e1.conditional(y, S, s).mean, e1.conditional(y, S, s).covariance)
+print(e2.conditional(y, S, s).mean, e2.conditional(y, S, s).covariance)
+print(e3.conditional(y, S, s).mean, e3.conditional(y, S, s).covariance)
+print(e4.conditional(y, S, s).mean, e4.conditional(y, S, s).covariance)
 
-import time
-def evaluate_policy(policy, cases, debug=False):
-    """Evaluate a policy over the given test cases, returning a
-    PolicyEvaluationResults object containing the results
-    """
-    results = PolicyEvaluationResults(policy, cases)
-    for i,case in enumerate(cases):
-        print("%0.2f Evaluating policy on test case %d..." % i/len(cases)*100, end="") if debug else None
-        start = time.time()
-        (estimate, interventions) = run_policy(policy, case.sem, case.target)
-        end = time.time()
-        elapsed = end - start
-        print(" done (%0.2f seconds)" % elapsed) if debug else None
-        results.estimates.append(estimate)
-        results.interventions.append(interventions)
-        results.times.append(times)
-    return results
+result_pop = population_icp.population_icp([e, e2], y, debug=True, selection='all')
+print(result_pop.estimate, result_pop.accepted, result_pop.mses)
+print("Stable blanket :", population_icp.stable_blanket(result_pop.accepted, result_pop.mses))
+print("Nint:", reduce(lambda acc,x: acc.union(x), result_pop.accepted))
 
+#utils.plot_graph(W, ordering)
