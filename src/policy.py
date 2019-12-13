@@ -30,7 +30,7 @@
 
 import time
 import numpy as np
-from src import icp, population_icp
+from src import icp, population_icp, utils
 
 # --------------------------------------------------------------------
 # Policy evaluation
@@ -42,7 +42,7 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False,  r
     np.random.seed(random_seed)
     results = []
     for i,case in enumerate(cases):
-        print("%0.2f%% Evaluating policy on test case %d..." % (i/len(cases)*100, i), end="") if debug else None
+        print("%0.2f%% Evaluating policy on test case %d..." % (i/len(cases)*100, i)) if debug else None
         result = run_policy(policy, case, name=name, n=n, population=population, debug=debug)
         print(" done (%0.2f seconds)" % result.time) if debug else None
         results.append(result)
@@ -58,20 +58,21 @@ def run_policy(policy, case, name=None, n=round(1e5), population=False, debug=Fa
     e = case.sem.sample(n, population)
     envs = [e]
     start = time.time()
-    next_intervention = policy.first(e)
+    (next_intervention, initial_estimate) = policy.first(e)
+    history.append((None, initial_estimate, next_intervention))
     i = 1
     while next_intervention is not None:
         print("  %d: intervention %s" % (i, next_intervention)) if debug else None
         new_env = case.sem.sample(n, population, noise_interventions = next_intervention)
         envs.append(new_env)
         result = icp(envs, case.target, debug=False)
-        history.append((next_intervention, result))
-        next_intervention = policy.next(result)
+        (next_intervention, current_estimate) = policy.next(result)
+        history.append((result, current_estimate, next_intervention))
         i += 1
     end = time.time()
     elapsed = end - start
     # Return result
-    return EvaluationResult(policy, case, result.estimate, history, elapsed)
+    return EvaluationResult(policy, case, current_estimate, history, elapsed)
     
 def jaccard_distance(A, B):
     """Compute the jaccard distance between sets A and B"""
@@ -89,7 +90,19 @@ class EvaluationResult():
         self.estimate = estimate # estimate produced by the policy
         self.history = history # interventions and intermediate results of the policy
         self.time = time # time used by the policy
-        
+
+    def estimates(self):
+        """Return the parents estimated by the policy at each step"""
+        return list(map(lambda step: step[1], self.history))
+
+    def interventions(self):
+        """Return the interventions carried out by the policy"""
+        return list(map(lambda step: step[2], self.history[0:len(self.history)-1]))
+
+    def intervened_variables(self):
+        """Return the intervened variables"""
+        return list(map(lambda step: step[2][0,0], self.history[0:len(self.history)-1]))
+    
 class TestCase():
     """Object that represents a test case
     ie. SEM + target + expected result
@@ -109,10 +122,12 @@ class Policy():
         self.name = name
 
     def first(self, observational_data):
-        return None
+        """Returns the initial intervention and initial estimate"""
+        return (None, set())
 
     def next(self, icp_results):
-        return None
+        """Returns the next intervention and the current estimate"""
+        return (None, set())
 
 class RandomPolicy(Policy):
     """Random policy: selects a previously unintervened variable at
@@ -124,13 +139,13 @@ class RandomPolicy(Policy):
         Policy.__init__(self, target, p, name)
     
     def first(self, _):
-        return self.random_intervention()
+        return (self.random_intervention(), set())
 
     def next(self, result):
         if [result.estimate] == result.accepted:
-            return None
+            return (None, result.estimate)
         else:
-            return self.random_intervention()
+            return (self.random_intervention(), result.estimate)
 
     def random_intervention(self):
         choice = [i for i in range(self.p) if i not in self.interventions and i != self.target]
