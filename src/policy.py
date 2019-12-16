@@ -67,12 +67,14 @@ def run_policy(policy, case, name=None, n=round(1e5), population=False, debug=Fa
     (next_intervention, current_estimate) = policy.first(e)
     history.append((None, current_estimate, next_intervention))
     i = 1
+    selection = 'all' # on the first iteration, evaluate all possible candidate sets
     while next_intervention is not None:
         print("  %d current estimate: %s next intervention: %s" % (i, current_estimate, next_intervention)) if debug else None
         new_env = case.sem.sample(n, population, noise_interventions = next_intervention)
         envs.append(new_env)
-        result = icp(envs, case.target, debug=False)
+        result = icp(envs, case.target, selection=selection, debug=False)
         (next_intervention, current_estimate) = policy.next(result)
+        selection = result.accepted # in each iteration we only need to run ICP on the sets accepted in the previous one
         history.append((result, current_estimate, next_intervention))
         i += 1
     end = time.time()
