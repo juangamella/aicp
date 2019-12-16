@@ -59,23 +59,24 @@ def run_policy(policy, case, name=None, n=round(1e5), population=False, debug=Fa
     # Initialization
     policy = policy(case.target, case.sem.p, name=name)
     icp = population_icp.population_icp if population else icp.icp
-    history = []
+    history = [] # store the ICP result, current estimate and next intervention
     # Generate observational samples
     e = case.sem.sample(n, population)
     envs = [e]
     start = time.time()
     (next_intervention, current_estimate) = policy.first(e)
     history.append((None, current_estimate, next_intervention))
+    print("  %d initial estimate: %s first intervention: %s" % (0, current_estimate, next_intervention)) if debug else None
     i = 1
     selection = 'all' # on the first iteration, evaluate all possible candidate sets
-    while next_intervention is not None:
-        print("  %d current estimate: %s next intervention: %s" % (i, current_estimate, next_intervention)) if debug else None
+    while current_estimate != case.truth:
         new_env = case.sem.sample(n, population, noise_interventions = next_intervention)
         envs.append(new_env)
         result = icp(envs, case.target, selection=selection, debug=False)
-        (next_intervention, current_estimate) = policy.next(result)
         selection = result.accepted # in each iteration we only need to run ICP on the sets accepted in the previous one
+        (next_intervention, current_estimate) = policy.next(result)
         history.append((result, current_estimate, next_intervention))
+        print("  %d current estimate: %s next intervention: %s" % (i, current_estimate, next_intervention)) if debug else None
         i += 1
     end = time.time()
     elapsed = end - start
@@ -139,30 +140,25 @@ class Policy():
 
 class RandomPolicy(Policy):
     """Random policy: selects a previously unintervened variable at
-    random, until the only accepted set is the estimate or until all
-    variables have been intervened on.
+    random. Once all variables have been intervened once, repeats the order
+    of interventions.
     """
     def __init__(self, target, p, name):
         self.interventions = []
         Policy.__init__(self, target, p, name)
     
     def first(self, _):
+        self.idx = np.random.permutation(utils.all_but(self.target, self.p))
+        self.i = 0
         return (self.random_intervention(), set())
 
     def next(self, result):
-        if [result.estimate] == result.accepted:
-            return (None, result.estimate)
-        else:
-            return (self.random_intervention(), result.estimate)
+        return (self.random_intervention(), result.estimate)
 
     def random_intervention(self):
-        choice = [i for i in range(self.p) if i not in self.interventions and i != self.target]
-        if not choice: # ie. all variables already intervened on
-            return None
-        else:
-            i = np.random.choice(choice)
-            self.interventions.append(i)
-            return np.array([[i, 0, 10]])
+        var = self.idx[self.i]
+        self.i = (self.i+1) % len(self.idx)
+        return np.array([[var, 0, 10]])
 
 class MBPolicy(Policy):
     """Markov Blanket policy: only considers subsets (and intervenes on
@@ -174,63 +170,19 @@ class MBPolicy(Policy):
         Policy.__init__(self, target, p, name)
 
     def first(self, e):
-        if isinstance(e, normal_distribution.NormalDistribution):
-            self.mb = set(population_icp.markov_blanket(self.target, e))
-            return (self.pick_intervention(), set())
+        mb = population_icp.markov_blanket(self.target, e)
+        if len(mb) == 0: # If the estimate of the MB is empty resort to the random strategy
+            self.mb = np.random.permutation(self.p)
         else:
-            raise Exception("Not yet implemented")
-
-    def next(self, result):
-        # Estimate is the intersection of all sets which are subsets
-        # of the Markov blanket
-        accepted = list(filter(lambda s: set.intersection(s, self.mb) == s, result.accepted))
-        estimate = reduce(lambda acc, s: set.intersection(acc, s), accepted, set(range(self.p)))
-        if [estimate] == accepted:
-            return (None, estimate)
-        else:
-            return (self.pick_intervention(), estimate)
-    
-    def pick_intervention(self):
-        choice = [i for i in self.mb if i not in self.interventions]
-        if not choice: # ie. all variables already intervened on
-            return None
-        else:
-            i = np.random.choice(choice)
-            self.interventions.append(i)
-            return np.array([[i, 0, 10]])
-
-class SBPopPolicy(Policy):
-    """Using stable blanket and derived theoretical results"""
-
-    def __init__(self, target, p, name, alpha=0.01, full=False):
-        self.interventions = []
-        self.full = full
-        Policy.__init__(self, target, p, name)
-
-    def first(self, e):
-        self.mb = set(population_icp.markov_blanket(self.target, e))
-        self.sb = self.mb.copy()
+            self.mb = np.random.permutation(mb)
+        self.i = 0
         return (self.pick_intervention(), set())
 
     def next(self, result):
-        if self.full:
-            raise Exception("Not yet implemented")
-        else:
-            # Estimate is the intersection of all sets which are subsets
-            # of the stable blanket
-            self.sb = population_icp.stable_blanket(result.accepted, result.mses)
-            accepted = list(filter(lambda s: set.intersection(s, self.sb) == s, result.accepted))
-            estimate = reduce(lambda acc, s: set.intersection(acc, s), accepted, set(range(self.p)))
-            if [estimate] == accepted:
-                return (None, estimate)
-            else:
-                return (self.pick_intervention(), estimate)
-
+        intervention = self.pick_intervention()
+        return (intervention, result.estimate)
+    
     def pick_intervention(self):
-        choice = [i for i in self.sb if i not in self.interventions]
-        if not choice: # ie. all variables already intervened on
-            return None
-        else:
-            i = np.random.choice(choice)
-            self.interventions.append(i)
-            return np.array([[i, 0, 10]])
+        var = self.mb[self.i]
+        self.i = (self.i+1) % len(self.mb)
+        return np.array([[var, 0, 10]])
