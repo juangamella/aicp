@@ -31,42 +31,50 @@
 import numpy as np
 import itertools
 from termcolor import colored
+from functools import reduce
 from src import utils
 from src import icp
 
-def population_icp(distributions, target, debug=False, selection='all', test='coefficients'):
+def population_icp(distributions, target, debug=False, selection='all'):
     """Perform ICP over a set of Gaussian Distributions, each
     representing a different environment
     """
+    # Build set of candidates
     p = distributions[0].p
-    if selection=='markov_blanket':
-        mb = markov_blanket(target, distributions[0])
-        base = set(mb)
-    elif selection=='all':
-        base = set(range(p))
-        base.remove(target)
-    S = base.copy()
+    if isinstance(selection, list):
+        base = reduce(lambda union, s: set.union(union, s), selection, set())
+        candidates = selection
+    else:
+        if selection=='markov_blanket':
+            mb = markov_blanket(target, distributions[0])
+            base = set(mb)
+        elif selection=='all':
+            base = set(range(p))
+            base.remove(target)
+        candidates = []
+        for set_size in range(p):
+            candidates += list(itertools.combinations(base, set_size))
+    # Evaluate candidates
     accepted = []
     rejected = []
     mses = []
-    for set_size in range(p):
-        candidates = itertools.combinations(base, set_size)
-        for s in candidates:
-            s = set(s)
-            reject = reject_hypothesis(s, target, distributions)
-            (pooled_coefs, pooled_intercept, pooled_mse) = pooled_regression(target, list(s), distributions)
-            if reject:
-                rejected.append(s)
-            else:
-                accepted.append(s)
-                S = S.intersection(s)
-                mses.append(pooled_mse)
-            if debug:
-                color = "red" if reject else "green"
-                coefs_str = np.array_str(np.hstack([pooled_coefs, pooled_intercept]), precision=2)
-                set_str = "rejected" if reject else "accepted"
-                msg = colored("%s %s" % (s, set_str), color) + " Pooled: %s MSE: %0.4f" % (coefs_str, pooled_mse)
-                print(msg)
+    S = base
+    for s in candidates:
+        s = set(s)
+        reject = reject_hypothesis(s, target, distributions)
+        (pooled_coefs, pooled_intercept, pooled_mse) = pooled_regression(target, list(s), distributions)
+        if reject:
+            rejected.append(s)
+        else:
+            accepted.append(s)
+            S = S.intersection(s)
+            mses.append(pooled_mse)
+        if debug:
+            color = "red" if reject else "green"
+            coefs_str = np.array_str(np.hstack([pooled_coefs, pooled_intercept]), precision=2)
+            set_str = "rejected" if reject else "accepted"
+            msg = colored("%s %s" % (s, set_str), color) + " Pooled: %s MSE: %0.4f" % (coefs_str, pooled_mse)
+            print(msg)
     result = icp.Result(S, accepted, rejected, mses)
     return result
 
