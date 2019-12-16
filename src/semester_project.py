@@ -31,6 +31,7 @@
 import pickle
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 from datetime import datetime
 from src import sampling, policy, utils
 
@@ -52,7 +53,8 @@ def load_results(filename):
 # Test cases
 
 def gen_cases(n, p, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_max=0, random_state=42):
-    np.random.seed(random_state)
+    if random_state is not None:
+        np.random.seed(random_state)
     cases = []
     for i in range(n):
         W, ordering = sampling.dag_avg_deg(p, k, w_min, w_max)
@@ -72,7 +74,18 @@ def gen_cases(n, p, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_ma
 
 # cases = [case_1]
 
-cases = gen_cases(15, 10, 1.7)
+## Test case 2
+# W = np.array([[0, 1, 1, 0],
+#               [0, 0, 1, 0],
+#               [0, 0, 0, 0],
+#               [0, 0, 1, 0]])
+# ordering = np.array([0, 1, 3, 2])
+# sem = sampling.LGSEM(W, ordering, (1,1))
+# target = 1
+# truth = {0}
+# case_2 = policy.TestCase(sem, target, truth)
+
+cases = gen_cases(30, 16, 1.5)
 
 # --------------------------------------------------------------------
 # Evaluation
@@ -80,11 +93,15 @@ cases = gen_cases(15, 10, 1.7)
 start = time.time()
 print("\n\nBeggining experiments at %s\n\n" % datetime.now())
 
-pop_rand_results = policy.evaluate_policy(policy.RandomPolicy, cases, name="random", population=True, debug=True)
-print()
-pop_mb_results = policy.evaluate_policy(policy.MBPolicy, cases, name="markov blanket", population=True, debug=True)
-print()
-pop_sb_results = policy.evaluate_policy(policy.SBPopPolicy, cases, name="stable blanket", population=True, debug=True)
+runs = 10
+
+pop_rand_results = []
+pop_mb_results = []
+
+for i in range(runs):
+    print("--- RUN %d ---" % i)
+    pop_mb_results.append(policy.evaluate_policy(policy.MBPolicy, cases, name="markov blanket", population=True, debug=True, random_state=None))
+    pop_rand_results.append(policy.evaluate_policy(policy.RandomPolicy, cases, name="random", population=True, debug=True, random_state=None))
 
 end = time.time()
 print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
@@ -97,3 +114,24 @@ print("Saved to file \"%s\"" % filename)
 
 # --------------------------------------------------------------------
 # Plotting
+
+#results = load_results("experiments/results_1576347498.pickle")
+
+results_mb = results[1]
+results_rand = results[0]
+
+no_ints_mb = np.zeros((10, 90))
+no_ints_rand = np.zeros((10, 90))
+correct_mb = np.zeros(90)
+correct_rand = np.zeros(90)
+
+for i in range(10):
+    no_ints_mb[i,:] = list(map(lambda res: len(res.interventions()), results_mb[i]))
+    no_ints_rand[i,:] = list(map(lambda res: len(res.interventions()), results_rand[i]))
+
+for i in range(10):
+    plt.scatter(np.arange(90), no_ints_mb[i,:], c='b', marker='+')
+    plt.scatter(np.arange(90), no_ints_mb.mean(axis=0), c='b', marker='s')
+    plt.scatter(np.arange(90), no_ints_rand[i,:], c='g', marker='x')
+    plt.scatter(np.arange(90), no_ints_rand.mean(axis=0), c='b', marker='o')
+plt.show(block=False)

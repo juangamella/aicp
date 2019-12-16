@@ -31,21 +31,26 @@
 import time
 import numpy as np
 from functools import reduce
+from termcolor import colored
 from src import icp, population_icp, utils, normal_distribution
 
 # --------------------------------------------------------------------
 # Policy evaluation
 
-def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False,  random_seed=42, debug=False):
+def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False,  random_state=42, debug=False):
     """Evaluate a policy over the given test cases, returning a
     PolicyEvaluationResults object containing the results
     """
-    np.random.seed(random_seed)
+    if random_state is not None:
+        np.random.seed(random_state)
     results = []
     for i,case in enumerate(cases):
         print("%0.2f%% Evaluating policy \"%s\" on test case %d..." % (i/len(cases)*100, name, i)) if debug else None
         result = run_policy(policy, case, name=name, n=n, population=population, debug=debug)
-        print(" done (%0.2f seconds). truth: %s estimate: %s" % (result.time, case.truth, result.estimate)) if debug else None
+        if debug:
+            msg = " done (%0.2f seconds). truth: %s estimate: %s" % (result.time, case.truth, result.estimate)
+            color = "green" if case.truth == result.estimate else "red"
+            print(colored(msg, color))
         results.append(result)
     return results
 
