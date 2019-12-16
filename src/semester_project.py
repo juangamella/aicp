@@ -85,7 +85,7 @@ def gen_cases(n, p, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_ma
 # truth = {0}
 # case_2 = policy.TestCase(sem, target, truth)
 
-cases = gen_cases(30, 16, 1.5)
+cases = gen_cases(5, 10, 1.5)
 
 # --------------------------------------------------------------------
 # Evaluation
@@ -93,7 +93,7 @@ cases = gen_cases(30, 16, 1.5)
 start = time.time()
 print("\n\nBeggining experiments at %s\n\n" % datetime.now())
 
-runs = 10
+runs = 1
 
 pop_rand_results = []
 pop_mb_results = []
@@ -120,18 +120,20 @@ print("Saved to file \"%s\"" % filename)
 results_mb = results[1]
 results_rand = results[0]
 
-no_ints_mb = np.zeros((10, 90))
-no_ints_rand = np.zeros((10, 90))
-correct_mb = np.zeros(90)
-correct_rand = np.zeros(90)
+C = len(cases)
 
-for i in range(10):
+no_ints_mb = np.zeros((runs, C))
+no_ints_rand = np.zeros((runs, C))
+correct_mb = np.zeros(C)
+correct_rand = np.zeros(C)
+
+for i in range(runs):
     no_ints_mb[i,:] = list(map(lambda res: len(res.interventions()), results_mb[i]))
     no_ints_rand[i,:] = list(map(lambda res: len(res.interventions()), results_rand[i]))
 
-for i in range(10):
-    plt.scatter(np.arange(90), no_ints_mb[i,:], c='b', marker='+')
-    plt.scatter(np.arange(90), no_ints_mb.mean(axis=0), c='b', marker='s')
-    plt.scatter(np.arange(90), no_ints_rand[i,:], c='g', marker='x')
-    plt.scatter(np.arange(90), no_ints_rand.mean(axis=0), c='b', marker='o')
+for i in range(runs):
+    plt.scatter(np.arange(C), no_ints_mb[i,:], c='b', marker='+')
+    plt.scatter(np.arange(C), no_ints_mb.mean(axis=0), c='b', marker='s')
+    plt.scatter(np.arange(C), no_ints_rand[i,:], c='g', marker='x')
+    plt.scatter(np.arange(C), no_ints_rand.mean(axis=0), c='b', marker='o')
 plt.show(block=False)
