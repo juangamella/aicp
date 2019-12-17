@@ -37,7 +37,7 @@ from src import icp, population_icp, utils, normal_distribution
 # --------------------------------------------------------------------
 # Policy evaluation
 
-def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False,  random_state=42, debug=False):
+def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, max_iter=100, random_state=42, debug=False):
     """Evaluate a policy over the given test cases, returning a
     PolicyEvaluationResults object containing the results
     """
@@ -46,7 +46,7 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False,  r
     results = []
     for i,case in enumerate(cases):
         print("%0.2f%% Evaluating policy \"%s\" on test case %d..." % (i/len(cases)*100, name, i)) if debug else None
-        result = run_policy(policy, case, name=name, n=n, population=population, debug=debug)
+        result = run_policy(policy, case, name=name, n=n, population=population, max_iter=max_iter, debug=debug)
         if debug:
             msg = " done (%0.2f seconds). truth: %s estimate: %s" % (result.time, case.truth, result.estimate)
             color = "green" if case.truth == result.estimate else "red"
@@ -54,28 +54,30 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False,  r
         results.append(result)
     return results
 
-def run_policy(policy, case, name=None, n=round(1e5), population=False, debug=False):
+def run_policy(policy, case, name=None, n=round(1e5), max_iter=100, population=False, debug=False):
     """Execute a policy over a given test case, recording the results"""
     # Initialization
     policy = policy(case.target, case.sem.p, name=name)
     icp = population_icp.population_icp if population else icp.icp
-    history = [] # store the ICP result, current estimate and next intervention
+    history = [] # store the ICP result and next intervention
     # Generate observational samples
     e = case.sem.sample(n, population)
     envs = [e]
     start = time.time()
-    (next_intervention, current_estimate) = policy.first(e)
-    history.append((None, current_estimate, next_intervention))
-    print("  %d initial estimate: %s first intervention: %s" % (0, current_estimate, next_intervention)) if debug else None
-    i = 1
+    next_intervention = policy.first(e)
+    history.append((None, next_intervention))
+    print("  %d first intervention: %s" % (0, next_intervention)) if debug else None
     selection = 'all' # on the first iteration, evaluate all possible candidate sets
-    while current_estimate != case.truth:
+    i = 1
+    current_estimate = None
+    while current_estimate != case.truth and i <= max_iter:
         new_env = case.sem.sample(n, population, noise_interventions = next_intervention)
         envs.append(new_env)
         result = icp(envs, case.target, selection=selection, debug=False)
+        current_estimate = result.estimate
         selection = result.accepted # in each iteration we only need to run ICP on the sets accepted in the previous one
-        (next_intervention, current_estimate) = policy.next(result)
-        history.append((result, current_estimate, next_intervention))
+        next_intervention = policy.next(result)
+        history.append((result, next_intervention))
         print("  %d current estimate: %s next intervention: %s" % (i, current_estimate, next_intervention)) if debug else None
         i += 1
     end = time.time()
@@ -131,12 +133,12 @@ class Policy():
         self.name = name
 
     def first(self, observational_data):
-        """Returns the initial intervention and initial estimate"""
-        return (None, set())
+        """Returns the initial intervention"""
+        return None
 
     def next(self, icp_results):
-        """Returns the next intervention and the current estimate"""
-        return (None, set())
+        """Returns the next intervention"""
+        return None
 
 class RandomPolicy(Policy):
     """Random policy: selects a previously unintervened variable at
@@ -150,10 +152,10 @@ class RandomPolicy(Policy):
     def first(self, _):
         self.idx = np.random.permutation(utils.all_but(self.target, self.p))
         self.i = 0
-        return (self.random_intervention(), set())
+        return self.random_intervention()
 
     def next(self, result):
-        return (self.random_intervention(), result.estimate)
+        return self.random_intervention()
 
     def random_intervention(self):
         var = self.idx[self.i]
@@ -176,13 +178,30 @@ class MBPolicy(Policy):
         else:
             self.mb = np.random.permutation(mb)
         self.i = 0
-        return (self.pick_intervention(), set())
+        return self.pick_intervention()
 
     def next(self, result):
-        intervention = self.pick_intervention()
-        return (intervention, result.estimate)
+        return self.pick_intervention()
     
     def pick_intervention(self):
         var = self.mb[self.i]
         self.i = (self.i+1) % len(self.mb)
         return np.array([[var, 0, 10]])
+
+class RatioPolicy(Policy):
+
+    def __init__(self, target, p, name):
+        self.interventions = []
+        self.ratios = np.zeros(p)
+        Policy.__init__(self, target, p, name)
+
+    def first(self, e):
+        return (None, set())
+
+    def next(self, result):
+        
+
+        
+        return (None, set())
+
+    
