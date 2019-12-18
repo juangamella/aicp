@@ -79,9 +79,12 @@ def graph_info(i, W):
     mb = parents.union(children, parents_of_children)
     return (parents, children, parents_of_children, mb)
 
-def plot_graph(W, ordering, block=False):
+def plot_graph(W, block=False):
     G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
-    pos = nx.drawing.layout.planar_layout(G, scale=0.5)
+    try:
+        pos = nx.drawing.layout.planar_layout(G, scale=0.5)
+    except nx.exception.NetworkXException:
+        pos = nx.drawing.layout.shell_layout(G, scale=0.5)
     edge_labels = nx.get_edge_attributes(G,'weight')
     p = len(W)
     node_labels = dict(zip(np.arange(p), map(lambda i: "$X_%d$" %i, range(p))))
@@ -239,3 +242,28 @@ def eg5():
                        [3,4,0,7],
                        [0,4,5,2,3,6]]
     return W, ordering, parents, markov_blankets
+
+def eg6():
+    W = np.array([[0, 0, 1, 0, 1],
+                  [0, 0, 1, 0, 1],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 1],
+                  [0, 0, 0, 0, 0]])
+    ordering = np.arange(len(W))
+    parents = [[],
+               [],
+               [0,1],
+               [2],
+               [0,1,3]]
+    children = [[2],
+                [2],
+                [3],
+                [4],
+                []]
+    markov_blankets = [[1,2,3,4],
+                       [0,2,3,4],
+                       [0,1,3],
+                       [2,4,0,1],
+                       [0,1,3]]
+    return W, ordering, parents, markov_blankets
+
