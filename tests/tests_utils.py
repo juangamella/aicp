@@ -40,6 +40,7 @@ from .context import src
 from src.sampling import dag_avg_deg
 
 # Tested functions
+from src import utils
 from src.utils import matrix_block, sampling_matrix, nonzero, all_but, graph_info
 
 class UtilsTests(unittest.TestCase):
@@ -131,10 +132,20 @@ class UtilsTests(unittest.TestCase):
                    {0,4,5,2,3,6}]
         for i in range(len(W)):
             #print("Testing info for node %d" %i)
-            graph_info(i, W)
             (parents, children, poc, mb) = graph_info(i, W)
             #print(parents, children, poc, mb)
             self.assertEqual(parents, true_parents[i])
             self.assertEqual(children, true_children[i])
             self.assertEqual(poc, true_poc[i])
             self.assertEqual(mb, true_mb[i])
+
+    def test_graph_info_2(self):
+        graphs = [utils.eg1(), utils.eg2(), utils.eg3(), utils.eg4(), utils.eg5(), utils.eg6()]
+        for k,graph in enumerate(graphs):
+            (W, ordering, true_parents, true_mb) = graph
+            for i in range(len(W)):
+                #print("%d Testing info for node %d" % (k+1,i))
+                (parents, children, poc, mb) = graph_info(i, W)
+                #print(parents, children, poc, mb)
+                self.assertEqual(parents, set(true_parents[i]))
+                self.assertEqual(mb, set(true_mb[i]))
