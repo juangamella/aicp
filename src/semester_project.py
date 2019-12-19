@@ -98,10 +98,8 @@ use_parallelism = True
 # --------------------------------------------------------------------
 # Run or load experiments
 
-if use_results is not None:
-    results = load_results(use_results)
-else:
-    N = 100
+if use_results is None:
+    N = 32
     runs = 8
     
     # Generate test cases
@@ -140,24 +138,24 @@ else:
     filename = save_results(results)
     print("Saved to file \"%s\"" % filename)
 
-# --------------------------------------------------------------------
-# Plotting
+else:
+    # --------------------------------------------------------------------
+    # Plotting
+    
+    colors = ["#ff7878", "#ffbc78", "#ffff78", "#bcff78", "#78ffbc"]
+    markers = ["o", "*", "+"]
+    
+    runs = len(results[0])
+    N = len(results[0][0])
+    
+    no_ints = np.zeros((len(results), runs, N))
 
-colors = ["#ff7878", "#ffbc78", "#ffff78", "#bcff78", "#78ffbc"]
-markers = ["o", "*", "+"]
-
-runs = len(results[0])
-N = len(results[0][0])
-
-no_ints = np.zeros((len(results), runs, N))
-
-for k, policy_runs in enumerate(results):
-    name = policy_runs[0][0].policy.name
-    print("Plotting intervention numbers for policy %d: %s" % (k, name))
-    for i,run_results in enumerate(policy_runs):
-        no_ints[k, i,:] = list(map(lambda result: len(result.interventions()), run_results))
-        plt.scatter(np.arange(N), no_ints[k, i,:], c=colors[k], marker=markers[k])
-#plt.legend()
-plt.show(block=False)
-
-print(no_ints.mean(axis=1))
+    for k, policy_runs in enumerate(results):
+        name = policy_runs[0][0].policy.name
+        print("Plotting intervention numbers for policy %d: %s" % (k, name))
+        for i,run_results in enumerate(policy_runs):
+            no_ints[k, i,:] = list(map(lambda result: len(result.interventions()), run_results))
+            plt.scatter(np.arange(N), no_ints[k, i,:], c=colors[k], marker=markers[k])
+    plt.legend()
+    plt.show(block=False)
+    print(no_ints.mean(axis=1))
