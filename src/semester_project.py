@@ -93,7 +93,8 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, ma
         raise Exception("Not in __main__module. Name = ", __name__)
     
 use_results = None
-use_parallelism = True
+use_parallelism = False
+debug = True
 
 # --------------------------------------------------------------------
 # Run or load experiments
@@ -101,7 +102,7 @@ use_parallelism = True
 if use_results is not None:
     results = load_results(use_results)
 else:
-    N = 100
+    N = 64
     runs = 8
     
     # Generate test cases
@@ -128,9 +129,9 @@ else:
         
     for i in range(runs):
         print("--- RUN %d ---" % i)
-        pop_mb_results.append(evaluation_func(policy.MBPolicy, cases, name="markov blanket", population=True, debug=False, random_state=None))
-        pop_ratio_results.append(evaluation_func(policy.RatioPolicy, cases, name="ratio policy", population=True, debug=False, random_state=None))
-        pop_rand_results.append(evaluation_func(policy.RandomPolicy, cases, name="random", population=True, debug=False, random_state=None))
+        pop_mb_results.append(evaluation_func(policy.MBPolicy, cases, name="markov blanket", population=True, debug=debug, random_state=None))
+        pop_ratio_results.append(evaluation_func(policy.RatioPolicy, cases, name="ratio policy", population=True, debug=debug, random_state=None))
+        pop_rand_results.append(evaluation_func(policy.RandomPolicy, cases, name="random", population=True, debug=debug, random_state=None))
 
     end = time.time()
     print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
