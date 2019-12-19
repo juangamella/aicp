@@ -65,7 +65,7 @@ def nonzero(A, tol=1e-12):
     """Return the indices of the nonzero (up to tol) elements in A"""
     return np.where(np.abs(A) > tol)[0]
 
-def graph_info(i, W):
+def graph_info(i, W, interventions = None):
     """Returns the parents, children, parents of children and markov
     blanket of variable i in DAG W, using the graph structure
     """
@@ -78,6 +78,24 @@ def graph_info(i, W):
     if len(children) > 0: parents_of_children.remove(i)
     mb = parents.union(children, parents_of_children)
     return (parents, children, parents_of_children, mb)
+
+def stable_blanket(i, W, interventions = set()):
+    """Return the stable blanket using the graph structure"""
+    G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
+    parents = set(G.predecessors(i))
+    children = set(G.successors(i))
+    unstable_descendants = set()
+    for j in interventions:
+        if j in children:
+            unstable_descendants.update({j})
+            unstable_descendants.update(nx.algorithms.dag.descendants(G,j))
+    stable_children = set.difference(children, unstable_descendants)
+    parents_of_stable_children = set()
+    for child in stable_children:
+        parents_of_stable_children.update(G.predecessors(child))
+    if len(stable_children) > 0: parents_of_stable_children.remove(i)
+    sb = set.union(parents, stable_children, parents_of_stable_children)
+    return sb
 
 def plot_graph(W, block=False):
     G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)

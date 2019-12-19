@@ -41,7 +41,7 @@ from src.sampling import dag_avg_deg
 
 # Tested functions
 from src import utils
-from src.utils import matrix_block, sampling_matrix, nonzero, all_but, graph_info
+from src.utils import matrix_block, sampling_matrix, nonzero, all_but, graph_info, stable_blanket
 
 class UtilsTests(unittest.TestCase):
     def test_matrix_block(self):
@@ -149,3 +149,17 @@ class UtilsTests(unittest.TestCase):
                 #print(parents, children, poc, mb)
                 self.assertEqual(parents, set(true_parents[i]))
                 self.assertEqual(mb, set(true_mb[i]))
+
+    def test_stable_blanket(self):
+        W, _, _, markov_blanket = utils.eg5()
+        target = 3
+        intervened_variables = [set(), {2}, {7}, {6}, {5}]
+        truth = [markov_blanket,
+                 markov_blanket,
+                 markov_blanket,
+                 {2, 5, 7},
+                 {2}]
+        interventions = set()
+        for i, var in enumerate(intervened_variables):
+            interventions.update(var)
+            self.assertTrue(truth[i], stable_blanket(target, W, interventions))
