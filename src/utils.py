@@ -31,7 +31,6 @@
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-import network2tikz as tikz
 
 def matrix_block(M, rows, cols):
     """
@@ -130,22 +129,6 @@ def plot_graph(W, block=False):
     nx.draw(G,pos, **params)
     fig.set_facecolor("white")
     plt.show(block = block)
-
-def graph_to_latex(W, ordering, name):
-    p = len(W)
-    G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
-    pos = nx.drawing.layout.planar_layout(G)
-    # Plotting parameters
-    visual_style = {}
-    visual_style['vertex_size'] = 0.5
-    visual_style['vertex_color'] = 'white'
-    visual_style['vertex_opacity'] = 1
-    labels = list(map(lambda i: "X_%d" %i, range(p)))
-    visual_style['vertex_label'] = labels
-    visual_style['node_math_mode'] = True
-    visual_style['edge_width'] = 0.8
-    visual_style['edge_color'] = 'black'
-    tikz.plot(G, name + ".tex", layout=pos, canvas=(12,12), margin=0.5, **visual_style)
 
     
 # Example graphs
