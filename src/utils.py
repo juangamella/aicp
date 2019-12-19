@@ -97,6 +97,16 @@ def stable_blanket(i, W, interventions = set()):
     sb = set.union(parents, stable_children, parents_of_stable_children)
     return sb
 
+def descendants(i, W):
+    """Return the descendants of a node using the graph structure"""
+    G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
+    return nx.algorithms.dag.descendants(G, i)
+
+def ancestors(i, W):
+    """Return the ancestors of a node using the graph structure"""
+    G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
+    return nx.algorithms.dag.ancestors(G, i)
+
 def plot_graph(W, block=False):
     G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
     try:
