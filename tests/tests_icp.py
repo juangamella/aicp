@@ -83,6 +83,13 @@ class DataTests(unittest.TestCase):
             self.assertTrue((target == truth[i]).all())
             truth_pooled = np.hstack([truth_pooled, truth[i]])
         self.assertTrue((truth_pooled == data.pooled_targets()).all())
+
+    def test_idx(self):
+        data = Data(self.environments, self.target)
+        truth = []
+        for i,ne in enumerate(self.N):
+            truth = np.hstack([truth, np.ones(ne)*i])
+        self.assertTrue((truth == data.idx).all())
         
     def test_data(self):
         data = Data(self.environments, self.target)
