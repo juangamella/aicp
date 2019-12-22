@@ -114,7 +114,7 @@ def plot_graph(W, block=False):
         pos = nx.drawing.layout.shell_layout(G, scale=0.5)
     edge_labels = nx.get_edge_attributes(G,'weight')
     p = len(W)
-    node_labels = dict(zip(np.arange(p), map(lambda i: "$X_%d$" %i, range(p))))
+    node_labels = dict(zip(np.arange(p), map(lambda i: "$X_{%d}$" %i, range(p))))
     # Plot
     fig = plt.figure()
     params = {'node_color': 'white',
