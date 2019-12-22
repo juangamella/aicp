@@ -81,10 +81,6 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
                 accepted.append(s)
                 S = S.intersection(s)
                 mses.append(error)
-                if max_size !=0:
-                    intervals = confidence_intervals(s, beta, data, alpha)
-                    print(intervals)
-                    conf_intervals.update(s, intervals)
             if debug:
                 color = "red" if reject else "green"
                 beta_str = np.array_str(beta, precision=2)
@@ -94,7 +90,7 @@ def icp(environments, target, alpha=0.01, max_predictors=None, debug=False, stop
             if len(S) == 0 and stop_early:
                 break;
         max_size += 1
-    return Result(S, accepted, rejected, mses, conf_intervals)
+    return Result(S, accepted, rejected, mses, None)
 
 # Support functions to icp
 
@@ -105,10 +101,13 @@ def test_hypothesis(coefs, data, debug=False):
     """
     mean_pvalues = np.zeros(data.n_env)
     var_pvalues = np.zeros(data.n_env)
+    #residuals = data.pooled_targets() - data.pooled_data() @ coefs
     for i in range(data.n_env):
         (env_targets, env_data, others_targets, others_data) = data.split(i)
         residuals_env = env_targets - env_data @ coefs
         residuals_others = others_targets - others_data @ coefs
+        # residuals_env = residuals[data.idx == i]
+        # residuals_others = residuals[data.idx != i]
         mean_pvalues[i] = t_test(residuals_env, residuals_others)
         var_pvalues[i] = f_test(residuals_env, residuals_others)
         assert(mean_pvalues[i] <= 1)
@@ -128,8 +127,8 @@ def regress(s, data, pooling=True, debug=False):
         X = data.pooled_data()[:,supp]
         Y = data.pooled_targets()
     coefs = np.zeros(data.p+1)
-    coefs[supp] = LinearRegression(fit_intercept=False).fit(X, Y).coef_
-    error = mse(Y, data.pooled_data() @ coefs)
+    coefs[supp] = np.linalg.lstsq(X,Y, None)[0]
+    error = 0 #mse(Y, data.pooled_data() @ coefs)
     return coefs, error
 
 def mse(true, pred):
@@ -216,6 +215,14 @@ class Data():
         self.targets = list(map(lambda e: e[:,target], environments))
         self.data = list(map(lambda e: np.hstack([e, np.ones((len(e),1))]), environments))
         self.target = target
+        # Construct an index array
+        self.idx = np.zeros(self.n)
+        ends = np.cumsum(self.N)
+        starts = np.zeros_like(ends)
+        starts[1::] = ends[:-1]
+        for i,start in enumerate(starts):
+            end = ends[i]
+            self.idx[start:end] = i
 
     def pooled_data(self):
         """Returns the observations of all variables except the target,
