@@ -49,16 +49,25 @@ def load_results(filename):
     f = open(filename, "rb")
     return pickle.load(f)
 
-def gen_cases(n, p, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_max=0, random_state=42):
+def gen_cases(n, P, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_max=0, random_state=39):
     if random_state is not None:
         np.random.seed(random_state)
     cases = []
-    for i in range(n):
+    i = 0
+    while i < n:
+        if isinstance(P, tuple):
+            p = np.random.randint(P[0], P[1])
+        else:
+            p = P
+        print("Generating case %d with %d nodes" % (i,p))
         W, ordering = sampling.dag_avg_deg(p, k, w_min, w_max)
-        sem = sampling.LGSEM(W, ordering, (var_min, var_max), (int_min, int_max))
         target = np.random.choice(range(p))
-        (truth, _, _, _) = utils.graph_info(target, W)
-        cases.append(policy.TestCase(i, sem, target, truth))
+        parents = utils.graph_info(target, W)[0]
+        if len(parents) > 0:
+            sem = sampling.LGSEM(W, ordering, (var_min, var_max), (int_min, int_max))
+            (truth, _, _, _) = utils.graph_info(target, W)
+            cases.append(policy.TestCase(i, sem, target, truth))
+            i += 1
     return cases
 
 # --------------------------------------------------------------------
@@ -81,7 +90,8 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, ma
                       'n': n,
                       'population': population,
                       'max_iter': max_iter,
-                      'debug': debug}
+                      'debug': debug,
+                      'random_state': np.random.randint(999999)}
         iterable.append(parameters)
     if __name__ == '__main__':
         p = multiprocessing.Pool(n_workers)
@@ -91,72 +101,77 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, ma
         return result
     else:
         raise Exception("Not in __main__module. Name = ", __name__)
-    
-use_results = None
-use_parallelism = False
-debug = True
 
-# --------------------------------------------------------------------
-# Run or load experiments
+if True:#__name__ == '__main__':
+    use_results = None
+    use_parallelism = True
+    plot = False
+    debug = True
 
-if use_results is None:
-    N = 64
-    runs = 8
-    
-    # Generate test cases
-    cases = gen_cases(N, 12, 2, 0.1, 1)
-
-    # Evaluate
-    
-    start = time.time()
-    print("\n\nBeggining experiments at %s\n\n" % datetime.now())
-
-    pop_rand_results = []
-    pop_mb_results = []
-    pop_ratio_results = []    
-
-    if use_parallelism and __name__ == '__main__':
-        print("Running in parallel")
-        evaluation_func = evaluate_policy
-    elif use_parallelism:
-        print("Not in __main__ module, running sequentially")
-        evaluation_func = policy.evaluate_policy
-    else:
-        print("Running sequentially")
-        evaluation_func = policy.evaluate_policy
-        
-    for i in range(runs):
-        print("--- RUN %d ---" % i)
-        pop_mb_results.append(evaluation_func(policy.MBPolicy, cases, name="markov blanket", population=True, debug=debug, random_state=None))
-        pop_ratio_results.append(evaluation_func(policy.RatioPolicy, cases, name="ratio policy", population=True, debug=debug, random_state=None))
-        pop_rand_results.append(evaluation_func(policy.RandomPolicy, cases, name="random", population=True, debug=debug, random_state=None))
-
-    end = time.time()
-    print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
-    
-    # Save results
-    results = [pop_mb_results, pop_ratio_results, pop_rand_results]
-    filename = save_results(results)
-    print("Saved to file \"%s\"" % filename)
-
-else:
     # --------------------------------------------------------------------
-    # Plotting
+    # Run or load experiments
     
-    colors = ["#ff7878", "#ffbc78", "#ffff78", "#bcff78", "#78ffbc"]
-    markers = ["o", "*", "+"]
-    
-    runs = len(results[0])
-    N = len(results[0][0])
-    
-    no_ints = np.zeros((len(results), runs, N))
+    if use_results is None:
+        N = 32
+        runs = 8
+        max_iter = 14
 
-    for k, policy_runs in enumerate(results):
-        name = policy_runs[0][0].policy.name
-        print("Plotting intervention numbers for policy %d: %s" % (k, name))
-        for i,run_results in enumerate(policy_runs):
-            no_ints[k, i,:] = list(map(lambda result: len(result.interventions()), run_results))
-            plt.scatter(np.arange(N), no_ints[k, i,:], c=colors[k], marker=markers[k])
-    plt.legend()
-    plt.show(block=False)
-    print(no_ints.mean(axis=1))
+        # Generate test cases
+        cases = gen_cases(N, (6,14), 3, 1, 2, 0.1, 1, 0 , 1)
+
+        # Evaluate
+
+        start = time.time()
+        print("\n\nBeggining experiments at %s\n\n" % datetime.now())
+
+        pop_rand_results = []
+        pop_mb_results = []
+        pop_ratio_results = []    
+
+        if use_parallelism and __name__ == '__main__':
+            print("Running in parallel")
+            evaluation_func = evaluate_policy
+        elif use_parallelism:
+            print("Not in __main__ module, running sequentially")
+            evaluation_func = policy.evaluate_policy
+        else:
+            print("Running sequentially")
+            evaluation_func = policy.evaluate_policy
+
+        for i in range(runs):
+            print("--- RUN %d ---" % i)
+            pop_mb_results.append(evaluation_func(policy.MBPolicy, cases, name="markov blanket", population=True, debug=debug, random_state=None, max_iter=max_iter))
+            pop_ratio_results.append(evaluation_func(policy.RatioPolicy, cases, name="ratio policy", population=True, debug=debug, random_state=None, max_iter=max_iter))
+            pop_rand_results.append(evaluation_func(policy.RandomPolicy, cases, name="random", population=True, debug=debug, random_state=None, max_iter=max_iter))
+
+        end = time.time()
+        print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
+
+        # Save results
+        results = [pop_mb_results, pop_ratio_results, pop_rand_results]
+        filename = save_results(results)
+        print("Saved to file \"%s\"" % filename)
+
+    else:
+        results = load_results(use_results)
+
+    if plot:
+        # --------------------------------------------------------------------
+        # Plotting
+
+        colors = ["#ff7878", "#ffbc78", "#ffff78", "#bcff78", "#78ffbc"]
+        markers = ["o", "*", "+"]
+
+        runs = len(results[0])
+        N = len(results[0][0])
+
+        no_ints = np.zeros((len(results), runs, N))
+
+        for k, policy_runs in enumerate(results):
+            name = policy_runs[0][0].policy.name
+            print("Plotting intervention numbers for policy %d: %s" % (k, name))
+            for i,run_results in enumerate(policy_runs):
+                no_ints[k, i,:] = list(map(lambda result: len(result.interventions()), run_results))
+                plt.scatter(np.arange(N), no_ints[k, i,:], c=colors[k], marker=markers[k])
+                plt.legend()
+                plt.show(block=False)
