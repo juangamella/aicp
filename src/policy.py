@@ -40,14 +40,12 @@ import networkx as nx
 
 def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, max_iter=100, random_state=42, debug=False):
     """Evaluate a policy over the given test cases, in a sequential manner"""
-    if random_state is not None:
-        np.random.seed(random_state)
     results = []
     start = time.time()
     print("Evaluating policy \"%s\" sequentially..." % name)
     for i,case in enumerate(cases):
         print("%0.2f%% Evaluating policy \"%s\" on test case %d (truth = %s)..." % (i/len(cases)*100, name, case.id, case.truth)) if debug else None
-        result = run_policy(policy, case, name=name, n=n, population=population, max_iter=max_iter, debug=debug)
+        result = run_policy(policy, case, name=name, n=n, population=population, max_iter=max_iter, debug=debug, random_state=random_state)
         if debug:
             msg = " done (%0.2f seconds). truth: %s estimate: %s" % (result.time, case.truth, result.estimate)
             color = "green" if case.truth == result.estimate else "red"
@@ -57,10 +55,12 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, ma
     print("  done (%0.2f seconds)" % (end-start))
     return results
 
-def run_policy(policy, case, name=None, n=round(1e5), max_iter=100, population=False, debug=False):
+def run_policy(policy, case, name=None, n=round(1e5), max_iter=100, population=True, debug=False, random_state=42):
     """Execute a policy over a given test case, returning a returning a
     PolicyEvaluationResults object containing the result"""
     # Initialization
+    if random_state is not None:
+        np.random.seed(random_state)
     policy = policy(case.target, case.sem.p, name=name)
     icp = population_icp.population_icp if population else icp.icp
     history = [] # store the ICP result and next intervention
@@ -74,34 +74,43 @@ def run_policy(policy, case, name=None, n=round(1e5), max_iter=100, population=F
     result = None
     selection = 'all' # on the first iteration, evaluate all possible candidate sets
     i = 1
+    ####
+    parents, _, _, _ = utils.graph_info(case.target, case.sem.W)
+    ####
     while current_estimate != case.truth and i <= max_iter:
-        history.append((result, next_intervention))
-        print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, next_intervention)) if debug else None
+        history.append((current_estimate, next_intervention))
+        print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, len(selection), next_intervention)) if debug else None
+        # Perform intervention
         new_env = case.sem.sample(n, population, noise_interventions = next_intervention)
         envs.append(new_env)
+        # Run ICP
         result = icp(envs, case.target, selection=selection, debug=False)
         current_estimate = result.estimate
         selection = result.accepted # in each iteration we only need to run ICP on the sets accepted in the previous one
         next_intervention = policy.next(result)
-        #######
-        parents, children, _, _ = utils.graph_info(case.target, case.sem.W)
+        ######
         var_ratios = ratios(case.sem.p, result.accepted)
-        descendants = utils.descendants(case.target, case.sem.W)
         for j,r in enumerate(var_ratios):
-            if j != case.target and r < 0.5 and j in parents:
-                txt = "Hypothesis is false %d %s case_id: %s, target: %d, truth: %s, policy: %s, interventions %s"
-                params = (j, var_ratios, case.id, case.target, case.truth, policy.name, history)
-                print(txt % params)
-        #######
+            if j in parents and r < 0.5:
+                print(parents)
+                print(var_ratios)
+                print("Hypothesis is false! (case_id: %s, target: %d, interventions: %s)" % (case.id, case.target, history))
+        ######
         i += 1
     end = time.time()
+    if i > max_iter:
+        print(" (case_id: %s, target: %d, truth: %s, policy: %s) reached %d > %d iterations" % (case.id, case.target, case.truth, policy.name, i, max_iter))
     elapsed = end - start
+    print("  (case_id: %s) done (%0.2f seconds)" % (case.id, elapsed)) if debug else None
     # Return result
     return EvaluationResult(policy, case, current_estimate, history, elapsed)
     
 def jaccard_distance(A, B):
     """Compute the jaccard distance between sets A and B"""
-    return len(set.intersection(A,B)) / len(set.union(A,B))
+    if len(A) == 0 and len(B) == 0:
+        return 1
+    else:
+        return len(set.intersection(A,B)) / len(set.union(A,B))
 
 def ratios(p, accepted):    
     one_hot = np.zeros((len(accepted), p))
@@ -127,11 +136,11 @@ class EvaluationResult():
 
     def interventions(self):
         """Return the interventions carried out by the policy"""
-        return list(map(lambda step: step[1], self.history[0:len(self.history)-1]))
+        return list(map(lambda step: step[1], self.history))
 
     def intervened_variables(self):
         """Return the intervened variables"""
-        return list(map(lambda step: step[1][0,0], self.history[0:len(self.history)-1]))
+        return list(map(lambda step: step[1][0,0], self.history))
     
 class TestCase():
     """Object that represents a test case
@@ -231,8 +240,8 @@ class RatioPolicy(Policy):
         diff = new_ratios - self.current_ratios
         last_intervention = self.interventions[-1]
         #print(new_ratios)
-        for i,d in enumerate(diff):
-            if new_ratios[i] < 0.5 and i in self.candidates:
+        for i,r in enumerate(new_ratios):
+            if r < 0.5 and i in self.candidates:
                 #print("removing %d" % i)
                 self.candidates.remove(i)
         self.current_ratios = new_ratios
@@ -243,10 +252,7 @@ class RatioPolicy(Policy):
         if choice == set(): # Have intervened on all variables or there are no parents
             None
         else:
-            var, max_ratio = None, 0
-            for i in np.random.permutation(list(choice)):
-                if self.current_ratios[i] >= max_ratio:
-                    var, max_ratio = i, self.current_ratios[i]
+            var = np.random.choice(list(choice))
             self.interventions.append(var)
             return np.array([[var, 0, 10]])
     
