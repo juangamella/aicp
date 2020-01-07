@@ -77,7 +77,6 @@ def gen_cases(n, P, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_ma
 
 def wrapper(parameters):
     result = policy.run_policy(**parameters)
-    print("  case %d done" % parameters['case'].id)
     return result
 
 def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, max_iter=100, random_state=None, debug=False, n_workers=4):
@@ -108,8 +107,8 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, ma
 # Default settings
 arguments = {
     'n_workers': {'default': 4, 'type': int},
-    'use_parallelism': {'default': True, 'type': bool},
-    'debug': {'default': True, 'type': bool},
+    'seq': {'default': False, 'type': bool},
+    'debug': {'default': False, 'type': bool},
     'avg_deg': {'default': 2, 'type': float},
     'G': {'default': 10, 'type': int},
     'runs': {'default': 1, 'type': int},
@@ -125,14 +124,16 @@ arguments = {
 
 # Settings from input
 parser = argparse.ArgumentParser(description='Run experiments')
-for name, args in arguments.items():
+for name, params in arguments.items():
+    if params['type']==bool:
+        action = {'action': 'store_true'}
+    else:
+        action = {'action': 'store', 'type': params['type']}
     parser.add_argument("--" + name,
-                        action="store",
+                        **action,
                         dest=name,
-                        nargs=1,
-                        type=args['type'],
                         required=False,
-                        default=args['default'])
+                        default=params['default'])
 
 args = parser.parse_args()
 print()
@@ -143,7 +144,7 @@ print()
 # Run experiments
 max_iter = args.n_max
 debug = args.debug
-
+use_parallelism = not args.seq
 P = args.n_min if args.n_min == args.n_max else (args.n_min, args.n_max)
 
 # Generate test cases
@@ -167,21 +168,28 @@ pop_rand_results = []
 pop_mb_results = []
 pop_ratio_results = []    
 
-if args.use_parallelism and __name__ == '__main__':
+evaluation_params = {'population': True,
+                     'debug': False,
+                     'random_state': None,
+                     'max_iter': max_iter}
+
+if use_parallelism and __name__ == '__main__':
     print("Running in parallel")
     evaluation_func = evaluate_policy
-elif args.use_parallelism:
+    evaluation_params['n_workers'] = args.n_workers
+elif use_parallelism:
     print("Not in __main__ module, running sequentially")
     evaluation_func = policy.evaluate_policy
 else:
     print("Running sequentially")
     evaluation_func = policy.evaluate_policy
 
+    
 for i in range(args.runs):
     print("--- RUN %d ---" % i)
-    pop_mb_results.append(evaluation_func(policy.MBPolicy, cases, name="markov blanket", population=True, debug=debug, random_state=None, max_iter=max_iter, n_workers=args.n_workers))
-    pop_ratio_results.append(evaluation_func(policy.RatioPolicy, cases, name="ratio policy", population=True, debug=debug, random_state=None, max_iter=max_iter, n_workers=args.n_workers))
-    pop_rand_results.append(evaluation_func(policy.RandomPolicy, cases, name="random", population=True, debug=debug, random_state=None, max_iter=max_iter, n_workers=args.n_workers))
+    pop_mb_results.append(evaluation_func(policy.MBPolicy, cases, name="markov blanket", **evaluation_params))
+    pop_ratio_results.append(evaluation_func(policy.RatioPolicy, cases, name="ratio policy", **evaluation_params))
+    pop_rand_results.append(evaluation_func(policy.RandomPolicy, cases, name="random", **evaluation_params))
 
 end = time.time()
 print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
