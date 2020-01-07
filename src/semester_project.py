@@ -47,10 +47,6 @@ def save_results(results, filename=None):
     f.close()
     return filename
 
-def load_results(filename):
-    f = open(filename, "rb")
-    return pickle.load(f)
-
 def gen_cases(n, P, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_max=0, random_state=39):
     if random_state is not None:
         np.random.seed(random_state)
@@ -58,7 +54,7 @@ def gen_cases(n, P, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_ma
     i = 0
     while i < n:
         if isinstance(P, tuple):
-            p = np.random.randint(P[0], P[1])
+            p = np.random.randint(P[0], P[1]+1)
         else:
             p = P
         W, ordering = sampling.dag_avg_deg(p, k, w_min, w_max)
