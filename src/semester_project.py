@@ -61,7 +61,6 @@ def gen_cases(n, P, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_ma
             p = np.random.randint(P[0], P[1])
         else:
             p = P
-        print("Generating case %d with %d nodes" % (i,p))
         W, ordering = sampling.dag_avg_deg(p, k, w_min, w_max)
         target = np.random.choice(range(p))
         parents = utils.graph_info(target, W)[0]
@@ -195,6 +194,12 @@ end = time.time()
 print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
 
 # Save results
+
+filename = "experiments/results_%d" % end
+for k,v in vars(args).items():
+    filename = filename + "_" + k + ":" + str(v)
+filename = filename + ".pickle"
+
 results = [pop_mb_results, pop_ratio_results, pop_rand_results]
-filename = save_results(results)
+save_results(results, filename)
 print("Saved to file \"%s\"" % filename)
