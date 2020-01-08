@@ -1,4 +1,4 @@
-# Copyright 2019 Juan Luis Gamella Martin
+2# Copyright 2019 Juan Luis Gamella Martin
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -78,7 +78,7 @@ def population_icp(distributions, target, debug=False, selection='all'):
     result = icp.Result(S, accepted, rejected, mses)
     return result
 
-def reject_hypothesis(S, y, distributions):
+def reject_hypothesis(S, y, distributions, atol=1e-8, rtol=1e-4):
     """A set is generalizable if the conditional distribution Y|Xs remains
     invariant across the observed environments. Because we are dealing
     with normal distributions, if the mean and variance are the same, the
@@ -93,9 +93,9 @@ def reject_hypothesis(S, y, distributions):
     i = 1
     while not rejected and i < len(distributions):
         (new_coefs, new_intercept) = distributions[i].regress(y,S)
-        if np.allclose(coefs, new_coefs) and np.allclose(intercept, new_intercept):
+        if np.allclose(coefs, new_coefs, rtol, atol) and np.allclose(intercept, new_intercept, rtol, atol):
             new_cov = distributions[i].conditional(y, S, np.zeros_like(S)).covariance
-            if np.allclose(cov, new_cov):
+            if np.allclose(cov, new_cov, rtol, atol):
                 i += 1
             else:
                 rejected = True
