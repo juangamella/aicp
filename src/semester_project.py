@@ -125,10 +125,10 @@ for name, params in arguments.items():
     else:
         action = {'action': 'store', 'type': params['type']}
     parser.add_argument("--" + name,
-                        **action,
                         dest=name,
                         required=False,
-                        default=params['default'])
+                        default=params['default'],
+                        **action)
 
 args = parser.parse_args()
 print()
