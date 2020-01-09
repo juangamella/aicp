@@ -109,12 +109,12 @@ arguments = {
     'runs': {'default': 1, 'type': int},
     'n_min': {'default': 8, 'type': int},
     'n_max': {'default': 8, 'type': int},
-    'w_min': {'default': 1, 'type': int},
-    'w_max': {'default': 2, 'type': int},
-    'var_min': {'default': 0.1, 'type': int},
-    'var_max': {'default': 1, 'type': int},
-    'int_min': {'default': 0, 'type': int},
-    'int_max': {'default': 1, 'type': int},
+    'w_min': {'default': 1, 'type': float},
+    'w_max': {'default': 2, 'type': float},
+    'var_min': {'default': 0.1, 'type': float},
+    'var_max': {'default': 1, 'type': float},
+    'int_min': {'default': 0, 'type': float},
+    'int_max': {'default': 1, 'type': float},
     'random_state': {'default': 42, 'type': int}}
 
 # Settings from input
