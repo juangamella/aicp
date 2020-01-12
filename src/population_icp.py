@@ -78,7 +78,7 @@ def population_icp(distributions, target, debug=False, selection='all'):
     result = icp.Result(S, accepted, rejected, mses)
     return result
 
-def reject_hypothesis(S, y, distributions, atol=1e-8, rtol=1e-4):
+def reject_hypothesis(S, y, distributions, atol=1e-8, rtol=1e-3):
     """A set is generalizable if the conditional distribution Y|Xs remains
     invariant across the observed environments. Because we are dealing
     with normal distributions, if the mean and variance are the same, the
