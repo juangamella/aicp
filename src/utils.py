@@ -130,6 +130,11 @@ def plot_graph(W, block=False):
     fig.set_facecolor("white")
     plt.show(block = block)
 
+def allclose(A, B, rtol=1e-5, atol=1e-8):
+    """Use np.allclose to compare, but relative tolerance is relative to
+    the smallest element compared
+    """
+    return np.allclose(np.maximum(A,B), np.minimum(A,B), rtol, atol)
     
 # Example graphs
 
