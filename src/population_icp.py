@@ -35,7 +35,7 @@ from functools import reduce
 from src import utils
 from src import icp
 
-def population_icp(distributions, target, debug=False, selection='all'):
+def population_icp(distributions, target, debug=False, selection='all', atol=1e-8, rtol=1e-3):
     """Perform ICP over a set of Gaussian Distributions, each
     representing a different environment
     """
@@ -61,7 +61,7 @@ def population_icp(distributions, target, debug=False, selection='all'):
     S = base
     for s in candidates:
         s = set(s)
-        reject = reject_hypothesis(s, target, distributions)
+        reject = reject_hypothesis(s, target, distributions, atol, rtol)
         (pooled_coefs, pooled_intercept, pooled_mse) = pooled_regression(target, list(s), distributions)
         if reject:
             rejected.append(s)
@@ -78,7 +78,7 @@ def population_icp(distributions, target, debug=False, selection='all'):
     result = icp.Result(S, accepted, rejected, mses)
     return result
 
-def reject_hypothesis(S, y, distributions, atol=1e-8, rtol=1e-4):
+def reject_hypothesis(S, y, distributions, atol=1e-8, rtol=1e-3, check_covariance = False):
     """A set is generalizable if the conditional distribution Y|Xs remains
     invariant across the observed environments. Because we are dealing
     with normal distributions, if the mean and variance are the same, the
@@ -95,7 +95,7 @@ def reject_hypothesis(S, y, distributions, atol=1e-8, rtol=1e-4):
         (new_coefs, new_intercept) = distributions[i].regress(y,S)
         if np.allclose(new_coefs, coefs, rtol, atol) and np.allclose(new_intercept, intercept, rtol, atol):
             new_cov = distributions[i].conditional(y, S, np.zeros_like(S)).covariance
-            if np.allclose(cov, new_cov, rtol, atol):
+            if np.allclose(cov, new_cov, rtol, atol) or not check_covariance:
                 i += 1
             else:
                 rejected = True
