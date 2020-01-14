@@ -74,18 +74,27 @@ from src import policy
 
 import pickle
 
-f = open("case_151.pickle", "rb")
+f = open("scratch/case_381.pickle", "rb")
 case = pickle.load(f)
 
 sem = case.sem
 
 d = sem.sample(population=True)
-d1 = sem.sample(population=True, noise_interventions = np.array([[1, 0, 10]]))
+d11 = sem.sample(population=True, noise_interventions = np.array([[11, 0, 10]]))
+d3 = sem.sample(population=True, noise_interventions = np.array([[3, 0, 10]]))
 
-result = population_icp.population_icp([d, d1], 7, debug=True)
+result = population_icp.population_icp([d, d11, d3], case.target, debug=False, atol=1e-2, rtol=1e-5)
 
 p = sem.p
 R = policy.ratios(p, result.accepted)
+print("Parents: %s" % case.truth)
 print(R)
 for i,r in enumerate(R):
     print("X%d = %d/%d=%0.4f" % (i, r*len(result.accepted), len(result.accepted), r))
+
+
+def diff(A, B):
+    """Return elements in A that are not in B"""
+    return [i for i in A if i not in B]
+
+#(coefs, intercept) = d.regress(case.target, S)
