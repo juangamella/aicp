@@ -131,7 +131,7 @@ for name, params in arguments.items():
                         **action)
 
 args = parser.parse_args()
-args = argparse.Namespace(G=1000, avg_deg=4.0, debug=False, int_max=1, int_min=0, n_max=16, n_min=8, n_workers=100, random_state=2, runs=16, seq=False, var_max=1, var_min=0.1, w_max=3.0, w_min=1.5)
+args = argparse.Namespace(G=1000, avg_deg=4.0, debug=False, int_max=1, int_min=0, n_max=16, n_min=8, n_workers=265, random_state=2, runs=16, seq=False, var_max=1, var_min=0.1, w_max=3.0, w_min=1.5)
 print()
 print(args)
 print()
