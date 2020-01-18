@@ -189,7 +189,7 @@ class RandomPolicy(Policy):
     def random_intervention(self):
         var = self.idx[self.i]
         self.i = (self.i+1) % len(self.idx)
-        return np.array([[var, 0, 10]])
+        return np.array([[var, 10, 2]])
 
 class MBPolicy(Policy):
     """Markov Blanket policy: only considers subsets (and intervenes on
@@ -215,7 +215,7 @@ class MBPolicy(Policy):
     def pick_intervention(self):
         var = self.mb[self.i]
         self.i = (self.i+1) % len(self.mb)
-        return np.array([[var, 0, 10]])
+        return np.array([[var, 10, 2]])
 
 class RatioPolicy(Policy):
 
@@ -232,7 +232,7 @@ class RatioPolicy(Policy):
         else:
             var = np.random.choice(list(self.mb))
         self.interventions.append(var)
-        return np.array([[var, 0, 10]])
+        return np.array([[var, 10, 2]])
 
     def next(self, result):
         #print("ratios = %s candidates = %s, interventions = %s" % (self.current_ratios, self.candidates, self.interventions))
@@ -254,7 +254,7 @@ class RatioPolicy(Policy):
         else:
             var = np.random.choice(list(choice))
             self.interventions.append(var)
-            return np.array([[var, 0, 10]])
+            return np.array([[var, 10, 2]])
     
 
 
