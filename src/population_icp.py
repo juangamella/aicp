@@ -35,7 +35,7 @@ from functools import reduce
 from src import utils
 from src import icp
 
-def population_icp(distributions, target, debug=False, selection='all', atol=1e-8, rtol=1e-5, check_covariance=False):
+def population_icp(distributions, target, debug=False, selection='all', atol=1e-8, rtol=1e-10, check_covariance=False):
     """Perform ICP over a set of Gaussian Distributions, each
     representing a different environment
     """
