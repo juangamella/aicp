@@ -196,6 +196,6 @@ for k,v in vars(args).items():
     filename = filename + "_" + k + ":" + str(v)
 filename = filename + ".pickle"
 
-results = [pop_mb_results, pop_ratio_results, pop_rand_results]
+results = [cases, pop_mb_results, pop_ratio_results, pop_rand_results]
 save_results(results, filename)
 print("Saved to file \"%s\"" % filename)

@@ -78,7 +78,7 @@ def run_policy(policy, case, name=None, n=round(1e5), max_iter=100, population=T
     parents, _, _, _ = utils.graph_info(case.target, case.sem.W)
     ####
     while current_estimate != case.truth and i <= max_iter:
-        history.append((current_estimate, next_intervention))
+        history.append((current_estimate, next_intervention[0][0]))
         print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, len(selection), next_intervention)) if debug else None
         # Perform intervention
         new_env = case.sem.sample(n, population, noise_interventions = next_intervention)
@@ -103,7 +103,7 @@ def run_policy(policy, case, name=None, n=round(1e5), max_iter=100, population=T
     elapsed = end - start
     print("  (case_id: %s) done (%0.2f seconds)" % (case.id, elapsed)) if debug else None
     # Return result
-    return EvaluationResult(policy, case, current_estimate, history, elapsed)
+    return EvaluationResult(policy.name, current_estimate, history)
     
 def jaccard_distance(A, B):
     """Compute the jaccard distance between sets A and B"""
@@ -122,13 +122,13 @@ class EvaluationResult():
     """Class to contain all information resulting from evaluating a policy
     over a test case"""
 
-    def __init__(self, policy, case, estimate, history, time):
+    def __init__(self, policy, estimate, history):
         self.policy = policy
-        self.case = case
+        #self.case = case
         # Info
         self.estimate = estimate # estimate produced by the policy
         self.history = history # interventions and intermediate results of the policy
-        self.time = time # time used by the policy
+        #self.time = time # time used by the policy
 
     def estimates(self):
         """Return the parents estimated by the policy at each step"""
