@@ -112,7 +112,7 @@ arguments = {
     'debug': {'default': False, 'type': bool},
     'avg_deg': {'default': 2, 'type': float},
     'G': {'default': 10, 'type': int},
-    'runs': {'default': 1, 'type': int},
+    'runs': {'default': 10, 'type': int},
     'n_min': {'default': 8, 'type': int},
     'n_max': {'default': 8, 'type': int},
     'w_min': {'default': 0.1, 'type': float},
@@ -170,7 +170,8 @@ names = ["markov blanket", "ratio policy", "random"]
 evaluation_params = {'population': True,
                      'debug': False,
                      'random_state': None,
-                     'max_iter': max_iter}
+                     'max_iter': max_iter,
+                     'n_workers': args.n_workers}
 
 results = evaluate_policies(cases, args.runs, policies, names, **evaluation_params)
 end = time.time()
