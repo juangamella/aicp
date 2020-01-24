@@ -74,24 +74,29 @@ def wrapper(parameters):
     result = policy.run_policy(**parameters)
     return result
 
-def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, max_iter=100, random_state=None, debug=False, n_workers=4):
+def evaluate_policies(cases, runs, policies, names, n=round(1e5), population=False, max_iter=100, random_state=None, debug=False, n_workers=4):
     """Evaluate a policy over the given test cases, using as many cores as possible"""
     start = time.time()
-    print("Evaluating policy \"%s\" with %d workers... " % (name, n_workers))
-    iterable = []
-    for case in cases:
-        parameters = {'case':case,
-                      'policy': policy,
-                      'name': name,
-                      'n': n,
-                      'population': population,
-                      'max_iter': max_iter,
-                      'debug': debug,
-                      'random_state': np.random.randint(999999)}
-        iterable.append(parameters)
+    print("Compiling experiment batch...", end="")
+    experiments = []
+    for i, policy in enumerate(policies):
+        for run in range(runs):
+            for case in cases:
+                parameters = {'case':case,
+                              'policy': policy,
+                              'name': names[i],
+                              'n': n,
+                              'population': population,
+                              'max_iter': max_iter,
+                              'debug': debug,
+                              'random_state': np.random.randint(999999)}
+                experiments.append(parameters)
+    print("  done (%0.2f seconds)" % (time.time() - start))
+    start = time.time()
+    print("Running experiments with %d workers" % n_workers)
     if __name__ == '__main__':
         p = multiprocessing.Pool(n_workers)
-        result = p.map(wrapper, iterable)
+        result = p.map(wrapper, experiments)
         end = time.time()
         print("  done (%0.2f seconds)" % (end-start))
         return result
@@ -99,6 +104,7 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, ma
         raise Exception("Not in __main__module. Name = ", __name__)
 
 
+    
 # Default settings
 arguments = {
     'n_workers': {'default': 4, 'type': int},
@@ -159,43 +165,34 @@ cases = gen_cases(args.G,
 start = time.time()
 print("\n\nBeggining experiments on %d graphs at %s\n\n" % (len(cases), datetime.now()))
 
-pop_rand_results = []
-pop_mb_results = []
-pop_ratio_results = []    
-
+policies = [policy.MBPolicy, policy.RatioPolicy, policy.RandomPolicy]
+names = ["markov blanket", "ratio policy", "random"]
 evaluation_params = {'population': True,
                      'debug': False,
                      'random_state': None,
                      'max_iter': max_iter}
 
-if use_parallelism and __name__ == '__main__':
-    print("Running in parallel")
-    evaluation_func = evaluate_policy
-    evaluation_params['n_workers'] = args.n_workers
-elif use_parallelism:
-    print("Not in __main__ module, running sequentially")
-    evaluation_func = policy.evaluate_policy
-else:
-    print("Running sequentially")
-    evaluation_func = policy.evaluate_policy
-
-    
-for i in range(args.runs):
-    print("--- RUN %d ---" % i)
-    pop_mb_results.append(evaluation_func(policy.MBPolicy, cases, name="markov blanket", **evaluation_params))
-    pop_ratio_results.append(evaluation_func(policy.RatioPolicy, cases, name="ratio policy", **evaluation_params))
-    pop_rand_results.append(evaluation_func(policy.RandomPolicy, cases, name="random", **evaluation_params))
-
+results = evaluate_policies(cases, args.runs, policies, names, **evaluation_params)
 end = time.time()
 print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
 
 # Save results
+
+processed_results = []
+R = args.runs
+G = len(cases)
+P = len(policies)
+for i in range(P):
+    policy_results = []
+    for r in range(R):
+        run_results = results[(i*G*R + G*r):(i*G*R + G*(r+1))]
+        policy_results.append(run_results)
+    processed_results.append(policy_results)
 
 filename = "experiments/results_%d" % end
 for k,v in vars(args).items():
     filename = filename + "_" + k + ":" + str(v)
 filename = filename + ".pickle"
 
-results = [cases, pop_mb_results, pop_ratio_results, pop_rand_results]
-save_results(results, filename)
+save_results([cases] + processed_results, filename)
 print("Saved to file \"%s\"" % filename)
