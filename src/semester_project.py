@@ -37,6 +37,7 @@ from src import sampling, policy, utils
 import multiprocessing
 import sys
 import argparse
+import os
 
 def save_results(results, filename=None):
     if filename is None:
@@ -77,6 +78,7 @@ def wrapper(parameters):
 def evaluate_policies(cases, runs, policies, names, n=round(1e5), population=False, max_iter=100, random_state=None, debug=False, n_workers=4):
     """Evaluate a policy over the given test cases, using as many cores as possible"""
     start = time.time()
+    print("Available cores: %d" % os.cpu_count())
     print("Compiling experiment batch...", end="")
     experiments = []
     for i, policy in enumerate(policies):
@@ -96,7 +98,7 @@ def evaluate_policies(cases, runs, policies, names, n=round(1e5), population=Fal
     print("Running experiments with %d workers" % n_workers)
     if __name__ == '__main__':
         p = multiprocessing.Pool(n_workers)
-        result = p.map(wrapper, experiments)
+        result = p.map(wrapper, experiments, chunksize=1)
         end = time.time()
         print("  done (%0.2f seconds)" % (end-start))
         return result
