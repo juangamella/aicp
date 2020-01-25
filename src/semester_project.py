@@ -75,10 +75,12 @@ def wrapper(parameters):
     result = policy.run_policy(**parameters)
     return result
 
-def evaluate_policies(cases, runs, policies, names, n=round(1e5), population=False, max_iter=100, random_state=None, debug=False, n_workers=None):
+def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=round(1e5), population=False, max_iter=100, random_state=None, debug=False, n_workers=None):
     """Evaluate a policy over the given test cases, using as many cores as possible"""
+    if not __name__ == '__main__':
+        raise Exception("Not in __main__module. Name = ", __name__)
+    # Prepare experiments
     start = time.time()
-    print("Available cores: %d" % os.cpu_count())
     print("Compiling experiment batch...", end="")
     experiments = []
     for i, policy in enumerate(policies):
@@ -94,18 +96,27 @@ def evaluate_policies(cases, runs, policies, names, n=round(1e5), population=Fal
                               'random_state': np.random.randint(999999)}
                 experiments.append(parameters)
     print("  done (%0.2f seconds)" % (time.time() - start))
-    start = time.time()
+    n_exp = len(experiments)
+    # Run experiments in batches to prevent memory explosion due to
+    # large interables with pool.map
     if n_workers is None:
         n_workers = os.cpu_count()
-    print("Running experiments with %d workers" % n_workers)
-    if __name__ == '__main__':
-        p = multiprocessing.Pool(n_workers)
-        result = p.map(wrapper, experiments, chunksize=1)
-        end = time.time()
-        print("  done (%0.2f seconds)" % (end-start))
-        return result
-    else:
-        raise Exception("Not in __main__module. Name = ", __name__)
+    print("Available cores: %d" % os.cpu_count())
+    print("Running a total of %d experiments with %d workers" % (n_exp, n_workers))
+    pool = multiprocessing.Pool(n_workers)
+    n_batches = int(np.floor(n_exp / batch_size) + (n_exp % batch_size != 0))
+    result = []
+    for i in range(n_batches):
+        if i == n_batches-1:
+            batch = experiments[i*batch_size::]
+        else:
+            batch = experiments[i*batch_size:(i+1)*batch_size]
+        batch_start = time.time()
+        result.append(pool.map(wrapper, batch, chunksize=1))
+        batch_end = time.time()
+        print("  %d/%d experiments completed (%0.2f seconds)" % (i*batch_size, n_exp, batch_end-batch_start))
+    return result
+
 
 
     
