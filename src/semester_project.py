@@ -75,7 +75,7 @@ def wrapper(parameters):
     result = policy.run_policy(**parameters)
     return result
 
-def evaluate_policies(cases, runs, policies, names, n=round(1e5), population=False, max_iter=100, random_state=None, debug=False, n_workers=4):
+def evaluate_policies(cases, runs, policies, names, n=round(1e5), population=False, max_iter=100, random_state=None, debug=False, n_workers=None):
     """Evaluate a policy over the given test cases, using as many cores as possible"""
     start = time.time()
     print("Available cores: %d" % os.cpu_count())
@@ -95,6 +95,8 @@ def evaluate_policies(cases, runs, policies, names, n=round(1e5), population=Fal
                 experiments.append(parameters)
     print("  done (%0.2f seconds)" % (time.time() - start))
     start = time.time()
+    if n_workers is None:
+        n_workers = os.cpu_count()
     print("Running experiments with %d workers" % n_workers)
     if __name__ == '__main__':
         p = multiprocessing.Pool(n_workers)
@@ -109,8 +111,7 @@ def evaluate_policies(cases, runs, policies, names, n=round(1e5), population=Fal
     
 # Default settings
 arguments = {
-    'n_workers': {'default': 4, 'type': int},
-    'seq': {'default': False, 'type': bool},
+    'n_workers': {'default': -1, 'type': int},
     'debug': {'default': False, 'type': bool},
     'avg_deg': {'default': 2, 'type': float},
     'G': {'default': 10, 'type': int},
@@ -147,8 +148,9 @@ print()
 # Run experiments
 max_iter = args.n_max
 debug = args.debug
-use_parallelism = not args.seq
 P = args.n_min if args.n_min == args.n_max else (args.n_min, args.n_max)
+
+n_workers = None if args.n_workers == -1 else args.n_workers
 
 # Generate test cases
 cases = gen_cases(args.G,
@@ -173,7 +175,7 @@ evaluation_params = {'population': True,
                      'debug': False,
                      'random_state': None,
                      'max_iter': max_iter,
-                     'n_workers': args.n_workers}
+                     'n_workers': n_workers}
 
 results = evaluate_policies(cases, args.runs, policies, names, **evaluation_params)
 end = time.time()
