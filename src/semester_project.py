@@ -112,9 +112,9 @@ def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=rou
         else:
             batch = experiments[i*batch_size:(i+1)*batch_size]
         batch_start = time.time()
-        result.append(pool.map(wrapper, batch, chunksize=1))
+        result += pool.map(wrapper, batch, chunksize=1)
         batch_end = time.time()
-        print("  %d/%d experiments completed (%0.2f seconds)" % (i*batch_size, n_exp, batch_end-batch_start))
+        print("  %d/%d experiments completed (%0.2f seconds)" % ((i+1)*batch_size, n_exp, batch_end-batch_start))
     return result
 
 
@@ -180,15 +180,15 @@ cases = gen_cases(args.G,
 start = time.time()
 print("\n\nBeggining experiments on %d graphs at %s\n\n" % (len(cases), datetime.now()))
 
-policies = [policy.MBPolicy, policy.RatioPolicy, policy.RandomPolicy]
-names = ["markov blanket", "ratio policy", "random"]
+policies = [policy.MBPolicy, policy.RatioPolicy, policy.ProposedPolicy, policy.RandomPolicy]
+names = ["markov blanket", "ratio policy", "proposed", "random"]
 evaluation_params = {'population': True,
                      'debug': False,
                      'random_state': None,
                      'max_iter': max_iter,
                      'n_workers': n_workers}
 
-results = evaluate_policies(cases, args.runs, policies, names, **evaluation_params)
+results = evaluate_policies(cases, args.runs, policies, names, batch_size=50, **evaluation_params)
 end = time.time()
 print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
 

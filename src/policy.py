@@ -238,7 +238,6 @@ class RatioPolicy(Policy):
         #print("ratios = %s candidates = %s, interventions = %s" % (self.current_ratios, self.candidates, self.interventions))
         new_ratios = ratios(self.p, result.accepted)
         diff = new_ratios - self.current_ratios
-        last_intervention = self.interventions[-1]
         #print(new_ratios)
         for i,r in enumerate(new_ratios):
             if r < 0.5 and i in self.candidates:
@@ -256,5 +255,43 @@ class RatioPolicy(Policy):
             self.interventions.append(var)
             return np.array([[var, 10, 2]])
     
+class ProposedPolicy(Policy):
 
+    def __init__(self, target, p, name):
+        self.interventions = []
+        self.current_ratios = np.zeros(p)
+        Policy.__init__(self, target, p, name)
 
+    def first(self, e):
+        self.mb = set(population_icp.markov_blanket(self.target, e))
+        self.candidates = self.mb.copy()
+        if self.mb == set():
+            var = np.random.choice(utils.all_but(self.target, self.p))
+        else:
+            var = np.random.choice(list(self.mb))
+        self.interventions.append(var)
+        return np.array([[var, 10, 2]])
+
+    def next(self, result):
+        #print("ratios = %s candidates = %s, interventions = %s" % (self.current_ratios, self.candidates, self.interventions))
+        new_ratios = ratios(self.p, result.accepted)
+        diff = new_ratios - self.current_ratios
+        last_intervention = self.interventions[-1]
+        #print(new_ratios)
+        if set() in result.accepted:
+            self.candidates.remove(last_intervention)
+        for i,r in enumerate(new_ratios):
+            if r < 0.5 and i in self.candidates:
+                #print("removing %d" % i)
+                self.candidates.remove(i)
+        self.current_ratios = new_ratios
+        return self.pick_intervention()
+
+    def pick_intervention(self):
+        choice = set.difference(self.candidates, set(self.interventions))
+        if choice == set(): # Have intervened on all variables or there are no parents
+            None
+        else:
+            var = np.random.choice(list(choice))
+            self.interventions.append(var)
+            return np.array([[var, 10, 2]])
