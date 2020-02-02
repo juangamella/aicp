@@ -179,8 +179,8 @@ cases = gen_cases(args.G,
 start = time.time()
 print("\n\nBeggining experiments on %d graphs at %s\n\n" % (len(cases), datetime.now()))
 
-policies = [policy.MBPolicy, policy.RatioPolicy, policy.ProposedPolicy, policy.RandomPolicy]
-names = ["markov blanket", "ratio policy", "proposed", "random"]
+policies = [policy.MBPolicy, policy.RatioPolicy, policy.RandomPolicy]
+names = ["markov blanket", "ratio policy", "random"]
 evaluation_params = {'population': True,
                      'debug': False,
                      'random_state': None,
