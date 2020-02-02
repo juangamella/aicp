@@ -44,7 +44,6 @@ def save_results(results, filename=None):
         filename = "experiments/results_%d.pickle" % time.time()
     f = open(filename, "wb")
     pickle.dump(results, f)
-    pickle.dump(results, f)
     f.close()
     return filename
 
