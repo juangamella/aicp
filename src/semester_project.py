@@ -59,8 +59,8 @@ def gen_cases(n, P, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_ma
             p = P
         W, ordering = sampling.dag_avg_deg(p, k, w_min, w_max)
         target = np.random.choice(range(p))
-        parents = utils.graph_info(target, W)[0]
-        if len(parents) > 0:
+        parents,_,_,mb = utils.graph_info(target, W)
+        if len(parents) > 0 and len(parents) != len(mb):
             sem = sampling.LGSEM(W, ordering, (var_min, var_max), (int_min, int_max))
             (truth, _, _, _) = utils.graph_info(target, W)
             cases.append(policy.TestCase(i, sem, target, truth))
