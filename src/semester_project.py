@@ -122,6 +122,7 @@ def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=rou
 # Default settings
 arguments = {
     'n_workers': {'default': -1, 'type': int},
+    'batch_size': {'default': 50, 'type': int},
     'debug': {'default': False, 'type': bool},
     'avg_deg': {'default': 2, 'type': float},
     'G': {'default': 10, 'type': int},
@@ -185,7 +186,8 @@ evaluation_params = {'population': True,
                      'debug': False,
                      'random_state': None,
                      'max_iter': max_iter,
-                     'n_workers': n_workers}
+                     'n_workers': n_workers,
+                     'batch_size': args.batch_size}
 
 results = evaluate_policies(cases, args.runs, policies, names, **evaluation_params)
 end = time.time()
