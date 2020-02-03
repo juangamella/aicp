@@ -39,7 +39,7 @@ from sklearn import linear_model
 # --------------------------------------------------------------------
 # Policy evaluation        
 
-def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, max_iter=100, random_state=42, debug=False):
+def evaluate_policy(policy, cases, name=None, n=round(1e5), alpha=0.01, population=False, max_iter=100, random_state=42, debug=False):
     """Evaluate a policy over the given test cases, in a sequential manner"""
     results = []
     start = time.time()
@@ -56,7 +56,7 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), population=False, ma
     print("  done (%0.2f seconds)" % (end-start))
     return results
 
-def run_policy(policy, case, name=None, n=round(1e5), max_iter=100, population=True, debug=False, random_state=42):
+def run_policy(policy, case, name=None, n=round(1e5), alpha=0.005, max_iter=100, population=True, debug=False, random_state=42):
     """Execute a policy over a given test case, returning a returning a
     PolicyEvaluationResults object containing the result"""
     # Initialization
@@ -67,7 +67,7 @@ def run_policy(policy, case, name=None, n=round(1e5), max_iter=100, population=T
     history = [] # store the ICP result and next intervention
     # Generate observational samples
     e = case.sem.sample(n, population)
-    envs = [e]
+    envs = [e] if population else Environments(case.sem.p, e)
     start = time.time()
     # Initial iteration
     next_intervention = policy.first(e)
@@ -84,9 +84,12 @@ def run_policy(policy, case, name=None, n=round(1e5), max_iter=100, population=T
         if next_intervention is not None:
             # Perform intervention
             new_env = case.sem.sample(n, population, noise_interventions = np.array([[next_intervention, 10, 1]]))
-            envs.append(new_env)
+            envs.append(new_env) if population else envs.add(next_intervention, new_env)
             # Run ICP
-            result = algorithm(envs, case.target, selection=selection, debug=False)
+            if population:
+                result = population_icp.population_icp(envs, case.target, selection=selection, debug=False)
+            else:
+                result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=alpha, debug=False)
             current_estimate = result.estimate
             selection = result.accepted # in each iteration we only need to run ICP on the sets accepted in the previous one
             next_intervention, selection = policy.next(result)
@@ -102,12 +105,30 @@ def run_policy(policy, case, name=None, n=round(1e5), max_iter=100, population=T
         i += 1
     end = time.time()
     if i > max_iter:
-        print(" (case_id: %s, target: %d, truth: %s, policy: %s) reached %d > %d iterations" % (case.id, case.target, case.truth, policy.name, i, max_iter))
+        print(" (case_id: %s, target: %d, truth: %s, policy: %s) reached %d > %d iterations" % (case.id, case.target, case.truth, policy.name, i, max_iter)) if debug else None
     elapsed = end - start
     print("  (case_id: %s) done (%0.2f seconds)" % (case.id, elapsed)) if debug else None
     # Return result
     return EvaluationResult(policy.name, current_estimate, history)
-    
+
+class Environments():
+    def __init__(self, p, e):
+        self.envs = dict([(i,[]) for i in range(p)])
+        self.envs[None] = e
+
+    def add(self, target, env):
+        if self.envs[target] == []:
+            self.envs[target] = env
+        else:
+            self.envs[target] = np.vstack([env, self.envs[target]])
+
+    def to_list(self):
+        envs = []
+        for env in self.envs.values():
+            if env != []:
+                envs.append(env)
+        return envs
+
 def jaccard_distance(A, B):
     """Compute the jaccard distance between sets A and B"""
     if len(A) == 0 and len(B) == 0:
@@ -267,14 +288,14 @@ class RatioPolicy(Policy):
     
 # Finite sample setting
 
-def markov_blanket(sample, target, alpha=1e-3, tol=.05):
+def markov_blanket(sample, target, alpha=1e-4, tol=.05):
     """Use the Lasso estimator to return an estimate of the Markov Blanket"""
     p = sample.shape[1]
     predictors = utils.all_but(target, p)
     X = sample[:, predictors]
     Y = sample[:, target]
     coefs = np.zeros(p)
-    coefs[predictors] = linear_model.Lasso(alpha=alpha, normalize=True).fit(X, Y).coef_
+    coefs[predictors] = linear_model.Lasso(alpha=alpha, normalize=True, max_iter=10000).fit(X, Y).coef_
     return utils.nonzero(coefs, tol)
 
 class RandomPolicyF(Policy):
@@ -339,7 +360,6 @@ class ProposedPolicyMEF(Policy):
         self.candidates.difference_update(to_remove)
         # Prune accepted sets
         selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
-        print(to_remove, end=" ")
         # Pick next intervention
         var = self.pick_intervention()
         self.interventions.append(var)
@@ -378,7 +398,6 @@ class ProposedPolicyMERF(Policy):
         for i,r in enumerate(self.current_ratios):
             if r < 0.5:
                 to_remove.add(i)
-        print(to_remove, end=" ")
         self.candidates.difference_update(to_remove)
         # Prune accepted sets
         selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
@@ -417,7 +436,6 @@ class ProposedPolicyEF(Policy):
         self.candidates.difference_update(to_remove)
         # Prune accepted sets
         selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
-        print(to_remove, end=" ")
         # Pick next intervention
         var = self.pick_intervention()
         self.interventions.append(var)
@@ -456,7 +474,6 @@ class ProposedPolicyERF(Policy):
         for i,r in enumerate(self.current_ratios):
             if r < 0.5:
                 to_remove.add(i)
-        print(to_remove, end=" ")
         self.candidates.difference_update(to_remove)
         # Prune accepted sets
         selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]

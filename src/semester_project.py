@@ -74,7 +74,7 @@ def wrapper(parameters):
     result = policy.run_policy(**parameters)
     return result
 
-def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=round(1e5), population=False, max_iter=100, random_state=None, debug=False, n_workers=None):
+def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=round(1e5), alpha=0.01, population=False, max_iter=100, random_state=None, debug=False, n_workers=None):
     """Evaluate a policy over the given test cases, using as many cores as possible"""
     if not __name__ == '__main__':
         raise Exception("Not in __main__module. Name = ", __name__)
@@ -89,6 +89,7 @@ def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=rou
                               'policy': policy,
                               'name': names[i],
                               'n': n,
+                              'alpha': alpha,
                               'population': population,
                               'max_iter': max_iter,
                               'debug': debug,
@@ -127,7 +128,7 @@ arguments = {
     'batch_size': {'default': 50, 'type': int},
     'debug': {'default': False, 'type': bool},
     'avg_deg': {'default': 3, 'type': float}, # 2
-    'G': {'default': 2, 'type': int}, # 10
+    'G': {'default': 4, 'type': int}, # 10
     'runs': {'default': 1, 'type': int}, # 10
     'n_min': {'default': 8, 'type': int},
     'n_max': {'default': 8, 'type': int},
@@ -140,7 +141,8 @@ arguments = {
     'random_state': {'default': 42, 'type': int},
     'finite': {'default': True, 'type': bool}, # False
     'max_iter': {'default': 20, 'type': int}, # -1
-    'n' : {'default': 10, 'type': int}}
+    'n': {'default': 10000, 'type': int},
+    'alpha': {'default': 0.01, 'type': float}}
 
 # Settings from input
 parser = argparse.ArgumentParser(description='Run experiments')
@@ -201,6 +203,7 @@ else:
 
 evaluation_params = {'population': population,
                      'n': args.n,
+                     'alpha': args.alpha,
                      'debug': args.debug,
                      'random_state': None,
                      'max_iter': max_iter,
