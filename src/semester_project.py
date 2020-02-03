@@ -101,7 +101,7 @@ def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=rou
     if n_workers is None:
         n_workers = os.cpu_count()
     print("Available cores: %d" % os.cpu_count())
-    print("Running a total of %d experiments with %d workers" % (n_exp, n_workers))
+    print("Running a total of %d experiments with %d workers in batches of size %d" % (n_exp, n_workers, batch_size))
     pool = multiprocessing.Pool(n_workers)
     n_batches = int(np.floor(n_exp / batch_size) + (n_exp % batch_size != 0))
     result = []
