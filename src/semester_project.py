@@ -187,7 +187,7 @@ evaluation_params = {'population': True,
                      'max_iter': max_iter,
                      'n_workers': n_workers}
 
-results = evaluate_policies(cases, args.runs, policies, names, batch_size=50, **evaluation_params)
+results = evaluate_policies(cases, args.runs, policies, names, **evaluation_params)
 end = time.time()
 print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
 
