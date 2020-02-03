@@ -102,6 +102,8 @@ def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=rou
         n_workers = os.cpu_count()
     print("Available cores: %d" % os.cpu_count())
     print("Running a total of %d experiments with %d workers in batches of size %d" % (n_exp, n_workers, batch_size))
+    setting = "Population" if population else "Finite (%d samples/environment)" % n
+    print("%s setting with a maximum of %d iterations per experiment" % (setting, max_iter))
     pool = multiprocessing.Pool(n_workers)
     n_batches = int(np.floor(n_exp / batch_size) + (n_exp % batch_size != 0))
     result = []
@@ -111,22 +113,22 @@ def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=rou
         else:
             batch = experiments[i*batch_size:(i+1)*batch_size]
         batch_start = time.time()
-        result += pool.map(wrapper, batch, chunksize=1)
+        if n_workers > 1:
+            result += pool.map(wrapper, batch, chunksize=1)
+        else:
+            result += map(wrapper, batch)
         batch_end = time.time()
         print("  %d/%d experiments completed (%0.2f seconds)" % ((i+1)*batch_size, n_exp, batch_end-batch_start))
     return result
-
-
-
     
 # Default settings
 arguments = {
-    'n_workers': {'default': -1, 'type': int},
+    'n_workers': {'default': 1, 'type': int}, # -1
     'batch_size': {'default': 50, 'type': int},
-    'debug': {'default': False, 'type': bool},
-    'avg_deg': {'default': 2, 'type': float},
-    'G': {'default': 10, 'type': int},
-    'runs': {'default': 10, 'type': int},
+    'debug': {'default': True, 'type': bool}, # False
+    'avg_deg': {'default': 3, 'type': float}, # 2
+    'G': {'default': 2, 'type': int}, # 10
+    'runs': {'default': 1, 'type': int}, # 10
     'n_min': {'default': 8, 'type': int},
     'n_max': {'default': 8, 'type': int},
     'w_min': {'default': 0.1, 'type': float},
@@ -135,7 +137,10 @@ arguments = {
     'var_max': {'default': 1, 'type': float},
     'int_min': {'default': 0, 'type': float},
     'int_max': {'default': 1, 'type': float},
-    'random_state': {'default': 42, 'type': int}}
+    'random_state': {'default': 42, 'type': int},
+    'finite': {'default': True, 'type': bool}, # False
+    'max_iter': {'default': 20, 'type': int}, # -1
+    'n' : {'default': 10, 'type': int}}
 
 # Settings from input
 parser = argparse.ArgumentParser(description='Run experiments')
@@ -156,9 +161,13 @@ print(args)
 print()
 
 # --------------------------------------------------------------------
-# Run experiments
-max_iter = args.n_max
-debug = args.debug
+# Compile experiments
+
+if args.max_iter == -1:
+    max_iter = args.n_max
+else:
+    max_iter = args.max_iter
+    
 P = args.n_min if args.n_min == args.n_max else (args.n_min, args.n_max)
 
 n_workers = None if args.n_workers == -1 else args.n_workers
@@ -175,15 +184,24 @@ cases = gen_cases(args.G,
                   args.int_max,
                   args.random_state)
 
-# Evaluate
+# --------------------------------------------------------------------
+# Evaluate experiments
 
 start = time.time()
 print("\n\nBeggining experiments on %d graphs at %s\n\n" % (len(cases), datetime.now()))
 
-policies = [policy.MBPolicy, policy.RatioPolicy, policy.RandomPolicy]
-names = ["markov blanket", "ratio policy", "random"]
-evaluation_params = {'population': True,
-                     'debug': False,
+population = not args.finite
+
+if population:
+    policies = [policy.MBPolicy, policy.RatioPolicy, policy.RandomPolicy]
+    names = ["markov blanket", "ratio policy", "random"]
+else:
+    policies = [policy.RandomPolicyF, policy.MarkovPolicyF, policy.ProposedPolicyMEF, policy.ProposedPolicyMERF, policy.ProposedPolicyEF, policy.ProposedPolicyERF]
+    names = ["random", "markov", "markov + e", "markov + e + r", "e", "e + r"]
+
+evaluation_params = {'population': population,
+                     'n': args.n,
+                     'debug': args.debug,
                      'random_state': None,
                      'max_iter': max_iter,
                      'n_workers': n_workers,
