@@ -395,9 +395,6 @@ class ProposedPolicyMERF(Policy):
         # Prune candidate set
         if set() in result.accepted:
             to_remove.add(last_intervention)
-        for i,r in enumerate(self.current_ratios):
-            if r < 0.5:
-                to_remove.add(i)
         self.candidates.difference_update(to_remove)
         # Prune accepted sets
         selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
@@ -410,7 +407,15 @@ class ProposedPolicyMERF(Policy):
         if len(self.candidates) == 0:
             return None
         else:
-            return np.random.choice(list(self.candidates))
+            below_half = set()
+            for i,r in enumerate(self.current_ratios):
+                if r < 0.5:
+                    below_half.add(i)
+            choice = set.difference(self.candidates, below_half)
+            if len(choice) == 0:
+                return np.random.choice(list(self.candidates))
+            else:
+                return np.random.choice(list(choice))
 
 class ProposedPolicyEF(Policy):
     """Proposed policy 1: selects variables at random from Markov blanket
@@ -471,9 +476,6 @@ class ProposedPolicyERF(Policy):
         # Prune candidate set
         if set() in result.accepted:
             to_remove.add(last_intervention)
-        for i,r in enumerate(self.current_ratios):
-            if r < 0.5:
-                to_remove.add(i)
         self.candidates.difference_update(to_remove)
         # Prune accepted sets
         selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
@@ -486,4 +488,12 @@ class ProposedPolicyERF(Policy):
         if len(self.candidates) == 0:
             return None
         else:
-            return np.random.choice(list(self.candidates))
+            below_half = set()
+            for i,r in enumerate(self.current_ratios):
+                if r < 0.5:
+                    below_half.add(i)
+            choice = set.difference(self.candidates, below_half)
+            if len(choice) == 0:
+                return np.random.choice(list(self.candidates))
+            else:
+                return np.random.choice(list(choice))

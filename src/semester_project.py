@@ -124,12 +124,12 @@ def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=rou
     
 # Default settings
 arguments = {
-    'n_workers': {'default': 1, 'type': int}, # -1
+    'n_workers': {'default': 1, 'type': int},
     'batch_size': {'default': 50, 'type': int},
-    'debug': {'default': False, 'type': bool},
-    'avg_deg': {'default': 3, 'type': float}, # 2
-    'G': {'default': 4, 'type': int}, # 10
-    'runs': {'default': 1, 'type': int}, # 10
+    'debug': {'default': False, 'type': bool}, # False
+    'avg_deg': {'default': 3, 'type': float},
+    'G': {'default': 4, 'type': int},
+    'runs': {'default': 1, 'type': int},
     'n_min': {'default': 8, 'type': int},
     'n_max': {'default': 8, 'type': int},
     'w_min': {'default': 0.1, 'type': float},
@@ -141,7 +141,7 @@ arguments = {
     'random_state': {'default': 42, 'type': int},
     'finite': {'default': False, 'type': bool}, # False
     'max_iter': {'default': -1, 'type': int}, # -1
-    'n': {'default': 10000, 'type': int},
+    'n': {'default': 100, 'type': int},
     'alpha': {'default': 0.01, 'type': float}}
 
 # Settings from input
@@ -200,7 +200,7 @@ if population:
 else:
     policies = [policy.RandomPolicyF, policy.MarkovPolicyF, policy.ProposedPolicyMEF, policy.ProposedPolicyMERF, policy.ProposedPolicyEF, policy.ProposedPolicyERF]
     names = ["random", "markov", "markov + e", "markov + e + r", "e", "e + r"]
-
+    
 evaluation_params = {'population': population,
                      'n': args.n,
                      'alpha': args.alpha,
