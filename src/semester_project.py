@@ -139,8 +139,8 @@ arguments = {
     'int_min': {'default': 0, 'type': float},
     'int_max': {'default': 1, 'type': float},
     'random_state': {'default': 42, 'type': int},
-    'finite': {'default': True, 'type': bool}, # False
-    'max_iter': {'default': 20, 'type': int}, # -1
+    'finite': {'default': False, 'type': bool}, # False
+    'max_iter': {'default': -1, 'type': int}, # -1
     'n': {'default': 10000, 'type': int},
     'alpha': {'default': 0.01, 'type': float}}
 
