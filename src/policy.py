@@ -359,7 +359,7 @@ class ProposedPolicyMEF(Policy):
             to_remove.add(last_intervention)
         self.candidates.difference_update(to_remove)
         # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
+        selection = result.accepted#[s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
         # Pick next intervention
         var = self.pick_intervention()
         self.interventions.append(var)
@@ -433,7 +433,7 @@ class ProposedPolicyMERF(Policy):
             to_remove.add(last_intervention)
         self.candidates.difference_update(to_remove)
         # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
+        selection = result.accepted#[s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
         # Pick next intervention
         var = self.pick_intervention()
         self.interventions.append(var)
@@ -476,7 +476,7 @@ class ProposedPolicyEF(Policy):
             to_remove.add(last_intervention)
         self.candidates.difference_update(to_remove)
         # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
+        selection = result.accepted#[s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
         # Pick next intervention
         var = self.pick_intervention()
         self.interventions.append(var)
@@ -514,7 +514,7 @@ class ProposedPolicyERF(Policy):
             to_remove.add(last_intervention)
         self.candidates.difference_update(to_remove)
         # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
+        selection = result.accepted#[s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
         # Pick next intervention
         var = self.pick_intervention()
         self.interventions.append(var)
