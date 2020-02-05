@@ -142,7 +142,8 @@ arguments = {
     'finite': {'default': False, 'type': bool}, # False
     'max_iter': {'default': -1, 'type': int}, # -1
     'n': {'default': 100, 'type': int},
-    'alpha': {'default': 0.01, 'type': float}}
+    'alpha': {'default': 0.01, 'type': float},
+    'tag' : {'default': "", 'type': str}}
 
 # Settings from input
 parser = argparse.ArgumentParser(description='Run experiments')
@@ -198,8 +199,8 @@ if population:
     policies = [policy.MBPolicy, policy.RatioPolicy, policy.RandomPolicy]
     names = ["markov blanket", "ratio policy", "random"]
 else:
-    policies = [policy.RandomPolicyF, policy.MarkovPolicyF, policy.ProposedPolicyMEF, policy.ProposedPolicyMERF, policy.ProposedPolicyEF, policy.ProposedPolicyERF]
-    names = ["random", "markov", "markov + e", "markov + e + r", "e", "e + r"]
+    policies = [policy.RandomPolicyF, policy.ProposedPolicyEF, policy.ProposedPolicyRF, policy.ProposedPolicyERF, policy.MarkovPolicyF, policy.ProposedPolicyMEF, policy.ProposedPolicyMRF, policy.ProposedPolicyMERF]
+    names = ["random", "e", "r", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
     
 evaluation_params = {'population': population,
                      'n': args.n,

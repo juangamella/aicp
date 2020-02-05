@@ -370,7 +370,43 @@ class ProposedPolicyMEF(Policy):
             return None
         else:
             return np.random.choice(list(self.candidates))
+
+class ProposedPolicyMRF(Policy):
+    """Proposed policy 2: selects variables at random from Markov blanket
+    estimate, removes variables which accept the empty set or have
+    ratio < 1/2
+
+    """
+    def __init__(self, target, p, name):
+        self.interventions = []
+        self.current_ratios = np.ones(p) * 0.5
+        Policy.__init__(self, target, p, name)
     
+    def first(self, sample):
+        self.candidates = set(markov_blanket(sample, self.target)) # set(range(self.p))
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
+
+    def next(self, result):
+        self.current_ratios = ratios(self.p, result.accepted)
+        # Pick next intervention
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return (var, result.accepted)
+    
+    def pick_intervention(self):
+        below_half = set()
+        for i,r in enumerate(self.current_ratios):
+            if r < 0.5:
+                below_half.add(i)
+        choice = set.difference(self.candidates, below_half)
+        if len(choice) == 0:
+            return np.random.choice(list(self.candidates))
+        else:
+            return np.random.choice(list(choice))
+
+        
 class ProposedPolicyMERF(Policy):
     """Proposed policy 2: selects variables at random from Markov blanket
     estimate, removes variables which accept the empty set or have
@@ -497,3 +533,38 @@ class ProposedPolicyERF(Policy):
                 return np.random.choice(list(self.candidates))
             else:
                 return np.random.choice(list(choice))
+
+class ProposedPolicyRF(Policy):
+    """Proposed policy 2: selects variables at random from Markov blanket
+    estimate, removes variables which accept the empty set or have
+    ratio < 1/2
+
+    """
+    def __init__(self, target, p, name):
+        self.interventions = []
+        self.current_ratios = np.ones(p) * 0.5
+        Policy.__init__(self, target, p, name)
+    
+    def first(self, sample):
+        self.candidates = set(utils.all_but(self.target, self.p))
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
+
+    def next(self, result):
+        self.current_ratios = ratios(self.p, result.accepted)
+        # Pick next intervention
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return (var, result.accepted)
+    
+    def pick_intervention(self):
+        below_half = set()
+        for i,r in enumerate(self.current_ratios):
+            if r < 0.5:
+                below_half.add(i)
+        choice = set.difference(self.candidates, below_half)
+        if len(choice) == 0:
+            return np.random.choice(list(self.candidates))
+        else:
+            return np.random.choice(list(choice))
