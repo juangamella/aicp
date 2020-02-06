@@ -396,7 +396,7 @@ class ProposedPolicyMRF(Policy):
         return (var, result.accepted)
     
     def pick_intervention(self):
-        if len(self.candidates == 0):
+        if len(self.candidates) == 0:
             return None
         else:
             below_half = set()
@@ -562,7 +562,7 @@ class ProposedPolicyRF(Policy):
         return (var, result.accepted)
     
     def pick_intervention(self):
-        if len(self.candidates == 0):
+        if len(self.candidates) == 0:
             return None
         else:
             below_half = set()
