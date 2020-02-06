@@ -396,15 +396,18 @@ class ProposedPolicyMRF(Policy):
         return (var, result.accepted)
     
     def pick_intervention(self):
-        below_half = set()
-        for i,r in enumerate(self.current_ratios):
-            if r < 0.5:
-                below_half.add(i)
-        choice = set.difference(self.candidates, below_half)
-        if len(choice) == 0:
-            return np.random.choice(list(self.candidates))
+        if len(self.candidates == 0):
+            return None
         else:
-            return np.random.choice(list(choice))
+            below_half = set()
+            for i,r in enumerate(self.current_ratios):
+                if r < 0.5:
+                    below_half.add(i)
+            choice = set.difference(self.candidates, below_half)
+            if len(choice) == 0:
+                return np.random.choice(list(self.candidates))
+            else:
+                return np.random.choice(list(choice))
 
         
 class ProposedPolicyMERF(Policy):
@@ -559,12 +562,15 @@ class ProposedPolicyRF(Policy):
         return (var, result.accepted)
     
     def pick_intervention(self):
-        below_half = set()
-        for i,r in enumerate(self.current_ratios):
-            if r < 0.5:
-                below_half.add(i)
-        choice = set.difference(self.candidates, below_half)
-        if len(choice) == 0:
-            return np.random.choice(list(self.candidates))
+        if len(self.candidates == 0):
+            return None
         else:
-            return np.random.choice(list(choice))
+            below_half = set()
+            for i,r in enumerate(self.current_ratios):
+                if r < 0.5:
+                    below_half.add(i)
+            choice = set.difference(self.candidates, below_half)
+            if len(choice) == 0:
+                return np.random.choice(list(self.candidates))
+            else:
+                return np.random.choice(list(choice))
