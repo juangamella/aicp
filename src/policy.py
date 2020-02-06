@@ -35,6 +35,7 @@ from termcolor import colored
 from src import icp, population_icp, utils, normal_distribution
 import networkx as nx
 from sklearn import linear_model
+import warnings
 
 # --------------------------------------------------------------------
 # Policy evaluation        
@@ -288,15 +289,17 @@ class RatioPolicy(Policy):
     
 # Finite sample setting
 
-def markov_blanket(sample, target, alpha=1e-4, tol=.05):
+def markov_blanket(sample, target, tol=1e-3, debug=False):
     """Use the Lasso estimator to return an estimate of the Markov Blanket"""
-    p = sample.shape[1]
-    predictors = utils.all_but(target, p)
-    X = sample[:, predictors]
-    Y = sample[:, target]
-    coefs = np.zeros(p)
-    coefs[predictors] = linear_model.Lasso(alpha=alpha, normalize=True, max_iter=10000).fit(X, Y).coef_
-    return utils.nonzero(coefs, tol)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        p = sample.shape[1]
+        predictors = utils.all_but(target, p)
+        X = sample[:, predictors]
+        Y = sample[:, target]
+        coefs = np.zeros(p)
+        coefs[predictors] = linear_model.LassoCV(cv=5, normalize=True, max_iter=1000, verbose=debug).fit(X, Y).coef_
+        return utils.nonzero(coefs, tol)
 
 class RandomPolicyF(Policy):
     """Random policy: selects variables at random.
