@@ -1,6 +1,6 @@
 # Towards active ICP: experiment selection through stability
 
-This repository contains the code to run the experiments and plot the results. This README is not intended to be completely self-contained, and should be read alongside the [manuscript](semester_project_juan_gamella.pdf).
+This repository contains the code to run the experiments and plot the results. This README is not intended to be completely self-explanatory, and should be read alongside the [manuscript](semester_project_juan_gamella.pdf).
 
 ## Running the experiments
 
@@ -13,9 +13,9 @@ python -m src.semester_project
 The parameters for the experiments can be set by passing the following command-line arguments:
 
 - `n_workers`: Size of the process pool on which to run experiments in parallel. `-1` uses as many workers as cores are visible by the python process. Default is `1`, ie. running experiments sequentially.
-- `batch_size`: Size of the experiment batches which are submitted to the worker pool. A lower batch size reduces the maximum size of allocated memory (useful if running experiments with large graphs, see (this post)[https://stackoverflow.com/questions/26520781/multiprocessing-pool-whats-the-difference-between-map-async-and-imap]), but increases overhead. Defaults to `20000`.
+- `batch_size`: Size of the experiment batches which are submitted to the worker pool. A lower batch size reduces the maximum size of allocated memory (useful if running experiments with large graphs, see [this post](https://stackoverflow.com/questions/26520781/multiprocessing-pool-whats-the-difference-between-map-async-and-imap)), but increases overhead. Defaults to `20000`.
 - `runs`: Number of runs performed over each test case, each initialized with different random seeds. Default is `1`.
-- `max_iter`: Maximum number of iterations for which to run each experiment, i.e., maximum number of interventions performed by each policy. Defaults to `-1`, which sets this value to `n_max`.
+- `max_iter`: Maximum number of iterations for which to run each experiment, i.e., maximum number of interventions performed by each policy. Defaults to `-1`, which sets this value to `n_max` (see below).
 
 
 The following parameters control the generation of SEMs, i.e. test cases.
@@ -52,7 +52,8 @@ python -m src.semester_project --n_workers -1 --avg_deg 3 --G 30 --runs 32 --n_m
 The results from running all experiments are pickled and stored in a file. The filename contains a timestamp and all parameters, so it is always possible to know which file contains which experiments. For example, executing the above example would produce the following file:
 
 ```
-results_1581038775_n_workers:-1_batch_size:20000_debug:False_avg_deg:3.0_G:30_runs:32_n_min:8_n_max:8_w_min:0.0_w_max:1.0_var_min:0.1_var_max:1.0_int_min:0.0_int_max:1.0_random_state:110_finite:True_max_iter:50_n:10_alpha:0.001_tag:exmple.pickle```
+results_1581038775_n_workers:-1_batch_size:20000_debug:False_avg_deg:3.0_G:30_runs:32_n_min:8_n_max:8_w_min:0.0_w_max:1.0_var_min:0.1_var_max:1.0_int_min:0.0_int_max:1.0_random_state:110_finite:True_max_iter:50_n:10_alpha:0.001_tag:exmple.pickle
+```
 
 ## Plotting results
 
