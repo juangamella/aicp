@@ -129,7 +129,7 @@ def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=rou
 # Default settings
 arguments = {
     'n_workers': {'default': 1, 'type': int},
-    'batch_size': {'default': 50, 'type': int},
+    'batch_size': {'default': 20000, 'type': int},
     'debug': {'default': False, 'type': bool}, # False
     'avg_deg': {'default': 3, 'type': float},
     'G': {'default': 4, 'type': int},
