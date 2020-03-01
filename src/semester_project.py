@@ -1,4 +1,4 @@
-# Copyright 2019 Juan Luis Gamella Martin
+# Copyright 2020 Juan Luis Gamella Martin
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -39,15 +39,16 @@ import sys
 import argparse
 import os
 
-def save_results(results, filename=None):
-    if filename is None:
-        filename = "experiments/results_%d.pickle" % time.time()
-    f = open(filename, "wb")
-    pickle.dump(results, f)
-    f.close()
-    return filename
-
 def gen_cases(n, P, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_max=0, random_state=39):
+    """
+    Generate random experimental cases (ie. linear SEMs). Parameters:
+      - n: total number of cases
+      - P: number of variables in the SEMs (either an integer or a tuple to indicate a range)
+      - w_min, w_max: Weights of the SEMs are sampled at uniform between w_min and w_max
+      - var_min, var_max: Weights of the SEMs are sampled at uniform between var_min and var_max
+      - int_min, int_max: Weights of the SEMs are sampled at uniform between int_min and int_max
+      - random_state: to fix the random seed for reproducibility
+    """
     if random_state is not None:
         np.random.seed(random_state)
     cases = []
@@ -121,7 +122,10 @@ def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=rou
         batch_end = time.time()
         print("  %d/%d experiments completed (%0.2f seconds)" % ((i+1)*batch_size, n_exp, batch_end-batch_start))
     return result
-    
+
+# --------------------------------------------------------------------
+# Parse input parameters
+
 # Default settings
 arguments = {
     'n_workers': {'default': 1, 'type': int},
@@ -215,6 +219,7 @@ results = evaluate_policies(cases, args.runs, policies, names, **evaluation_para
 end = time.time()
 print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
 
+# --------------------------------------------------------------------
 # Save results
 
 processed_results = []
@@ -232,6 +237,5 @@ filename = "experiments/results_%d" % end
 for k,v in vars(args).items():
     filename = filename + "_" + k + ":" + str(v)
 filename = filename + ".pickle"
-
-save_results([cases] + processed_results, filename)
+pickle.dump([cases] + processed_results, open(filename, "wb"))
 print("Saved to file \"%s\"" % filename)

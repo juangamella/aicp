@@ -1,4 +1,4 @@
-2# Copyright 2019 Juan Luis Gamella Martin
+2# Copyright 2020 Juan Luis Gamella Martin
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions

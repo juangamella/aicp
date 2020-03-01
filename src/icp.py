@@ -3,7 +3,7 @@ TO CHANGE BEFORE PUBLISHING:
   - color output is not portable, so deactivate it
 """
 
-# Copyright 2019 Juan Luis Gamella Martin
+# Copyright 2020 Juan Luis Gamella Martin
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
