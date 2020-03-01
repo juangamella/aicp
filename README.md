@@ -61,4 +61,4 @@ The plots can be generated with the notebooks `plots_population.ipynb` and `plot
 
 ## Feedback
 
-If you need assistance or have feedback, you are more than welcome to write an email to [gajuan@ethz.ch]([mailto:gajuan@ethz.ch)!.
+If you need assistance or have feedback, you are more than welcome to write an email to [gajuan@ethz.ch](mailto:gajuan@ethz.ch)!.
