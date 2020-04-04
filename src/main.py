@@ -1,5 +1,5 @@
-import networkx as nx
-import matplotlib.pyplot as plt
+import networkx as nxi
+mport matplotlib.pyplot as plt
 from src.sampling import LGSEM
 from src.icp import icp
 import numpy as np
@@ -22,19 +22,18 @@ from src.policy import Environments
 # #               [0, 0, 0, 0, 1, 0],
 # #               [0, 0, 0, 0, 0, 0],
 # #               [0, 0, 0, 0, 1, 0]])
-# ordering = np.arange(len(W))
 
 #W = np.array([[0, 0, 0, 1],
               # [0, 0, 1, 1],
               # [0, 0, 0, 1],
               # [0, 0, 0, 0]])
-#ordering = np.arange(4)g
-W, ordering = sampling.dag_avg_deg(8, 3, 0.5, 1, random_state=51)
+
+W = sampling.dag_avg_deg(8, 3, 0.5, 1, random_state=51)
 p = len(W)
 #W = W * np.random.uniform(size=W.shape)
-sem = LGSEM(W,ordering,(0,1))
-n = 10000
-e = sem.sample(n)
+sem = LGSEM(W,(0,1))
+n = 10
+e = sem.sample(10)
 def ei(i):
     return sem.sample(n, do_interventions = np.array([[i,10,1]]))
 
@@ -50,12 +49,12 @@ def ei(i):
 
 target = 5
 
-# print("finite sample icp")
-# start = time.time()
-# result = icp([e, ei(6)], target, alpha=0.01, max_predictors=None, selection = 'all', debug=True, stop_early=False)
-# end = time.time()
-# print("done in %0.2f seconds" % (end-start))
-
+print("finite sample icp")
+start = time.time()
+result = icp([e, ei(0)], target, alpha=0.01, max_predictors=None, selection = 'all', debug=True, stop_early=False)
+end = time.time()
+print("done in %0.2f seconds" % (end-start))
+print("Estimate: %s" % result.estimate)
 # print("population icp")
 # start = time.time()
 # result = population_icp.population_icp([d,d1], target, selection='all', debug=True)
@@ -66,11 +65,11 @@ parents,_,_,mb = utils.graph_info(target, W)
 print("Parents: %s" % parents)
 print("Markov Blanket: %s" % mb)
 
-# p = sem.p
-# R = policy.ratios(p, result.accepted)
-# print(R)
-# for i,r in enumerate(R):
-#     print("X%d = %d/%d=%0.4f" % (i, r*len(result.accepted), len(result.accepted), r))
+p = sem.p
+R = policy.ratios(p, result.accepted)
+print(R)
+for i,r in enumerate(R):
+    print("X%d = %d/%d=%0.4f" % (i, r*len(result.accepted), len(result.accepted), r))
 
 # alphas = np.arange(1e-6, 1e-4, 1e-6)
 # coefs = np.zeros((len(alphas), p))
@@ -82,36 +81,36 @@ print("Markov Blanket: %s" % mb)
 # plt.show(block=False)
 # plt.legend()
 
-# policy.markov_blanket(e, target, tol=0.15)
-np.random.seed()
-print("\nTesting lasso estimation")
-correct = 0
-superset = 0
-contains_parents = 0
-N = 100
-i = 0
-target = 1
-np.random.seed()
-begin = time.time()
-while i < N:
-    W, ordering = sampling.dag_avg_deg(8, 3, 0, 1)
-    parents,_,_,mb = utils.graph_info(target, W)
-    if len(parents) == 0:
-        continue
-    else:
-        i += 1
-    #print(i)
-    sem = LGSEM(W,ordering,(0,1),(0,1))
-    e = sem.sample(100)
-    estimate = set(policy.markov_blanket(e, target, tol=1e-3))
-    if mb == estimate:
-        correct += 1
-    if parents.issubset(estimate):
-        contains_parents += 1
-        if mb.issubset(estimate):
-            superset += 1
-print("correct %d/%d - contains parents %d/%d of which supersets %d/%d" % (correct, N, contains_parents, N, superset, N))
-print(time.time()- begin)    
+# # policy.markov_blanket(e, target, tol=0.15)
+# np.random.seed()
+# print("\nTesting lasso estimation")
+# correct = 0
+# superset = 0
+# contains_parents = 0
+# N = 100
+# i = 0
+# target = 1
+# np.random.seed()
+# begin = time.time()
+# while i < N:
+#     W = sampling.dag_avg_deg(8, 3, 0, 1)
+#     parents,_,_,mb = utils.graph_info(target, W)
+#     if len(parents) == 0:
+#         continue
+#     else:
+#         i += 1
+#     #print(i)
+#     sem = LGSEM(W,(0,1),(0,1))
+#     e = sem.sample(100)
+#     estimate = set(policy.markov_blanket(e, target, tol=1e-3))
+#     if mb == estimate:
+#         correct += 1
+#     if parents.issubset(estimate):
+#         contains_parents += 1
+#         if mb.issubset(estimate):
+#             superset += 1
+# print("correct %d/%d - contains parents %d/%d of which supersets %d/%d" % (correct, N, contains_parents, N, superset, N))
+# print(time.time()- begin)    
 # # for i in np.argsort(result.mses):
 # #     print("%s %0.5f" % (result.accepted[i], result.mses[i]))
 # np.random.seed()

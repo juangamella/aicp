@@ -31,7 +31,7 @@
 import pickle
 import time
 from datetime import datetime
-from src import evaluation, policy
+from src import evaluation, policy, sampling
 import argparse
 
 # --------------------------------------------------------------------
@@ -58,7 +58,11 @@ arguments = {
     'max_iter': {'default': -1, 'type': int}, # -1
     'n': {'default': 100, 'type': int},
     'alpha': {'default': 0.01, 'type': float},
-    'tag' : {'default': "", 'type': str}}
+    'tag' : {'default': "", 'type': str},
+    'save_dataset': {'default': "", 'type':str},
+    'load_dataset': {'default': "", 'type':str}}
+}
+
 
 # Parse settings from input
 parser = argparse.ArgumentParser(description='Run experiments')
@@ -77,7 +81,7 @@ args = parser.parse_args()
 print(args)
 
 # --------------------------------------------------------------------
-# Generate test cases
+# Generate (or load) test cases
 
 if args.max_iter == -1:
     max_iter = args.n_max
@@ -88,17 +92,30 @@ P = args.n_min if args.n_min == args.n_max else (args.n_min, args.n_max)
 
 n_workers = None if args.n_workers == -1 else args.n_workers
 
-# Generate test cases
-cases = evaluation.gen_cases(args.G,
-                             P,
-                             args.avg_deg,
-                             args.w_min,
-                             args.w_max,
-                             args.var_min,
-                             args.var_max,
-                             args.int_min,
-                             args.int_max,
-                             args.random_state)
+
+if args.load_dataset is not None:
+    # Load a dataset stored in the format used by ABCD
+    G = len(os.listdir(os.path.join(args.load_dataset, 'dags')))
+    Ws = [np.loadtxt(os.path.join(args.load_dataset, 'dags', 'dag%d' % i, 'adjacency.txt')) for i in range(G)]
+    means = [np.loadtxt(os.path.join(args.load_dataset, 'dags', 'dag%d' % i, 'means.txt')) for i in range(G)]
+    variances = [np.loadtxt(os.path.join(args.load_dataset, 'dags', 'dag%d' % i, 'variances.txt')) for i in range(G)]
+    targets = [np.loadtxt(os.path.join(args.load_dataset, 'dags', 'dag%d' % i, 'target.txt')) for i in range(G)]
+    cases = []
+    for i, W in enumerate(Ws):
+        sem = sampling.LGSEM(W, variances[i], means[i])
+        truth = utils.graph_info(target[i], W)
+        cases.append(policy.TestCase(i, sem, target[i], truth))
+else:
+    cases = evaluation.gen_cases(args.G,
+                                 P,
+                                 args.avg_deg,
+                                 args.w_min,
+                                 args.w_max,
+                                 args.var_min,
+                                 args.var_max,
+                                 args.int_min,
+                                 args.int_max,
+                                 args.random_state)
 
 # --------------------------------------------------------------------
 # Evaluate experiments

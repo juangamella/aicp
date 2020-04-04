@@ -41,19 +41,15 @@ def matrix_block(M, rows, cols):
     idx_cols = np.tile(cols, (len(rows),1)).flatten()
     return M[idx_rows, idx_cols].reshape(len(rows), len(cols))
 
-def sampling_matrix(W, ordering):
-    """Given the weighted adjacency matrix and ordering of a DAG, return
+def sampling_matrix(W):
+    """Given the weighted adjacency matrix of a DAG, return
     the matrix A such that the DAG generates samples
       A @ diag(var)^1/2 @ Z + mu
     where Z is an isotropic normal, and var/mu are the variances/means
     of the noise variables of the graph.
     """
     p = len(W)
-    A = np.eye(p)
-    W = W + A # set diagonal of W to 1
-    for i in ordering:
-        A[i,:] = np.sum(W[:,[i]] * A, axis=0)
-    return A
+    return np.linalg.inv(np.eye(p) - W.T)
 
 def all_but(k,p):
     """Return [0,...,p-1] without k"""
@@ -154,8 +150,7 @@ def eg1():
                [0],
                [1,2],
                [3]]
-    ordering = np.arange(5)
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
 def eg2():
     W = np.array([[0, 1, -1, 0, 0, 0],
@@ -176,8 +171,7 @@ def eg2():
                [1,2],
                [3,5],
                []]
-    ordering = np.arange(6)
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
 def eg3():
     W = np.array([[0, 1, -1, 0, 0, 0, 0, 0],
@@ -204,8 +198,7 @@ def eg3():
                [],
                [5],
                [4]]
-    ordering = np.arange(8)
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
 def eg4():
     W = np.array([[0,0,1,0],
@@ -220,8 +213,7 @@ def eg4():
                [],
                [0,1],
                [2]]
-    ordering = np.arange(4)
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
 def eg5():
     W = np.array([[0., 1., 0., 0., 0., 0., 0., 0.],
@@ -257,7 +249,7 @@ def eg5():
                        [2,3,7],
                        [3,4,0,7],
                        [0,4,5,2,3,6]]
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
 def eg6():
     W = np.array([[0, 0, 1, 0, 1],
@@ -265,7 +257,6 @@ def eg6():
                   [0, 0, 0, 1, 0],
                   [0, 0, 0, 0, 1],
                   [0, 0, 0, 0, 0]])
-    ordering = np.arange(len(W))
     parents = [[],
                [],
                [0,1],
@@ -281,5 +272,5 @@ def eg6():
                        [0,1,3],
                        [2,4,0,1],
                        [0,1,3]]
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
