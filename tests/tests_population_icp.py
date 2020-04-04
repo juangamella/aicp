@@ -51,9 +51,9 @@ class PopulationICPTests(unittest.TestCase):
         # results as regressing over that distribution
         graphs = [src.utils.eg1(), src.utils.eg2(), src.utils.eg3(), src.utils.eg4()]
         for g,graph in enumerate(graphs):
-            W, ordering, _, _ = graph
+            W, _, _ = graph
             p = len(W)
-            A = sampling_matrix(W, ordering)
+            A = sampling_matrix(W)
             dist = NormalDistribution(np.arange(p), A@A.T)
             envs = [dist]
             for i in range(p):
@@ -72,9 +72,9 @@ class PopulationICPTests(unittest.TestCase):
         # same results as regressing over that distribution
         graphs = [src.utils.eg1(), src.utils.eg2(), src.utils.eg3(), src.utils.eg4()]
         for g,graph in enumerate(graphs):
-            W, ordering, _, _ = graph
+            W, _, _ = graph
             p = len(W)
-            A = sampling_matrix(W, ordering)
+            A = sampling_matrix(W)
             dist = NormalDistribution(np.arange(p), A@A.T)
             envs = [dist, dist, dist]
             for i in range(p):
@@ -91,9 +91,9 @@ class PopulationICPTests(unittest.TestCase):
     def test_markov_blanket(self):
         graphs = [src.utils.eg1(), src.utils.eg2(), src.utils.eg3(), src.utils.eg4()]
         for g,graph in enumerate(graphs):
-            W, ordering, _, mb = graph
+            W, _, mb = graph
             p = len(W)
-            A = sampling_matrix(W, ordering)
+            A = sampling_matrix(W)
             dist = NormalDistribution(np.arange(p), A@A.T)
             for i in range(p):
                 truth = set(mb[i])
@@ -105,8 +105,8 @@ class PopulationICPTests(unittest.TestCase):
         np.random.seed(42)
         for p in range(2,8):
             #print("Testing random graph of size %d" %p)
-            W, ordering = sampling.dag_avg_deg(p,2.5,-1,1)
-            sem = sampling.LGSEM(W, ordering, (0.1,2))
+            W = sampling.dag_avg_deg(p,2.5,-1,1)
+            sem = sampling.LGSEM(W, (0.1,2))
             dist = sem.sample(population=True)
             for i in range(p):
                 #print("Testing markov and stable blankets of X_%d" %i)
@@ -123,8 +123,8 @@ class PopulationICPTests(unittest.TestCase):
         np.random.seed(7)
         for p in range(2,8):
             #print("Testing random graph of size %d" %p)
-            W, ordering = sampling.dag_avg_deg(p,2.5,-1,1)
-            sem = sampling.LGSEM(W, ordering, (0.1,2))
+            W = sampling.dag_avg_deg(p,2.5,-1,1)
+            sem = sampling.LGSEM(W, (0.1,2))
             dist = sem.sample(population=True)
             for i in range(p):
                 #print("Testing markov and stable blankets of X_%d" %i)

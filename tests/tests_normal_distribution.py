@@ -196,11 +196,10 @@ class NormalDistributionTests(unittest.TestCase):
         # blankets of each node, test basic properties of the MSE
         # PRE: It is assumed that [1,...,p] is the causal ordering
         p = len(W)
-        ordering = np.arange(p)
         np.random.seed(42)
         if sample_weights:
             W = W * (np.random.uniform(size=W.shape) + 1) # avoid 0 weights (causal minimality)
-        A = sampling_matrix(W, ordering)
+        A = sampling_matrix(W)
         covariance = A @ A.T
         mean = np.random.uniform(size=p)
         joint = NormalDistribution(mean, covariance)
@@ -231,7 +230,7 @@ class NormalDistributionTests(unittest.TestCase):
         p = len(W)
         np.random.seed(42)
         W = W * (np.random.uniform(size=W.shape) + 1) # avoid 0 weights (causal minimality)
-        A = sampling_matrix(W, np.arange(p))
+        A = sampling_matrix(W)
         covariance = A @ A.T
         mean = np.random.uniform(size=p)
         joint = NormalDistribution(mean, covariance)

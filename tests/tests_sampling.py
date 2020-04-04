@@ -46,27 +46,20 @@ from src.sampling import dag_full, dag_avg_deg, LGSEM
 class DAG_Tests(unittest.TestCase):
     def test_dag(self):
         for p in np.arange(2,100,5):
-            (W, ordering) = dag_avg_deg(p, p/4, 0, 1)
+            W = dag_avg_deg(p, p/4, 0, 1)
             G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
             self.assertTrue(nx.is_directed_acyclic_graph(G))
-            perm = np.argsort(ordering)
-
-    def test_ordering(self):
-        for p in np.arange(2,100,5):
-            (W, ordering) = dag_avg_deg(p, p/4, 0, 1)
-            B = W[ordering,:][:,ordering]
-            self.assertTrue((B == np.triu(B,1)).all())
 
     def test_avg_degree(self):
         p = 1000
         for k in range(1,5):
-            (W, _) = dag_avg_deg(p, k, 1, 2)
+            W = dag_avg_deg(p, k, 1, 2)
             av_deg = np.sum(W > 0) * 2 / p
             self.assertEqual(len(W), p)
             self.assertTrue(av_deg - k < 0.5)
 
     def test_disconnected_graph(self):
-        (W, _) = dag_avg_deg(10, 0, 1, 1)
+        W = dag_avg_deg(10, 0, 1, 1)
         self.assertEqual(np.sum(W), 0)
 
 # Tests for the SEM generation and sampling
@@ -74,8 +67,8 @@ class SEM_Tests(unittest.TestCase):
     def test_basic(self):
         # Test the initialization of an LGSEM object
         p = 10
-        (W, ordering) = dag_avg_deg(p, p/4, 1, 1)
-        sem = LGSEM(W, ordering, (1,1))
+        W = dag_avg_deg(p, p/4, 1, 1)
+        sem = LGSEM(W, (1,1))
         self.assertTrue((sem.variances == np.ones(p)).all())
         self.assertTrue((sem.intercepts == np.zeros(p)).all())
         self.assertTrue(np.sum((sem.W == 0).astype(float) + (sem.W == 1).astype(float)), p*p)
@@ -86,32 +79,28 @@ class SEM_Tests(unittest.TestCase):
         variances = np.array([1,2,3])
         intercepts = np.array([3,4,5])
         W = np.eye(3)
-        ordering = np.arange(3)
-        sem = LGSEM(W, ordering, variances, intercepts)
+        sem = LGSEM(W, variances, intercepts)
         # Modify and compare
         variances[0] = 0
         intercepts[2] = 1
         W[0,0] = 2
-        ordering[0] = 3
         self.assertFalse((W == sem.W).all())
         self.assertFalse((variances == sem.variances).all())
         self.assertFalse((intercepts == sem.intercepts).all())
-        self.assertFalse((ordering == sem.ordering).all())
         
     def test_intercepts(self):
         # Test that intercepts are set correctly
         p = 10
-        (W, ordering) = dag_avg_deg(p, p/4, 1, 1)
+        W = dag_avg_deg(p, p/4, 1, 1)
         intercepts = np.arange(p)
-        sem = LGSEM(W, ordering, (0,1), intercepts = intercepts)
+        sem = LGSEM(W, (0,1), intercepts = intercepts)
         self.assertTrue((sem.intercepts == intercepts).all())
 
     def test_sampling_args(self):
         variances = np.array([1,2,3])
         intercepts = np.array([3,4,5])
-        W = np.eye(3)
-        ordering = np.arange(3)
-        sem = LGSEM(W, ordering, variances, intercepts)
+        W = np.array([[0,1,1],[0,0,1],[0,0,0]])
+        sem = LGSEM(W, variances, intercepts)
         self.assertEqual(np.ndarray, type(sem.sample(n=1)))
         self.assertEqual(NormalDistribution, type(sem.sample(n=1, population=True)))
         self.assertEqual(NormalDistribution, type(sem.sample(population=True)))
@@ -121,8 +110,8 @@ class SEM_Tests(unittest.TestCase):
         np.random.seed(42)
         p = 1
         n = round(1e6)
-        (W, ordering) = dag_full(p)
-        sem = LGSEM(W, ordering, (1,1))
+        W = dag_full(p)
+        sem = LGSEM(W, (1,1))
         # Observational data
         truth = np.random.normal(0,1,size=(n,1))
         samples = sem.sample(n)
@@ -142,8 +131,8 @@ class SEM_Tests(unittest.TestCase):
         # using the path method
         p = 4
         n = round(1e6)
-        (W, ordering) = dag_full(p)
-        sem = LGSEM(W, ordering, (0.16,0.16))
+        W = dag_full(p)
+        sem = LGSEM(W, (0.16,0.16))
         np.random.seed(42)
         noise = np.random.normal([0,0,0,0],[.4, .4, .4, .4], size=(n,4))
         truth = np.zeros((n,p))
@@ -166,8 +155,7 @@ class SEM_Tests(unittest.TestCase):
                       [0, 0, 0, 0, 1, 1],
                       [0, 0, 0, 0, 0, 1],
                       [0, 0, 0, 0, 0, 0]])
-        ordering = np.arange(p)
-        sem = LGSEM(W, ordering, (0.16,0.16))
+        sem = LGSEM(W, (0.16,0.16))
 
         # Test observational data
         M = np.array([[1, 0, 0, 0, 0, 0],
@@ -207,11 +195,10 @@ class SEM_Tests(unittest.TestCase):
         W = np.array([[0, 1, 1],
                       [0, 0, 1],
                       [0, 0, 0]])
-        ordering = np.arange(3)
         n = round(1e6)
         variances = np.array([1,2,3])*0.1
         intercepts = np.array([1,2,3])
-        sem = LGSEM(W, ordering, variances, intercepts)
+        sem = LGSEM(W, variances, intercepts)
         np.random.seed(42)
         # Test observational data
         # Build truth
@@ -279,10 +266,9 @@ class SEM_Tests(unittest.TestCase):
                       [0,0,1,0],
                       [0,0,0,1],
                       [0,0,0,0]])
-        ordering = np.arange(4)
         # Build SEM with unit weights and standard normal noise
         # variables
-        sem = LGSEM(W, ordering, (1,1))
+        sem = LGSEM(W, (1,1))
         # Observational Distribution
         distribution = sem.sample(population=True)
         true_cov = np.array([[1,0,1,1],
@@ -308,27 +294,6 @@ class SEM_Tests(unittest.TestCase):
                              [2,2,5,6]])
         self.assertTrue((distribution.mean==np.array([0,1,1,1])).all())
         self.assertTrue((distribution.covariance==true_cov).all())
-
-    def test_sampling(self):
-        # Test that sampling by building the multivariate normal
-        # distribution works correctly (ie. NormalDistribution and sampling_matrix)
-        P = [4,8,16]
-        n = round(1e6)
-        for p in P:
-            (W, ordering) = dag_avg_deg(p, 3, -0.1, 0.1)
-            variances = np.random.uniform(0.1, 0.2, p)
-            intercepts = np.random.uniform(-1,1,p)
-            # Generate samples through SEM
-            X_sem = np.random.normal(intercepts, variances**0.5, size=(n,p))
-            M = W + np.eye(p)
-            for i in ordering:
-                X_sem[:,i] = X_sem @ M[:,i]
-            # Generate samples from Multivariate Normal
-            A = sampling_matrix(W, ordering)
-            distribution = NormalDistribution(A @ intercepts, A @ np.diag(variances) @ A.T)
-            X_distr = distribution.sample(n)
-            # Test
-            self.assertTrue(same_normal(X_sem, X_distr))
         
 def same_normal(sample_a, sample_b, atol=1e-2, debug=False):
     """
