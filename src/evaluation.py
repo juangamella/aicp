@@ -86,7 +86,7 @@ def wrapper(parameters):
     result = policy.run_policy(**parameters)
     return result
 
-def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=round(1e5), alpha=0.01, population=False, max_iter=100, random_state=None, debug=False, n_workers=None):
+def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n_obs=None, n=round(1e5), alpha=0.01, population=False, max_iter=100, random_state=None, debug=False, n_workers=None):
     """Evaluate the given policies over the given cases (SCMs) over runs with different random seeds, using as many cores as possible"""
     # # Multiprocessing support
     # if not __name__ == '__main__':
@@ -116,7 +116,7 @@ def evaluate_policies(cases, runs, policies, names, batch_size=round(1e4), n=rou
         n_workers = os.cpu_count()
     print("Available cores: %d" % os.cpu_count())
     print("Running a total of %d experiments with %d workers in batches of size %d" % (n_exp, n_workers, batch_size))
-    setting = "Population" if population else "Finite (%d samples/environment)" % n
+    setting = "Population" if population else ("Finite (%d samples/environment and %s obs. samples)" % (n, n_obs))
     print("%s setting with a maximum of %d iterations per experiment" % (setting, max_iter))
     pool = multiprocessing.Pool(n_workers)
     n_batches = int(np.floor(n_exp / batch_size) + (n_exp % batch_size != 0))

@@ -40,14 +40,14 @@ import warnings
 # --------------------------------------------------------------------
 # Policy evaluation        
 
-def evaluate_policy(policy, cases, name=None, n=round(1e5), alpha=0.01, population=False, max_iter=100, random_state=42, debug=False):
+def evaluate_policy(policy, cases, name=None, n_obs = None, n=round(1e5), alpha=0.01, population=False, max_iter=100, random_state=42, debug=False):
     """Evaluate a policy over the given test cases, in a sequential manner"""
     results = []
     start = time.time()
     print("Evaluating policy \"%s\" sequentially..." % name)
     for i,case in enumerate(cases):
         print("%0.2f%% Evaluating policy \"%s\" on test case %d (truth = %s)..." % (i/len(cases)*100, name, case.id, case.truth)) if debug else None
-        result = run_policy(policy, case, name=name, n=n, population=population, max_iter=max_iter, debug=debug, random_state=random_state)
+        result = run_policy(policy, case, name=name, n_obs=n_obs, n=n, population=population, max_iter=max_iter, debug=debug, random_state=random_state)
         if debug:
             msg = " done (%0.2f seconds). truth: %s estimate: %s" % (result.time, case.truth, result.estimate)
             color = "green" if case.truth == result.estimate else "red"
@@ -57,7 +57,7 @@ def evaluate_policy(policy, cases, name=None, n=round(1e5), alpha=0.01, populati
     print("  done (%0.2f seconds)" % (end-start))
     return results
 
-def run_policy(policy, case, name=None, n=round(1e5), alpha=0.005, max_iter=100, population=True, debug=False, random_state=42):
+def run_policy(policy, case, name=None, nobs=None, n_obs=None, n=round(1e5), alpha=0.005, max_iter=100, population=True, debug=False, random_state=42):
     """Execute a policy over a given test case, returning a returning a
     PolicyEvaluationResults object containing the result"""
     # Initialization
@@ -67,7 +67,8 @@ def run_policy(policy, case, name=None, n=round(1e5), alpha=0.005, max_iter=100,
     algorithm = population_icp.population_icp if population else icp.icp
     history = [] # store the ICP result and next intervention
     # Generate observational samples
-    e = case.sem.sample(n, population)
+    n_obs = n if n_obs is None else n_obs
+    e = case.sem.sample(n_obs, population)
     envs = [e] if population else Environments(case.sem.p, e)
     start = time.time()
     # Initial iteration

@@ -70,10 +70,12 @@ arguments = {
     'finite': {'default': False, 'type': bool}, # False
     'max_iter': {'default': -1, 'type': int}, # -1
     'n': {'default': 100, 'type': int},
+    'n_obs': {'type': int},
     'alpha': {'default': 0.01, 'type': float},
     'tag' : {'type': str},
     'save_dataset': {'type': str},
-    'load_dataset': {'type': str}
+    'load_dataset': {'type': str},
+    'abcd': {'type': bool, 'default': False} # ABCD settings: Run only random, e + r
 }
 
 
@@ -105,6 +107,8 @@ else:
 P = args.n_min if args.n_min == args.n_max else (args.n_min, args.n_max)
 
 excluded_keys += ['tag'] if args.tag is None else []
+excluded_keys += ['n_obs'] if args.n_obs is None else []
+excluded_keys += ['abcd'] if not args.abcd else []
 
 n_workers = None if args.n_workers == -1 else args.n_workers
 
@@ -148,6 +152,7 @@ if args.save_dataset is not None and args.load_dataset is None:
                'finite',
                'max_iter',
                'n',
+               'n_obs',
                'alpha',
                'save_dataset',
                'load_dataset']
@@ -174,6 +179,11 @@ population = not args.finite
 if population:
     policies = [policy.MBPolicy, policy.RatioPolicy, policy.RandomPolicy]
     names = ["markov blanket", "ratio policy", "random"]
+    excluded_keys += ['n', 'n_obs', 'alpha']
+elif args.abcd:
+    policies = [policy.RandomPolicyF,
+                policy.ProposedPolicyERF,]
+    names = ["random", "e + r"]
 else:
     policies = [policy.RandomPolicyF,
                 policy.ProposedPolicyEF,
@@ -187,6 +197,7 @@ else:
     
 evaluation_params = {'population': population,
                      'n': args.n,
+                     'n_obs': args.n if args.n_obs is None else args.n_obs,
                      'alpha': args.alpha,
                      'debug': args.debug,
                      'random_state': None,
