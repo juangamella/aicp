@@ -147,7 +147,6 @@ if args.save_dataset is not None and args.load_dataset is None:
     exclude = ['n_workers',
                'batch_size',
                'debug',
-               'avg_deg',
                'runs',
                'finite',
                'max_iter',
@@ -155,7 +154,8 @@ if args.save_dataset is not None and args.load_dataset is None:
                'n_obs',
                'alpha',
                'save_dataset',
-               'load_dataset']
+               'load_dataset',
+               'abcd']
     exclude += ['tag'] if args.tag is None else []
     dir_name = args.save_dataset + "_%d" % time.time() + parameter_string(args, exclude)
     print("\nSaving test cases under %s/" % dir_name)
