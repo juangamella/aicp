@@ -124,7 +124,7 @@ if args.load_dataset is not None:
     cases = []
     for i, W in enumerate(Ws):
         sem = sampling.LGSEM(W, variances[i], means[i])
-        truth = utils.graph_info(targets[i], W)
+        truth = utils.graph_info(targets[i], W)[0]
         cases.append(policy.TestCase(i, sem, targets[i], truth))
     excluded_keys += ['avg_deg', 'w_min', 'w_max', 'var_min', 'var_max', 'int_min', 'int_max', 'random_state', 'n_min', 'n_max']
 # Or generate dataset
