@@ -28,115 +28,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import time
 import numpy as np
-from functools import reduce
-from termcolor import colored
-from src import icp, population_icp, utils, normal_distribution
-import networkx as nx
+from src import utils, population_icp
 from sklearn import linear_model
 import warnings
-
-# --------------------------------------------------------------------
-# Policy evaluation        
-
-def evaluate_policy(policy, cases, name=None, n_obs = None, n=round(1e5), alpha=0.01, population=False, max_iter=100, random_state=42, debug=False):
-    """Evaluate a policy over the given test cases, in a sequential manner"""
-    results = []
-    start = time.time()
-    print("Evaluating policy \"%s\" sequentially..." % name)
-    for i,case in enumerate(cases):
-        print("%0.2f%% Evaluating policy \"%s\" on test case %d (truth = %s)..." % (i/len(cases)*100, name, case.id, case.truth)) if debug else None
-        result = run_policy(policy, case, name=name, n_obs=n_obs, n=n, population=population, max_iter=max_iter, debug=debug, random_state=random_state)
-        if debug:
-            msg = " done (%0.2f seconds). truth: %s estimate: %s" % (result.time, case.truth, result.estimate)
-            color = "green" if case.truth == result.estimate else "red"
-            print(colored(msg, color))
-        results.append(result)
-    end = time.time()
-    print("  done (%0.2f seconds)" % (end-start))
-    return results
-
-def run_policy(policy, case, name=None, nobs=None, n_obs=None, n=round(1e5), alpha=0.005, max_iter=100, population=True, debug=False, random_state=42):
-    """Execute a policy over a given test case, returning a returning a
-    PolicyEvaluationResults object containing the result"""
-    # Initialization
-    if random_state is not None:
-        np.random.seed(random_state)
-    policy = policy(case.target, case.sem.p, name=name)
-    algorithm = population_icp.population_icp if population else icp.icp
-    history = [] # store the ICP result and next intervention
-    # Generate observational samples
-    n_obs = n if n_obs is None else n_obs
-    e = case.sem.sample(n_obs, population)
-    envs = [e] if population else Environments(case.sem.p, e)
-    start = time.time()
-    # Initial iteration
-    next_intervention = policy.first(e)
-    current_estimate = set()
-    result = None
-    selection = 'all' # on the first iteration, evaluate all possible candidate sets
-    i = 1
-    ####
-    parents, _, _, _ = utils.graph_info(case.target, case.sem.W)
-    ####
-    while current_estimate != case.truth and i <= max_iter:
-        history.append((current_estimate, next_intervention, len(selection)))
-        print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, len(selection), next_intervention)) if debug else None
-        if next_intervention is not None:
-            # Perform intervention
-            new_env = case.sem.sample(n, population, noise_interventions = np.array([[next_intervention, 10, 1]]))
-            envs.append(new_env) if population else envs.add(next_intervention, new_env)
-            # Run ICP
-            if population:
-                result = population_icp.population_icp(envs, case.target, selection=selection, debug=False)
-            else:
-                result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=alpha, debug=False)
-            current_estimate = result.estimate
-            selection = result.accepted # in each iteration we only need to run ICP on the sets accepted in the previous one
-            next_intervention, selection = policy.next(result)
-        ###### Check hypothesis
-        if population:
-            var_ratios = ratios(case.sem.p, result.accepted)
-            for j,r in enumerate(var_ratios):
-                if j in parents and r < 0.5:
-                    print(parents)
-                    print(var_ratios)
-                    print("Hypothesis is false! (case_id: %s, target: %d, interventions: %s)" % (case.id, case.target, history))
-        ######
-        i += 1
-    end = time.time()
-    if i > max_iter:
-        print(" (case_id: %s, target: %d, truth: %s, policy: %s) reached %d > %d iterations" % (case.id, case.target, case.truth, policy.name, i, max_iter)) if debug else None
-    elapsed = end - start
-    print("  (case_id: %s) done (%0.2f seconds)" % (case.id, elapsed)) if debug else None
-    # Return result
-    return EvaluationResult(policy.name, current_estimate, history)
-
-class Environments():
-    def __init__(self, p, e):
-        self.envs = dict([(i,[]) for i in range(p)])
-        self.envs[None] = e
-
-    def add(self, target, env):
-        if self.envs[target] == []:
-            self.envs[target] = env
-        else:
-            self.envs[target] = np.vstack([env, self.envs[target]])
-
-    def to_list(self):
-        envs = []
-        for env in self.envs.values():
-            if env != []:
-                envs.append(env)
-        return envs
-
-def jaccard_distance(A, B):
-    """Compute the jaccard distance between sets A and B"""
-    if len(A) == 0 and len(B) == 0:
-        return 1
-    else:
-        return len(set.intersection(A,B)) / len(set.union(A,B))
 
 def ratios(p, accepted):    
     one_hot = np.zeros((len(accepted), p))
@@ -144,44 +39,10 @@ def ratios(p, accepted):
         one_hot[i, list(s)] = 1
     return one_hot.sum(axis=0) / len(accepted)
 
-class EvaluationResult():
-    """Class to contain all information resulting from evaluating a policy
-    over a test case"""
-
-    def __init__(self, policy, estimate, history):
-        self.policy = policy
-        #self.case = case
-        # Info
-        self.estimate = estimate # estimate produced by the policy
-        self.history = history # interventions and intermediate results of the policy
-        #self.time = time # time used by the policy
-
-    def estimates(self):
-        """Return the parents estimated by the policy at each step"""
-        return list(map(lambda step: step[0].estimate, self.history))
-
-    def interventions(self):
-        """Return the interventions carried out by the policy"""
-        return list(map(lambda step: step[1], self.history))
-
-    def intervened_variables(self):
-        """Return the intervened variables"""
-        return list(map(lambda step: step[1][0,0], self.history))
-    
-class TestCase():
-    """Object that represents a test case
-    ie. SEM + target + expected result
-    """
-    def __init__(self, id, sem, target, truth):
-        self.id = id
-        self.sem = sem
-        self.target = target
-        self.truth = truth
-
-# --------------------------------------------------------------------
-# Policies
-
 class Policy():
+    """Policy class, inherited by all policies. Defines first
+    (first_intervention) and next (next_intervention).
+    """
     def __init__(self, target, p, name=None):
         self.target = target
         self.p = p # no. of variables
@@ -195,7 +56,9 @@ class Policy():
         """Returns the next intervention"""
         return None
 
-# Population setting
+# --------------------------------------------------------------------
+# Population setting policies
+
 class RandomPolicy(Policy):
     """Random policy: selects a previously unintervened variable at
     random. Once all variables have been intervened once, repeats the order
@@ -288,7 +151,8 @@ class RatioPolicy(Policy):
             self.interventions.append(var)
             return var
     
-# Finite sample setting
+# --------------------------------------------------------------------
+# Finite sample setting policies
 
 def markov_blanket(sample, target, tol=1e-3, debug=False):
     """Use the Lasso estimator to return an estimate of the Markov Blanket"""
@@ -338,7 +202,6 @@ class MarkovPolicyF(Policy):
             return None
         else:
             return np.random.choice(self.mb)
-
 
 class ProposedPolicyMEF(Policy):
     """Proposed policy 1: selects variables at random from Markov blanket

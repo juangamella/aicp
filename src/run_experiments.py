@@ -54,7 +54,7 @@ def parameter_string(args, excluded_keys):
 arguments = {
     'n_workers': {'default': 1, 'type': int},
     'batch_size': {'default': 20000, 'type': int},
-    'debug': {'default': False, 'type': bool}, # False
+    'debug': {'default': False, 'type': bool},
     'avg_deg': {'default': 3, 'type': float},
     'G': {'default': 4, 'type': int},
     'runs': {'default': 1, 'type': int},
@@ -62,20 +62,22 @@ arguments = {
     'n_max': {'default': 8, 'type': int},
     'w_min': {'default': 0.1, 'type': float},
     'w_max': {'default': 0.2, 'type': float},
-    'var_min': {'default': 0.1, 'type': float},
+    'var_min': {'default': 0, 'type': float},
     'var_max': {'default': 1, 'type': float},
     'int_min': {'default': 0, 'type': float},
     'int_max': {'default': 1, 'type': float},
+    'i_mean': {'default': 10, 'type': float},
+    'i_var': {'default': 1, 'type': float},
     'random_state': {'default': 42, 'type': int},
-    'finite': {'default': False, 'type': bool}, # False
-    'max_iter': {'default': -1, 'type': int}, # -1
+    'finite': {'default': False, 'type': bool},
+    'max_iter': {'default': -1, 'type': int},
     'n': {'default': 100, 'type': int},
     'n_obs': {'type': int},
     'alpha': {'default': 0.01, 'type': float},
     'tag' : {'type': str},
     'save_dataset': {'type': str},
     'load_dataset': {'type': str},
-    'abcd': {'type': bool, 'default': False} # ABCD settings: Run only random, e + r
+    'abcd': {'type': bool, 'default': False} # ABCD settings: Run only random, e + r, r
 }
 
 
@@ -92,25 +94,20 @@ for name, params in arguments.items():
                         dest=name,
                         required=False,
                         **options)
-excluded_keys = ['save_dataset', 'debug'] # Parameters that are excluded from the filename (see parameter_string function above)
+
 args = parser.parse_args()
-print(args)
 
-# --------------------------------------------------------------------
-# Generate (or load) test cases
-
-if args.max_iter == -1:
-    max_iter = args.n_max
-else:
-    max_iter = args.max_iter
-    
-P = args.n_min if args.n_min == args.n_max else (args.n_min, args.n_max)
-
+# Parameters that will be excluded from the filename (see parameter_string function above)
+excluded_keys = ['save_dataset', 'debug'] 
 excluded_keys += ['tag'] if args.tag is None else []
 excluded_keys += ['n_obs'] if args.n_obs is None else []
 excluded_keys += ['abcd'] if not args.abcd else []
 
-n_workers = None if args.n_workers == -1 else args.n_workers
+print(args) # For debugging
+
+# --------------------------------------------------------------------
+# Generate (or load) test cases
+
 
 # Load dataset
 if args.load_dataset is not None:
@@ -125,10 +122,11 @@ if args.load_dataset is not None:
     for i, W in enumerate(Ws):
         sem = sampling.LGSEM(W, variances[i], means[i])
         truth = utils.graph_info(targets[i], W)[0]
-        cases.append(policy.TestCase(i, sem, targets[i], truth))
+        cases.append(evaluation.TestCase(i, sem, targets[i], truth))
     excluded_keys += ['avg_deg', 'w_min', 'w_max', 'var_min', 'var_max', 'int_min', 'int_max', 'random_state', 'n_min', 'n_max']
 # Or generate dataset
 else:
+    P = args.n_min if args.n_min == args.n_max else (args.n_min, args.n_max)
     cases = evaluation.gen_cases(args.G,
                                  P,
                                  args.avg_deg,
@@ -169,21 +167,23 @@ if args.save_dataset is not None and args.load_dataset is None:
         np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'target.txt'), [case.target])
 
 # --------------------------------------------------------------------
-# Evaluate experiments
+# Run experiments
 
 start = time.time()
 print("\n\nBeggining experiments on %d graphs at %s\n\n" % (len(cases), datetime.now()))
 
 population = not args.finite
 
+# Select which policies will be evaluated
 if population:
     policies = [policy.MBPolicy, policy.RatioPolicy, policy.RandomPolicy]
     names = ["markov blanket", "ratio policy", "random"]
     excluded_keys += ['n', 'n_obs', 'alpha']
 elif args.abcd:
     policies = [policy.RandomPolicyF,
-                policy.ProposedPolicyERF,]
-    names = ["random", "e + r"]
+                policy.ProposedPolicyERF,
+                policy.ProposedPolicyRF]
+    names = ["random", "e + r", "r"]
 else:
     policies = [policy.RandomPolicyF,
                 policy.ProposedPolicyEF,
@@ -194,18 +194,25 @@ else:
                 policy.ProposedPolicyMRF,
                 policy.ProposedPolicyMERF]
     names = ["random", "e", "r", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
+
+# Compose experimental parameters
+if args.max_iter == -1:
+    max_iter = args.n_max
+else:
+    max_iter = args.max_iter
     
 evaluation_params = {'population': population,
-                     'n': args.n,
-                     'n_obs': args.n if args.n_obs is None else args.n_obs,
-                     'alpha': args.alpha,
                      'debug': args.debug,
-                     'random_state': None,
                      'max_iter': max_iter,
-                     'n_workers': n_workers,
-                     'batch_size': args.batch_size}
+                     'intervention_mean': args.i_mean,
+                     'intervention_var': args.i_var,
+                     'n_int': args.n,
+                     'n_obs': args.n if args.n_obs is None else args.n_obs,
+                     'alpha': args.alpha}
 
-results = evaluation.evaluate_policies(cases, args.runs, policies, names, **evaluation_params)
+n_workers = None if args.n_workers == -1 else args.n_workers
+
+results = evaluation.evaluate_policies(cases, policies, names, args.runs, evaluation_params, n_workers, args.batch_size)
 end = time.time()
 print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
 

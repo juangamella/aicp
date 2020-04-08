@@ -50,7 +50,7 @@ from termcolor import colored
 #---------------------------------------------------------------------
 # "Public" API: icp function
 
-def icp(environments, target, alpha=0.01, selection='all', max_predictors=None, debug=False, stop_early=False):
+def icp(environments, target, alpha, selection='all', max_predictors=None, debug=False, stop_early=False):
     """
     ICP on the given target using data from the given environments
     """
