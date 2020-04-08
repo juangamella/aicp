@@ -103,7 +103,7 @@ def evaluate_policies(cases, policies, policy_names, runs, params, n_workers=Non
     # Run experiments in batches to prevent memory explosion due to
     # large interables with pool.map
     if n_workers is None:
-        n_workers = os.cpu_count()
+        n_workers = os.cpu_count() - 1
     print("Available cores: %d" % os.cpu_count())
     print("Running a total of %d experiments with %d workers in batches of size %d" % (n_exp, n_workers, batch_size))
     setting = "Population" if params['population'] else ("Finite (%d samples/environment and %s obs. samples)" % (params['n_int'], params['n_obs']))
