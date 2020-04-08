@@ -158,21 +158,23 @@ def run_policy(settings):
 
     # Remaining iterations
     while current_estimate != case.truth and i <= settings.max_iter:
-        history.append((current_estimate, next_intervention, len(selection)))
-        print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, len(selection), next_intervention)) if settings.debug else None
         if next_intervention is not None:
+            assert next_intervention != case.target
             # Perform intervention
-            noise_intervention = np.array([[next_intervention, settings.intervention_mean, settings.intervention_var]])
+            targets = intervention_targets(next_intervention, case.truth, case.sem.p, settings.off_targets)
+            history.append((current_estimate, targets, len(selection)))
+            print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, len(selection), targets)) if settings.debug else None
+            noise_interventions = np.array([[i, settings.intervention_mean, settings.intervention_var] for i in targets])
             if settings.population:
-                new_env = case.sem.sample(population = True, noise_interventions = noise_intervention)
+                new_env = case.sem.sample(population = True, noise_interventions = noise_interventions)
                 envs.append(new_env)
                 result = population_icp.population_icp(envs, case.target, selection=selection, debug=False)
             else:
-                new_env = case.sem.sample(n = settings.n_int, noise_interventions = noise_intervention)
+                new_env = case.sem.sample(n = settings.n_int, noise_interventions = noise_interventions)
                 envs.add(next_intervention, new_env)
                 result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=settings.alpha, debug=False)
             current_estimate = result.estimate
-            selection = result.accepted # in each iteration we only need to run ICP on the sets accepted in the previous one
+            selection = result.accepted if settings.speedup else 'all' # in each iteration we only need to run ICP on the sets accepted in the previous one
             next_intervention, selection = policy.next(result)
         i += 1
 
@@ -183,6 +185,21 @@ def run_policy(settings):
     elapsed = end - start
     print("  (case_id: %s) done (%0.2f seconds)" % (case.id, elapsed)) if settings.debug else None
     return EvaluationResult(policy.name, current_estimate, history)
+
+def intervention_targets(target, response, p, max_off_targets):
+    """Return intervention targets. If no off target effects are allowed
+    (i.e. max_off_targets = 0), the intervention is at the given
+    target. Otherwise, a number (at random, up to max_off_targets) of
+    additional targets are selected at random, excluding the response
+    (i.e. Y)."""
+    if max_off_targets == 0:
+        return [target]
+    else:
+        num_off_targets = np.random.choice(max_off_targets+1)
+        off_targets = list(np.random.choice(utils.all_but([target, response], p),
+                                            size=num_off_targets,
+                                            replace=False))
+        return [target] + off_targets
 
 # --------------------------------------------------------------------
 # Class definitions
@@ -210,6 +227,8 @@ class ExperimentSettings():
                  max_iter,
                  intervention_mean,
                  intervention_var,
+                 off_targets,
+                 speedup,
                  random_state,
                  n_int = None,
                  n_obs = None,
@@ -224,6 +243,8 @@ class ExperimentSettings():
         self.max_iter = max_iter
         self.intervention_mean = intervention_mean
         self.intervention_var = intervention_var
+        self.off_targets = off_targets
+        self.speedup = speedup
         self.random_state = random_state
         
         if not population:

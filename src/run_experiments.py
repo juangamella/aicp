@@ -55,12 +55,12 @@ arguments = {
     'n_workers': {'default': 1, 'type': int},
     'batch_size': {'default': 20000, 'type': int},
     'debug': {'default': False, 'type': bool},
-    'avg_deg': {'default': 3, 'type': float},
+    'k': {'default': 3, 'type': float},
     'G': {'default': 4, 'type': int},
     'runs': {'default': 1, 'type': int},
     'n_min': {'default': 8, 'type': int},
     'n_max': {'default': 8, 'type': int},
-    'w_min': {'default': 0.1, 'type': float},
+    'w_min': {'default': 0, 'type': float},
     'w_max': {'default': 0.2, 'type': float},
     'var_min': {'default': 0, 'type': float},
     'var_max': {'default': 1, 'type': float},
@@ -77,7 +77,9 @@ arguments = {
     'tag' : {'type': str},
     'save_dataset': {'type': str},
     'load_dataset': {'type': str},
-    'abcd': {'type': bool, 'default': False} # ABCD settings: Run only random, e + r, r
+    'abcd': {'type': bool, 'default': False}, # ABCD settings: Run only random, e + r, r
+    'ot': {'type': int, 'default': 0},
+    'sp': {'type': bool, 'default': False}
 }
 
 
@@ -98,10 +100,11 @@ for name, params in arguments.items():
 args = parser.parse_args()
 
 # Parameters that will be excluded from the filename (see parameter_string function above)
-excluded_keys = ['save_dataset', 'debug'] 
+excluded_keys = ['save_dataset', 'debug', 'n_workers', 'batch_size'] 
 excluded_keys += ['tag'] if args.tag is None else []
 excluded_keys += ['n_obs'] if args.n_obs is None else []
 excluded_keys += ['abcd'] if not args.abcd else []
+excluded_keys += ['ot'] if args.ot == 0 else []
 
 print(args) # For debugging
 
@@ -123,13 +126,13 @@ if args.load_dataset is not None:
         sem = sampling.LGSEM(W, variances[i], means[i])
         truth = utils.graph_info(targets[i], W)[0]
         cases.append(evaluation.TestCase(i, sem, targets[i], truth))
-    excluded_keys += ['avg_deg', 'w_min', 'w_max', 'var_min', 'var_max', 'int_min', 'int_max', 'random_state', 'n_min', 'n_max']
+    excluded_keys += ['k', 'w_min', 'w_max', 'var_min', 'var_max', 'int_min', 'int_max', 'random_state', 'n_min', 'n_max']
 # Or generate dataset
 else:
     P = args.n_min if args.n_min == args.n_max else (args.n_min, args.n_max)
     cases = evaluation.gen_cases(args.G,
                                  P,
-                                 args.avg_deg,
+                                 args.k,
                                  args.w_min,
                                  args.w_max,
                                  args.var_min,
@@ -153,6 +156,8 @@ if args.save_dataset is not None and args.load_dataset is None:
                'alpha',
                'save_dataset',
                'load_dataset',
+               'ot',
+               'sp',
                'abcd']
     exclude += ['tag'] if args.tag is None else []
     dir_name = args.save_dataset + "_%d" % time.time() + parameter_string(args, exclude)
@@ -206,6 +211,8 @@ evaluation_params = {'population': population,
                      'max_iter': max_iter,
                      'intervention_mean': args.i_mean,
                      'intervention_var': args.i_var,
+                     'off_targets': args.ot,
+                     'speedup': args.sp,
                      'n_int': args.n,
                      'n_obs': args.n if args.n_obs is None else args.n_obs,
                      'alpha': args.alpha}
