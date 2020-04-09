@@ -44,6 +44,14 @@ from src import utils
 from src.utils import matrix_block, sampling_matrix, nonzero, all_but, graph_info, stable_blanket
 
 class UtilsTests(unittest.TestCase):
+
+    def test_combinations(self):
+        for p in range(2, 10):
+            target = np.random.choice(p)
+            combinations = utils.combinations(p, target)
+            self.assertEqual(int(2**(p-1)), len(combinations))
+            [self.assertTrue(target not in s) for s in combinations]
+    
     def test_matrix_block(self):
         M = np.array([[11, 12, 13, 14],
                       [21, 22, 23, 24],

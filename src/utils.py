@@ -31,6 +31,7 @@
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import itertools
 
 def matrix_block(M, rows, cols):
     """
@@ -55,6 +56,14 @@ def all_but(k,p):
     """Return [0,...,p-1] without k"""
     k = np.atleast_1d(k)
     return [i for i in range(p) if not i in k]
+
+def combinations(p, target):
+    """Return all possible subsets of the set {0...p-1} \ {target}"""
+    base = set(range(p)) - {target}
+    sets = []
+    for size in range(p):
+        sets += [set(s) for s in itertools.combinations(base, size)]
+    return sets
 
 def nonzero(A, tol=1e-12):
     """Return the indices of the nonzero (up to tol) elements in A"""
