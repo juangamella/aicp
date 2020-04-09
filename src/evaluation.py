@@ -131,20 +131,20 @@ def run_policy(settings):
     """Execute a policy over a given test case, returning a returning a
     PolicyEvaluationResults object containing the result"""
 
-    print(vars(settings)) if settings.debug else None
+    print(vars(settings))
     
     # Initialization
     case = settings.case
     if settings.random_state is not None:
         np.random.seed(settings.random_state)
-    policy = settings.policy(case.target, case.sem.p, name=settings.policy_name)
     history = [] # where we store the ICP estimate / next intervention
-
-    # Generate observational samples
+    # Initialize policy and generate observational sample
     if settings.population:
+        policy = settings.policy(case.target, case.sem.p, settings.policy_name)
         e = case.sem.sample(population = True)
         envs = [e]
     else:
+        policy = settings.policy(case.target, case.sem.p, settings.policy_name, settings.speedup)
         e = case.sem.sample(n = settings.n_obs)
         envs = Environments(case.sem.p, e)
     start = time.time()
@@ -153,6 +153,7 @@ def run_policy(settings):
     next_intervention = policy.first(e)
     current_estimate = set()
     result = None
+    no_accepted = int(2**(case.sem.p-1))
     selection = 'all' # on the first iteration, evaluate all possible candidate sets
     i = 1
 
@@ -161,9 +162,9 @@ def run_policy(settings):
         if next_intervention is not None:
             assert next_intervention != case.target
             # Perform intervention
-            targets = intervention_targets(next_intervention, case.truth, case.sem.p, settings.off_targets)
-            history.append((current_estimate, targets, len(selection)))
-            print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, len(selection), targets)) if settings.debug else None
+            targets = intervention_targets(next_intervention, case.target, case.sem.p, settings.off_targets)
+            history.append((current_estimate, targets, len(selection), no_accepted))
+            print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, no_accepted, targets)) if settings.debug else None
             noise_interventions = np.array([[i, settings.intervention_mean, settings.intervention_var] for i in targets])
             if settings.population:
                 new_env = case.sem.sample(population = True, noise_interventions = noise_interventions)
@@ -174,7 +175,7 @@ def run_policy(settings):
                 envs.add(next_intervention, new_env)
                 result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=settings.alpha, debug=False)
             current_estimate = result.estimate
-            selection = result.accepted if settings.speedup else 'all' # in each iteration we only need to run ICP on the sets accepted in the previous one
+            no_accepted = len(result.accepted)
             next_intervention, selection = policy.next(result)
         i += 1
 
@@ -195,6 +196,7 @@ def intervention_targets(target, response, p, max_off_targets):
     if max_off_targets == 0:
         return [target]
     else:
+        max_off_targets = min(max_off_targets, p-2)
         num_off_targets = np.random.choice(max_off_targets+1)
         off_targets = list(np.random.choice(utils.all_but([target, response], p),
                                             size=num_off_targets,

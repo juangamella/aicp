@@ -192,13 +192,14 @@ elif args.abcd:
 else:
     policies = [policy.RandomPolicyF,
                 policy.ProposedPolicyEF,
+                policy.ProposedPolicyEsoftF,
                 policy.ProposedPolicyRF,
                 policy.ProposedPolicyERF,
                 policy.MarkovPolicyF,
                 policy.ProposedPolicyMEF,
                 policy.ProposedPolicyMRF,
                 policy.ProposedPolicyMERF]
-    names = ["random", "e", "r", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
+    names = ["random", "e", "e soft", "r", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
 
 # Compose experimental parameters
 if args.max_iter == -1:

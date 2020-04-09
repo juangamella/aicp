@@ -169,14 +169,16 @@ def markov_blanket(sample, target, tol=1e-3, debug=False):
 class RandomPolicyF(Policy):
     """Random policy: selects variables at random.
     """
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, speedup):
+        self.speedup = speedup
         Policy.__init__(self, target, p, name)
     
     def first(self, _):
         return self.pick_intervention()
 
     def next(self, result):
-        return (self.pick_intervention(), result.accepted)
+        selection = result.accepted if self.speedup else 'all'
+        return (self.pick_intervention(), selection)
 
     def pick_intervention(self):
         return np.random.choice(utils.all_but(self.target, self.p))
@@ -185,7 +187,8 @@ class MarkovPolicyF(Policy):
     """Markov policy: selects variables at random from Markov blanket
     estimate.
     """
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, speedup):
+        self.speedup = speedup
         Policy.__init__(self, target, p, name)
     
     def first(self, sample):
@@ -195,7 +198,8 @@ class MarkovPolicyF(Policy):
 
     def next(self, result):
         var = self.pick_intervention()
-        return (var, result.accepted)
+        selection = result.accepted if self.speedup else 'all'
+        return (var, selection)
     
     def pick_intervention(self):
         if len(self.mb) == 0:
@@ -208,8 +212,9 @@ class ProposedPolicyMEF(Policy):
     estimate, removes variables which accept the empty set
 
     """    
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, speedup):
         self.interventions = []
+        self.speedup = speedup
         Policy.__init__(self, target, p, name)
     
     def first(self, sample):
@@ -225,8 +230,9 @@ class ProposedPolicyMEF(Policy):
         if set() in result.accepted:
             to_remove.add(last_intervention)
         self.candidates.difference_update(to_remove)
-        # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
+        # Prune new candidate sets
+        selection = result.accepted if self.speedup else utils.combinations(self.p, self.target)
+        selection = [s for s in selection if len(set.intersection(s, to_remove)) == 0]
         # Pick next intervention
         var = self.pick_intervention()
         self.interventions.append(var)
@@ -244,9 +250,10 @@ class ProposedPolicyMRF(Policy):
     ratio < 1/2
 
     """
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, speedup):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
+        self.speedup = speedup
         Policy.__init__(self, target, p, name)
     
     def first(self, sample):
@@ -259,8 +266,9 @@ class ProposedPolicyMRF(Policy):
         self.current_ratios = ratios(self.p, result.accepted)
         # Pick next intervention
         var = self.pick_intervention()
+        selection = result.accepted if self.speedup else 'all'
         self.interventions.append(var)
-        return (var, result.accepted)
+        return (var, selection)
     
     def pick_intervention(self):
         if len(self.candidates) == 0:
@@ -283,9 +291,10 @@ class ProposedPolicyMERF(Policy):
     ratio < 1/2
 
     """
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, speedup):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
+        self.speedup = speedup
         Policy.__init__(self, target, p, name)
     
     def first(self, sample):
@@ -302,8 +311,9 @@ class ProposedPolicyMERF(Policy):
         if set() in result.accepted:
             to_remove.add(last_intervention)
         self.candidates.difference_update(to_remove)
-        # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
+        # Prune candidate sets
+        selection = result.accepted if self.speedup else utils.combinations(self.p, self.target)
+        selection = [s for s in selection if len(set.intersection(s, to_remove)) == 0]
         # Pick next intervention
         var = self.pick_intervention()
         self.interventions.append(var)
@@ -328,8 +338,9 @@ class ProposedPolicyEF(Policy):
     estimate, removes variables which accept the empty set
 
     """    
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, speedup):
         self.interventions = []
+        self.speedup = speedup
         Policy.__init__(self, target, p, name)
     
     def first(self, sample):
@@ -345,8 +356,9 @@ class ProposedPolicyEF(Policy):
         if set() in result.accepted:
             to_remove.add(last_intervention)
         self.candidates.difference_update(to_remove)
-        # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
+        # Prune candidate sets
+        selection = result.accepted if self.speedup else utils.combinations(self.p, self.target)
+        selection = [s for s in selection if len(set.intersection(s, to_remove)) == 0]
         # Pick next intervention
         var = self.pick_intervention()
         self.interventions.append(var)
@@ -364,9 +376,10 @@ class ProposedPolicyERF(Policy):
     ratio < 1/2
 
     """
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, speedup):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
+        self.speedup = speedup
         Policy.__init__(self, target, p, name)
     
     def first(self, sample):
@@ -383,8 +396,9 @@ class ProposedPolicyERF(Policy):
         if set() in result.accepted:
             to_remove.add(last_intervention)
         self.candidates.difference_update(to_remove)
-        # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
+        # Prune candidate sets
+        selection = result.accepted if self.speedup else utils.combinations(self.p, self.target)
+        selection = [s for s in selection if len(set.intersection(s, to_remove)) == 0]
         # Pick next intervention
         var = self.pick_intervention()
         self.interventions.append(var)
@@ -410,9 +424,10 @@ class ProposedPolicyRF(Policy):
     ratio < 1/2
 
     """
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, speedup):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
+        self.speedup = speedup
         Policy.__init__(self, target, p, name)
     
     def first(self, sample):
@@ -425,8 +440,9 @@ class ProposedPolicyRF(Policy):
         self.current_ratios = ratios(self.p, result.accepted)
         # Pick next intervention
         var = self.pick_intervention()
+        selection = result.accepted if self.speedup else 'all'
         self.interventions.append(var)
-        return (var, result.accepted)
+        return (var, selection)
     
     def pick_intervention(self):
         if len(self.candidates) == 0:
@@ -441,3 +457,39 @@ class ProposedPolicyRF(Policy):
                 return np.random.choice(list(self.candidates))
             else:
                 return np.random.choice(list(choice))
+
+class ProposedPolicyEsoftF(Policy):
+    """Proposed policy 1: selects variables at random from Markov blanket
+    estimate, removes variables which accept the empty set
+
+    """    
+    def __init__(self, target, p, name, speedup):
+        self.interventions = []
+        self.speedup = speedup
+        Policy.__init__(self, target, p, name)
+    
+    def first(self, sample):
+        self.candidates = set(utils.all_but(self.target, self.p))
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
+
+    def next(self, result):
+        last_intervention = self.interventions[-1]
+        to_remove = set()
+        # Prune candidate set
+        if set() in result.accepted:
+            to_remove.add(last_intervention)
+        self.candidates.difference_update(to_remove)
+        # Do not discard sets where last intervention appears
+        selection = result.accepted if self.speedup else 'all'
+        # Pick next intervention
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return (var, selection)
+    
+    def pick_intervention(self):
+        if len(self.candidates) == 0:
+            return None
+        else:
+            return np.random.choice(list(self.candidates))
