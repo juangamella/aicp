@@ -79,7 +79,7 @@ arguments = {
     'load_dataset': {'type': str},
     'abcd': {'type': bool, 'default': False}, # ABCD settings: Run only random, e + r, r
     'ot': {'type': int, 'default': 0},
-    'sp': {'type': bool, 'default': False}
+    'nsp': {'type': bool, 'default': False}
 }
 
 
@@ -157,7 +157,7 @@ if args.save_dataset is not None and args.load_dataset is None:
                'save_dataset',
                'load_dataset',
                'ot',
-               'sp',
+               'nsp',
                'abcd']
     exclude += ['tag'] if args.tag is None else []
     dir_name = args.save_dataset + "_%d" % time.time() + parameter_string(args, exclude)
@@ -181,8 +181,8 @@ population = not args.finite
 
 # Select which policies will be evaluated
 if population:
-    policies = [policy.MBPolicy, policy.RatioPolicy, policy.RandomPolicy]
-    names = ["markov blanket", "ratio policy", "random"]
+    policies = [policy.RandomPolicy, policy.MBPolicy, policy.RatioPolicy, policy.RatioPolicy2]
+    names = ["random", "markov", "markov + e + r", "markov + e + r 2.0"]
     excluded_keys += ['n', 'n_obs', 'alpha']
 elif args.abcd:
     policies = [policy.RandomPolicyF,
@@ -191,15 +191,17 @@ elif args.abcd:
     names = ["random", "e + r", "r"]
 else:
     policies = [policy.RandomPolicyF,
-                policy.ProposedPolicyEF,
-                policy.ProposedPolicyEsoftF,
+                #policy.ProposedPolicyEF,
                 policy.ProposedPolicyRF,
-                policy.ProposedPolicyERF,
-                policy.MarkovPolicyF,
-                policy.ProposedPolicyMEF,
-                policy.ProposedPolicyMRF,
-                policy.ProposedPolicyMERF]
-    names = ["random", "e", "e soft", "r", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
+                policy.ProposedPolicyRF2,
+                policy.ProposedPolicyRF3]
+                #policy.ProposedPolicyERF,
+                #policy.MarkovPolicyF,
+                #policy.ProposedPolicyMEF,
+                #policy.ProposedPolicyMRF,
+                #policy.ProposedPolicyMERF]
+    #names = ["random", "e", "r", "r2", "r3", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
+    names = ["random", "r", "r2", "r3"]
 
 # Compose experimental parameters
 if args.max_iter == -1:
@@ -213,7 +215,7 @@ evaluation_params = {'population': population,
                      'intervention_mean': args.i_mean,
                      'intervention_var': args.i_var,
                      'off_targets': args.ot,
-                     'speedup': args.sp,
+                     'speedup': not args.nsp,
                      'n_int': args.n,
                      'n_obs': args.n if args.n_obs is None else args.n_obs,
                      'alpha': args.alpha}

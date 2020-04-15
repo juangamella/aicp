@@ -181,7 +181,7 @@ class RatioPolicy2(RatioPolicy):
             None
         else:
             candidates = list(self.candidates)
-            idx = np.argmin(self.ratios[candidates])
+            idx = np.argmin(self.current_ratios[candidates])
             var = candidates[idx]
             self.interventions.append(var)
             return var
@@ -476,3 +476,58 @@ class ProposedPolicyRF(Policy):
                 return np.random.choice(list(self.candidates))
             else:
                 return np.random.choice(list(choice))
+
+class ProposedPolicyRF2(Policy):
+    """Select variable with lowest ratio above 0.5
+    """
+    def __init__(self, target, p, name, speedup):
+        self.interventions = []
+        self.current_ratios = np.ones(p) * 0.5
+        self.speedup = speedup
+        Policy.__init__(self, target, p, name)
+    
+    def first(self, sample):
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
+
+    def next(self, result):
+        self.current_ratios = ratios(self.p, result.accepted)
+        # Pick next intervention
+        var = self.pick_intervention()
+        selection = result.accepted if self.speedup else 'all'
+        self.interventions.append(var)
+        return (var, selection)
+    
+    def pick_intervention(self):
+        above_half = np.where[self.ratios >= 0.5][0]
+        idx = np.argmin(self.ratios[above_half])
+        return above_half[idx]
+
+class ProposedPolicyRF3(Policy):
+    """Select variable with ratio closest to 0.5
+    """
+    def __init__(self, target, p, name, speedup):
+        self.interventions = []
+        self.current_ratios = np.ones(p) * 0.5
+        self.speedup = speedup
+        Policy.__init__(self, target, p, name)
+    
+    def first(self, sample):
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
+
+    def next(self, result):
+        self.current_ratios = ratios(self.p, result.accepted)
+        # Pick next intervention
+        var = self.pick_intervention()
+        selection = result.accepted if self.speedup else 'all'
+        self.interventions.append(var)
+        return (var, selection)
+    
+    def pick_intervention(self):
+        candidates = utils.all_but(self.target, self.p)
+        distance = np.abs(self.ratios[candidates] - 0.5)
+        idx = np.argmin(distance)
+        return candidates[idx]
