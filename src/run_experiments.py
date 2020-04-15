@@ -181,8 +181,8 @@ population = not args.finite
 
 # Select which policies will be evaluated
 if population:
-    policies = [policy.RandomPolicy, policy.MBPolicy, policy.RatioPolicy, policy.RatioPolicy2]
-    names = ["random", "markov", "markov + e + r", "markov + e + r 2.0"]
+    policies = [policy.RandomPolicy, policy.MBPolicy, policy.EPolicy, policy.RatioPolicy, policy.RatioPolicy2]
+    names = ["random", "markov", "markov + e", "markov + e + r", "markov + e + r 2.0"]
     excluded_keys += ['n', 'n_obs', 'alpha']
 elif args.abcd:
     policies = [policy.RandomPolicyF,

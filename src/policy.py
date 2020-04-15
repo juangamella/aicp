@@ -67,7 +67,7 @@ class RandomPolicy(Policy):
     def __init__(self, target, p, name):
         self.interventions = []
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, _):
         self.idx = np.random.permutation(utils.all_but(self.target, self.p))
         self.i = 0
@@ -96,7 +96,7 @@ class MBPolicy(Policy):
             self.mb = np.random.permutation(utils.all_but(self.target, self.p))
         else:
             self.mb = np.random.permutation(mb)
-        self.i = 0
+            self.i = 0
         return self.pick_intervention()
 
     def next(self, result):
@@ -111,7 +111,6 @@ class RatioPolicy(Policy):
 
     def __init__(self, target, p, name):
         self.interventions = []
-        self.current_ratios = np.zeros(p)
         Policy.__init__(self, target, p, name)
 
     def first(self, e):
@@ -121,7 +120,7 @@ class RatioPolicy(Policy):
             var = np.random.choice(utils.all_but(self.target, self.p))
         else:
             var = np.random.choice(list(self.mb))
-        self.interventions.append(var)
+            self.interventions.append(var)
         return var
 
     def next(self, result):
@@ -130,7 +129,6 @@ class RatioPolicy(Policy):
         for i,r in enumerate(new_ratios):
             if r < 0.5 and i in self.candidates:
                 self.candidates.remove(i)
-        self.current_ratios = new_ratios
         # Empty-set strategy
         if set() in result.accepted:
             last_intervention = self.interventions[-1]
@@ -146,10 +144,43 @@ class RatioPolicy(Policy):
             self.interventions.append(var)
             return var
 
-class RatioPolicy2(RatioPolicy):
+class EPolicy(Policy):
+
     def __init__(self, target, p, name):
         self.interventions = []
-        self.current_ratios = np.zeros(p)
+        Policy.__init__(self, target, p, name)
+
+    def first(self, e):
+        self.mb = set(population_icp.markov_blanket(self.target, e))
+        self.candidates = self.mb.copy()
+        if self.mb == set():
+            var = np.random.choice(utils.all_but(self.target, self.p))
+        else:
+            var = np.random.choice(list(self.mb))
+            self.interventions.append(var)
+        return var
+
+    def next(self, result):
+        # Empty-set strategy
+        if set() in result.accepted:
+            last_intervention = self.interventions[-1]
+            self.candidates.difference_update({last_intervention})
+        return (self.pick_intervention(), result.accepted)
+
+    def pick_intervention(self):
+        choice = set.difference(self.candidates, set(self.interventions))
+        if choice == set(): # Have intervened on all variables or there are no parents
+            None
+        else:
+            var = np.random.choice(list(choice))
+            self.interventions.append(var)
+            return var
+        
+class RatioPolicy2(Policy):
+    def __init__(self, target, p, name):
+        self.interventions = []
+        self.current_ratios = np.ones(p) * 0.5
+        self.current_ratios[target] = 0
         RatioPolicy.__init__(self, target, p, name)
 
     def first(self, e):
@@ -159,7 +190,7 @@ class RatioPolicy2(RatioPolicy):
             var = np.random.choice(utils.all_but(self.target, self.p))
         else:
             var = np.random.choice(list(self.mb))
-        self.interventions.append(var)
+            self.interventions.append(var)
         return var
 
     def next(self, result):
@@ -181,7 +212,8 @@ class RatioPolicy2(RatioPolicy):
             None
         else:
             candidates = list(self.candidates)
-            idx = np.argmin(self.current_ratios[candidates])
+            choice = np.where(self.current_ratios[candidates] == self.current_ratios[candidates].min())[0]
+            idx = np.random.choice(choice)
             var = candidates[idx]
             self.interventions.append(var)
             return var
@@ -207,7 +239,7 @@ class RandomPolicyF(Policy):
     def __init__(self, target, p, name, speedup):
         self.speedup = speedup
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, _):
         return self.pick_intervention()
 
@@ -225,7 +257,7 @@ class MarkovPolicyF(Policy):
     def __init__(self, target, p, name, speedup):
         self.speedup = speedup
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, sample):
         self.mb = markov_blanket(sample, self.target)
         var = self.pick_intervention()
@@ -251,7 +283,7 @@ class ProposedPolicyMEF(Policy):
         self.interventions = []
         self.speedup = speedup
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, sample):
         self.candidates = set(markov_blanket(sample, self.target))
         var = self.pick_intervention()
@@ -263,7 +295,7 @@ class ProposedPolicyMEF(Policy):
         # Empty-set strategy
         if set() in result.accepted:
             self.candidates.difference_update({last_intervention})
-        # Pick next intervention
+            # Pick next intervention
         var = self.pick_intervention()
         selection = result.accepted if self.speedup else 'all'
         self.interventions.append(var)
@@ -284,9 +316,10 @@ class ProposedPolicyMRF(Policy):
     def __init__(self, target, p, name, speedup):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
+        self.current_ratios[target] = 0
         self.speedup = speedup
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, sample):
         self.candidates = set(markov_blanket(sample, self.target)) # set(range(self.p))
         var = self.pick_intervention()
@@ -309,7 +342,7 @@ class ProposedPolicyMRF(Policy):
             for i,r in enumerate(self.current_ratios):
                 if r < 0.5:
                     below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
+                    choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
                 return np.random.choice(list(self.candidates))
             else:
@@ -325,9 +358,10 @@ class ProposedPolicyMERF(Policy):
     def __init__(self, target, p, name, speedup):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
+        self.current_ratios[target] = 0
         self.speedup = speedup
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, sample):
         self.candidates = set(markov_blanket(sample, self.target)) # set(range(self.p))
         var = self.pick_intervention()
@@ -340,7 +374,7 @@ class ProposedPolicyMERF(Policy):
         # Empty-set strategy
         if set() in result.accepted:
             self.candidates.difference_update({last_intervention})
-        # Pick next intervention
+            # Pick next intervention
         var = self.pick_intervention()
         selection = result.accepted if self.speedup else 'all'
         self.interventions.append(var)
@@ -354,7 +388,7 @@ class ProposedPolicyMERF(Policy):
             for i,r in enumerate(self.current_ratios):
                 if r < 0.5:
                     below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
+                    choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
                 return np.random.choice(list(self.candidates))
             else:
@@ -369,7 +403,7 @@ class ProposedPolicyEF(Policy):
         self.interventions = []
         self.speedup = speedup
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, sample):
         self.candidates = set(utils.all_but(self.target, self.p))
         var = self.pick_intervention()
@@ -381,7 +415,7 @@ class ProposedPolicyEF(Policy):
         # Empty-set strategy
         if set() in result.accepted:
             self.candidates.difference_update({last_intervention})
-        # Pick next intervention
+            # Pick next intervention
         var = self.pick_intervention()
         selection = result.accepted if self.speedup else 'all'
         self.interventions.append(var)
@@ -392,7 +426,7 @@ class ProposedPolicyEF(Policy):
             return None
         else:
             return np.random.choice(list(self.candidates))
-    
+        
 class ProposedPolicyERF(Policy):
     """Proposed policy 2: selects variables at random from Markov blanket
     estimate, removes variables which accept the empty set or have
@@ -402,9 +436,10 @@ class ProposedPolicyERF(Policy):
     def __init__(self, target, p, name, speedup):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
+        self.current_ratios[target] = 0
         self.speedup = speedup
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, sample):
         self.candidates = set(utils.all_but(self.target, self.p))
         var = self.pick_intervention()
@@ -417,7 +452,7 @@ class ProposedPolicyERF(Policy):
         # Empty-set strategy
         if set() in result.accepted:
             self.candidates.difference_update({last_intervention})
-        # Pick next intervention
+            # Pick next intervention
         var = self.pick_intervention()
         selection = result.accepted if self.speedup else 'all'
         self.interventions.append(var)
@@ -431,7 +466,7 @@ class ProposedPolicyERF(Policy):
             for i,r in enumerate(self.current_ratios):
                 if r < 0.5:
                     below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
+                    choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
                 return np.random.choice(list(self.candidates))
             else:
@@ -446,9 +481,10 @@ class ProposedPolicyRF(Policy):
     def __init__(self, target, p, name, speedup):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
+        self.current_ratios[target] = 0
         self.speedup = speedup
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, sample):
         self.candidates = set(utils.all_but(self.target, self.p))
         var = self.pick_intervention()
@@ -471,7 +507,7 @@ class ProposedPolicyRF(Policy):
             for i,r in enumerate(self.current_ratios):
                 if r < 0.5:
                     below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
+                    choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
                 return np.random.choice(list(self.candidates))
             else:
@@ -483,9 +519,10 @@ class ProposedPolicyRF2(Policy):
     def __init__(self, target, p, name, speedup):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
+        self.current_ratios[target] = 0
         self.speedup = speedup
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, sample):
         var = self.pick_intervention()
         self.interventions.append(var)
@@ -500,8 +537,9 @@ class ProposedPolicyRF2(Policy):
         return (var, selection)
     
     def pick_intervention(self):
-        above_half = np.where[self.ratios >= 0.5][0]
-        idx = np.argmin(self.ratios[above_half])
+        above_half = np.where(self.current_ratios >= 0.5)[0]
+        choice = np.where(self.current_ratios[above_half] == self.current_ratios[above_half].min())[0]
+        idx = np.random.choice(choice)
         return above_half[idx]
 
 class ProposedPolicyRF3(Policy):
@@ -510,9 +548,10 @@ class ProposedPolicyRF3(Policy):
     def __init__(self, target, p, name, speedup):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
+        self.current_ratios[target] = 0
         self.speedup = speedup
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, sample):
         var = self.pick_intervention()
         self.interventions.append(var)
@@ -528,6 +567,7 @@ class ProposedPolicyRF3(Policy):
     
     def pick_intervention(self):
         candidates = utils.all_but(self.target, self.p)
-        distance = np.abs(self.ratios[candidates] - 0.5)
-        idx = np.argmin(distance)
+        distance = np.abs(self.current_ratios[candidates] - 0.5)
+        choice = np.where(distance == distance.min())[0]
+        idx = np.random.choice(choice)
         return candidates[idx]
