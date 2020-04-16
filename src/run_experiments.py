@@ -105,6 +105,7 @@ excluded_keys += ['tag'] if args.tag is None else []
 excluded_keys += ['n_obs'] if args.n_obs is None else []
 excluded_keys += ['abcd'] if not args.abcd else []
 excluded_keys += ['ot'] if args.ot == 0 else []
+excluded_keys += ['nsp'] if not args.nsp else []
 
 print(args) # For debugging
 
