@@ -182,8 +182,8 @@ population = not args.finite
 
 # Select which policies will be evaluated
 if population:
-    policies = [policy.RandomPolicy, policy.MBPolicy, policy.EPolicy, policy.RatioPolicy, policy.RatioPolicy2]
-    names = ["random", "markov", "markov + e", "markov + e + r", "markov + e + r 2.0"]
+    policies = [policy.RandomPolicy, policy.MBPolicy, policy.EPolicy, policy.RatioPolicy]
+    names = ["random", "markov", "markov + e", "markov + e + r"]
     excluded_keys += ['n', 'n_obs', 'alpha']
 elif args.abcd:
     policies = [policy.RandomPolicyF,
@@ -192,17 +192,14 @@ elif args.abcd:
     names = ["random", "e + r", "r"]
 else:
     policies = [policy.RandomPolicyF,
-                #policy.ProposedPolicyEF,
+                policy.ProposedPolicyEF,
                 policy.ProposedPolicyRF,
-                policy.ProposedPolicyRF2,
-                policy.ProposedPolicyRF3]
-                #policy.ProposedPolicyERF,
-                #policy.MarkovPolicyF,
-                #policy.ProposedPolicyMEF,
-                #policy.ProposedPolicyMRF,
-                #policy.ProposedPolicyMERF]
-    #names = ["random", "e", "r", "r2", "r3", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
-    names = ["random", "r", "r2", "r3"]
+                policy.ProposedPolicyERF,
+                policy.MarkovPolicyF,
+                policy.ProposedPolicyMEF,
+                policy.ProposedPolicyMRF,
+                policy.ProposedPolicyMERF]
+    names = ["random", "e", "r", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
 
 # Compose experimental parameters
 if args.max_iter == -1:

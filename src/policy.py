@@ -176,48 +176,6 @@ class EPolicy(Policy):
             self.interventions.append(var)
             return var
         
-class RatioPolicy2(Policy):
-    def __init__(self, target, p, name):
-        self.interventions = []
-        self.current_ratios = np.ones(p) * 0.5
-        self.current_ratios[target] = 0
-        RatioPolicy.__init__(self, target, p, name)
-
-    def first(self, e):
-        self.mb = set(population_icp.markov_blanket(self.target, e))
-        self.candidates = self.mb.copy()
-        if self.mb == set():
-            var = np.random.choice(utils.all_but(self.target, self.p))
-        else:
-            var = np.random.choice(list(self.mb))
-            self.interventions.append(var)
-        return var
-
-    def next(self, result):
-        # Ratio strategy
-        new_ratios = ratios(self.p, result.accepted)
-        for i,r in enumerate(new_ratios):
-            if r < 0.5 and i in self.candidates:
-                self.candidates.remove(i)
-        self.current_ratios = new_ratios
-        # Empty-set strategy
-        if set() in result.accepted:
-            last_intervention = self.interventions[-1]
-            self.candidates.difference_update({last_intervention})
-        return (self.pick_intervention(), result.accepted)
-
-    def pick_intervention(self):
-        choice = set.difference(self.candidates, set(self.interventions))
-        if choice == set(): # Have intervened on all variables or there are no parents
-            None
-        else:
-            candidates = list(self.candidates)
-            choice = np.where(self.current_ratios[candidates] == self.current_ratios[candidates].min())[0]
-            idx = np.random.choice(choice)
-            var = candidates[idx]
-            self.interventions.append(var)
-            return var
-        
 # --------------------------------------------------------------------
 # Finite sample setting policies
 
@@ -513,61 +471,36 @@ class ProposedPolicyRF(Policy):
             else:
                 return np.random.choice(list(choice))
 
-class ProposedPolicyRF2(Policy):
-    """Select variable with lowest ratio above 0.5
+class EvaluationResult():
+    """Class to contain all information resulting from evaluating a policy
+    over a test case"""
+
+    def __init__(self, policy, estimate, history):
+        self.policy = policy
+        #self.case = case
+        # Info
+        self.estimate = estimate # estimate produced by the policy
+        self.history = history # interventions and intermediate results of the policy
+        #self.time = time # time used by the policy
+
+    def estimates(self):
+        """Return the parents estimated by the policy at each step"""
+        return list(map(lambda step: step[0].estimate, self.history))
+
+    def interventions(self):
+        """Return the interventions carried out by the policy"""
+        return list(map(lambda step: step[1], self.history))
+
+    def intervened_variables(self):
+        """Return the intervened variables"""
+        return list(map(lambda step: step[1][0,0], self.history))
+
+class TestCase():
+    """Object that represents a test case
+    ie. SCM + target + expected result
     """
-    def __init__(self, target, p, name, speedup):
-        self.interventions = []
-        self.current_ratios = np.ones(p) * 0.5
-        self.current_ratios[target] = 0
-        self.speedup = speedup
-        Policy.__init__(self, target, p, name)
-        
-    def first(self, sample):
-        var = self.pick_intervention()
-        self.interventions.append(var)
-        return var
-
-    def next(self, result):
-        self.current_ratios = ratios(self.p, result.accepted)
-        # Pick next intervention
-        var = self.pick_intervention()
-        selection = result.accepted if self.speedup else 'all'
-        self.interventions.append(var)
-        return (var, selection)
-    
-    def pick_intervention(self):
-        above_half = np.where(self.current_ratios >= 0.5)[0]
-        choice = np.where(self.current_ratios[above_half] == self.current_ratios[above_half].min())[0]
-        idx = np.random.choice(choice)
-        return above_half[idx]
-
-class ProposedPolicyRF3(Policy):
-    """Select variable with ratio closest to 0.5
-    """
-    def __init__(self, target, p, name, speedup):
-        self.interventions = []
-        self.current_ratios = np.ones(p) * 0.5
-        self.current_ratios[target] = 0
-        self.speedup = speedup
-        Policy.__init__(self, target, p, name)
-        
-    def first(self, sample):
-        var = self.pick_intervention()
-        self.interventions.append(var)
-        return var
-
-    def next(self, result):
-        self.current_ratios = ratios(self.p, result.accepted)
-        # Pick next intervention
-        var = self.pick_intervention()
-        selection = result.accepted if self.speedup else 'all'
-        self.interventions.append(var)
-        return (var, selection)
-    
-    def pick_intervention(self):
-        candidates = utils.all_but(self.target, self.p)
-        distance = np.abs(self.current_ratios[candidates] - 0.5)
-        choice = np.where(distance == distance.min())[0]
-        idx = np.random.choice(choice)
-        return candidates[idx]
+    def __init__(self, id, sem, target, truth):
+        self.id = id
+        self.sem = sem
+        self.target = target
+        self.truth = truth
