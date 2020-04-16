@@ -1,7 +1,7 @@
 import networkx as nxi
-mport matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from src.sampling import LGSEM
-from src.icp import icp
+from src.icp import icp, t_test, f_test
 import numpy as np
 from src import utils
 import time
@@ -9,33 +9,41 @@ from src import population_icp
 from src import policy
 from src import sampling
 from sklearn import linear_model
-from src.policy import Environments
-# W = np.array([[0, 1, -1, 0, 0],
-#               [0, 0, 0, 1, 0],
-#               [0, 0, 0, 1, 0],
-#               [0, 0, 0, 0, 1],
-#               [0, 0, 0, 0, 0]])
 
-# # W = np.array([[0, 1, -1, 0, 0, 0],
-# #               [0, 0, 0, 1, 0, 0],
-# #               [0, 0, 0, 1, 0, 0],
-# #               [0, 0, 0, 0, 1, 0],
-# #               [0, 0, 0, 0, 0, 0],
-# #               [0, 0, 0, 0, 1, 0]])
+def diff(A, B):
+    """Return elements in A that are not in B"""
+    return [i for i in A if i not in B]
 
-#W = np.array([[0, 0, 0, 1],
-              # [0, 0, 1, 1],
-              # [0, 0, 0, 1],
-              # [0, 0, 0, 0]])
+def regress(pooled, S, target):
+    X = pooled[:, list(S)]
+    Y = pooled[:,target]
+    model = linear_model.LinearRegression(fit_intercept=True).fit(X, Y)
+    coefs, intercept = model.coef_, model.intercept_
+    res = Y - X @ coefs - intercept
+    return (res, coefs, intercept)
+
+def split_residuals(E, S, target, k=2, plot=False):
+    residuals = regress(np.vstack(E), S, target)[0]
+    split = np.random.choice(k, size=len(residuals))
+    splitted_residuals = [residuals[split==i] for i in range(k)]
+    if plot:
+        plt.scatter(np.arange(len(residuals)), residuals, c=split)
+        plt.plot([0,len(residuals)], [0,0], color='red')
+        plt.show(block=False)
+    return splitted_residuals
+
+def test(ra, rb):
+    return t_test(ra, rb), f_test(ra, rb)
 
 W = sampling.dag_avg_deg(8, 3, 0.5, 1, random_state=51)
 p = len(W)
 #W = W * np.random.uniform(size=W.shape)
 sem = LGSEM(W,(0,1))
-n = 10
-e = sem.sample(10)
-def ei(i):
-    return sem.sample(n, do_interventions = np.array([[i,10,1]]))
+n = 100
+e = sem.sample(n)
+
+def ei(i, n_samples=n):
+    return sem.sample(n_samples, do_interventions = np.array([[i,10,1]]))
 
 # d = sem.sample(population = True)
 # d0 = sem.sample(population = True, noise_interventions = np.array([[0,10,1]]))
@@ -49,27 +57,34 @@ def ei(i):
 
 target = 5
 
+environments = [e, ei(0), ei(1), ei(7)] 
+
+parents,_,_,mb = utils.graph_info(target, W)
+print("Parents: %s" % parents)
+print("Markov Blanket: %s" % mb)
+
 print("finite sample icp")
 start = time.time()
-result = icp([e, ei(0)], target, alpha=0.01, max_predictors=None, selection = 'all', debug=True, stop_early=False)
+result = icp(environments, target, alpha=0.01, max_predictors=None, selection = 'all', debug=True, stop_early=False)
 end = time.time()
 print("done in %0.2f seconds" % (end-start))
-print("Estimate: %s" % result.estimate)
+
 # print("population icp")
 # start = time.time()
 # result = population_icp.population_icp([d,d1], target, selection='all', debug=True)
 # end = time.time()
 # print("done in %0.2f seconds" % (end-start))
 
-parents,_,_,mb = utils.graph_info(target, W)
-print("Parents: %s" % parents)
-print("Markov Blanket: %s" % mb)
+print("Estimate: %s" % result.estimate)
 
 p = sem.p
 R = policy.ratios(p, result.accepted)
 print(R)
 for i,r in enumerate(R):
     print("X%d = %d/%d=%0.4f" % (i, r*len(result.accepted), len(result.accepted), r))
+
+[ra, rb] = split_residuals(environments, {0}, target, k=2, plot=True)
+test(ra, rb)
 
 # alphas = np.arange(1e-6, 1e-4, 1e-6)
 # coefs = np.zeros((len(alphas), p))

@@ -1,0 +1,333 @@
+Namespace(G=5, abcd=False, alpha=0.01, batch_size=20000, debug=True, finite=True, i_mean=10, i_var=1, int_max=1, int_min=0, k=3, load_dataset=None, max_iter=-1, n=5000, n_max=8, n_min=8, n_obs=None, n_workers=1, nsp=False, ot=0, random_state=42, runs=1, save_dataset=None, tag=None, var_max=1, var_min=0, w_max=0.2, w_min=0)
+
+
+Beggining experiments on 5 graphs at 2020-04-15 17:09:24.247023
+
+
+Compiling experiment batch...  done (0.00 seconds)
+Available cores: 4
+Running a total of 20 experiments with 1 workers in batches of size 20000
+Finite (5000 samples/environment and 5000 obs. samples) setting with a maximum of 8 iterations per experiment
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9748>, 'policy': <class 'src.policy.RandomPolicyF'>, 'policy_name': 'random', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 150168, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+ (case_id: 0, target: 2, truth: {4}, policy: random) 1 current estimate: set() accepted sets: 128 next intervention: [0]
+ (case_id: 0, target: 2, truth: {4}, policy: random) 2 current estimate: set() accepted sets: 96 next intervention: [5]
+ (case_id: 0, target: 2, truth: {4}, policy: random) 3 current estimate: set() accepted sets: 80 next intervention: [6]
+ (case_id: 0, target: 2, truth: {4}, policy: random) 4 current estimate: set() accepted sets: 80 next intervention: [5]
+ (case_id: 0, target: 2, truth: {4}, policy: random) 5 current estimate: set() accepted sets: 80 next intervention: [1]
+ (case_id: 0, target: 2, truth: {4}, policy: random) 6 current estimate: set() accepted sets: 80 next intervention: [1]
+ (case_id: 0, target: 2, truth: {4}, policy: random) 7 current estimate: set() accepted sets: 80 next intervention: [7]
+ (case_id: 0, target: 2, truth: {4}, policy: random) 8 current estimate: set() accepted sets: 74 next intervention: [7]
+ (case_id: 0, target: 2, truth: {4}, policy: random) reached 9 > 8 iterations
+  (case_id: 0) done (10.66 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf96d8>, 'policy': <class 'src.policy.RandomPolicyF'>, 'policy_name': 'random', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 592016, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+ (case_id: 1, target: 3, truth: {0}, policy: random) 1 current estimate: set() accepted sets: 128 next intervention: [5]
+ (case_id: 1, target: 3, truth: {0}, policy: random) 2 current estimate: set() accepted sets: 128 next intervention: [2]
+ (case_id: 1, target: 3, truth: {0}, policy: random) 3 current estimate: set() accepted sets: 128 next intervention: [5]
+ (case_id: 1, target: 3, truth: {0}, policy: random) 4 current estimate: set() accepted sets: 128 next intervention: [7]
+ (case_id: 1, target: 3, truth: {0}, policy: random) 5 current estimate: set() accepted sets: 128 next intervention: [4]
+ (case_id: 1, target: 3, truth: {0}, policy: random) 6 current estimate: set() accepted sets: 128 next intervention: [7]
+ (case_id: 1, target: 3, truth: {0}, policy: random) 7 current estimate: set() accepted sets: 128 next intervention: [5]
+ (case_id: 1, target: 3, truth: {0}, policy: random) 8 current estimate: set() accepted sets: 128 next intervention: [2]
+ (case_id: 1, target: 3, truth: {0}, policy: random) reached 9 > 8 iterations
+  (case_id: 1) done (14.08 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9550>, 'policy': <class 'src.policy.RandomPolicyF'>, 'policy_name': 'random', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 689376, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: random) 1 current estimate: set() accepted sets: 128 next intervention: [1]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: random) 2 current estimate: {1} accepted sets: 64 next intervention: [7]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: random) 3 current estimate: {1} accepted sets: 44 next intervention: [5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: random) 4 current estimate: {1, 5} accepted sets: 22 next intervention: [0]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: random) 5 current estimate: {1, 5} accepted sets: 16 next intervention: [5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: random) 6 current estimate: {1, 5} accepted sets: 16 next intervention: [6]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: random) 7 current estimate: {1, 5} accepted sets: 12 next intervention: [2]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: random) 8 current estimate: {1, 2, 5} accepted sets: 6 next intervention: [5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: random) reached 9 > 8 iterations
+  (case_id: 2) done (2.77 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9400>, 'policy': <class 'src.policy.RandomPolicyF'>, 'policy_name': 'random', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 535534, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+ (case_id: 3, target: 0, truth: {3}, policy: random) 1 current estimate: set() accepted sets: 128 next intervention: [5]
+ (case_id: 3, target: 0, truth: {3}, policy: random) 2 current estimate: set() accepted sets: 128 next intervention: [1]
+ (case_id: 3, target: 0, truth: {3}, policy: random) 3 current estimate: set() accepted sets: 128 next intervention: [5]
+ (case_id: 3, target: 0, truth: {3}, policy: random) 4 current estimate: set() accepted sets: 128 next intervention: [4]
+ (case_id: 3, target: 0, truth: {3}, policy: random) 5 current estimate: set() accepted sets: 128 next intervention: [5]
+ (case_id: 3, target: 0, truth: {3}, policy: random) 6 current estimate: set() accepted sets: 128 next intervention: [6]
+ (case_id: 3, target: 0, truth: {3}, policy: random) 7 current estimate: set() accepted sets: 128 next intervention: [5]
+ (case_id: 3, target: 0, truth: {3}, policy: random) 8 current estimate: set() accepted sets: 128 next intervention: [6]
+ (case_id: 3, target: 0, truth: {3}, policy: random) reached 9 > 8 iterations
+  (case_id: 3) done (13.38 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf92b0>, 'policy': <class 'src.policy.RandomPolicyF'>, 'policy_name': 'random', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 438774, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+ (case_id: 4, target: 4, truth: {0, 1}, policy: random) 1 current estimate: set() accepted sets: 128 next intervention: [1]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: random) 2 current estimate: {1} accepted sets: 64 next intervention: [5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: random) 3 current estimate: {1} accepted sets: 64 next intervention: [2]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: random) 4 current estimate: {1} accepted sets: 64 next intervention: [1]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: random) 5 current estimate: {1} accepted sets: 64 next intervention: [1]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: random) 6 current estimate: {1} accepted sets: 64 next intervention: [0]
+  (case_id: 4) done (4.26 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9748>, 'policy': <class 'src.policy.ProposedPolicyRF'>, 'policy_name': 'r', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 511937, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r) 1 current estimate: set() accepted sets: 128 next intervention: [6]
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r) 2 current estimate: set() accepted sets: 128 next intervention: [5]
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r) 3 current estimate: set() accepted sets: 128 next intervention: [0]
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r) 4 current estimate: set() accepted sets: 128 next intervention: [3]
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r) 5 current estimate: set() accepted sets: 128 next intervention: [5]
+[0.49606299 0.50393701 0.         0.49606299 0.50393701 0.50393701
+ 0.49606299 0.49606299]
+ (case_id: 0, target: 2, truth: {4}, policy: r) 6 current estimate: set() accepted sets: 127 next intervention: [5]
+[0.49606299 0.50393701 0.         0.49606299 0.50393701 0.50393701
+ 0.49606299 0.49606299]
+ (case_id: 0, target: 2, truth: {4}, policy: r) 7 current estimate: set() accepted sets: 127 next intervention: [5]
+[0.5        0.50833333 0.         0.48333333 0.53333333 0.50833333
+ 0.46666667 0.51666667]
+ (case_id: 0, target: 2, truth: {4}, policy: r) 8 current estimate: set() accepted sets: 120 next intervention: [7]
+[0.58441558 0.50649351 0.         0.48051948 0.58441558 0.49350649
+ 0.16883117 0.48051948]
+ (case_id: 0, target: 2, truth: {4}, policy: r) reached 9 > 8 iterations
+  (case_id: 0) done (15.27 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf96d8>, 'policy': <class 'src.policy.ProposedPolicyRF'>, 'policy_name': 'r', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 411597, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 1, target: 3, truth: {0}, policy: r) 1 current estimate: set() accepted sets: 128 next intervention: [6]
+[0.61538462 0.53846154 0.5        0.         0.5        0.53846154
+ 0.61538462 0.5       ]
+ (case_id: 1, target: 3, truth: {0}, policy: r) 2 current estimate: set() accepted sets: 104 next intervention: [2]
+[0.64 0.52 0.52 0.   0.5  0.52 0.64 0.5 ]
+ (case_id: 1, target: 3, truth: {0}, policy: r) 3 current estimate: set() accepted sets: 100 next intervention: [7]
+[0.64 0.52 0.52 0.   0.5  0.52 0.64 0.5 ]
+ (case_id: 1, target: 3, truth: {0}, policy: r) 4 current estimate: set() accepted sets: 100 next intervention: [5]
+[0.66666667 0.5        0.5        0.         0.5        0.5
+ 0.66666667 0.5       ]
+ (case_id: 1, target: 3, truth: {0}, policy: r) 5 current estimate: set() accepted sets: 96 next intervention: [2]
+[0.66666667 0.5        0.5        0.         0.5        0.
+ 0.66666667 0.5       ]
+ (case_id: 1, target: 3, truth: {0}, policy: r) 6 current estimate: set() accepted sets: 48 next intervention: [6]
+[0.66666667 0.5        0.5        0.         0.5        0.
+ 0.66666667 0.5       ]
+ (case_id: 1, target: 3, truth: {0}, policy: r) 7 current estimate: set() accepted sets: 48 next intervention: [7]
+[0.66666667 0.5        0.5        0.         0.5        0.
+ 0.66666667 0.5       ]
+ (case_id: 1, target: 3, truth: {0}, policy: r) 8 current estimate: set() accepted sets: 48 next intervention: [4]
+[0.66666667 0.5        0.5        0.         0.5        0.
+ 0.66666667 0.5       ]
+ (case_id: 1, target: 3, truth: {0}, policy: r) reached 9 > 8 iterations
+  (case_id: 1) done (8.38 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9550>, 'policy': <class 'src.policy.ProposedPolicyRF'>, 'policy_name': 'r', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 914228, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r) 1 current estimate: set() accepted sets: 128 next intervention: [4]
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r) 2 current estimate: set() accepted sets: 128 next intervention: [7]
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 1. ]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r) 3 current estimate: {7} accepted sets: 64 next intervention: [0]
+[0.66666667 0.5        0.5        0.         0.5        0.5
+ 0.33333333 1.        ]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r) 4 current estimate: {7} accepted sets: 48 next intervention: [4]
+[0.66666667 0.5        0.5        0.         0.5        0.5
+ 0.33333333 1.        ]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r) 5 current estimate: {7} accepted sets: 48 next intervention: [2]
+[0.66666667 0.5        1.         0.         0.5        0.5
+ 0.33333333 1.        ]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r) 6 current estimate: {2, 7} accepted sets: 24 next intervention: [4]
+[0.66666667 0.5        1.         0.         0.5        0.5
+ 0.33333333 1.        ]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r) 7 current estimate: {2, 7} accepted sets: 24 next intervention: [1]
+[0.66666667 1.         1.         0.         0.5        0.5
+ 0.33333333 1.        ]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r) 8 current estimate: {1, 2, 7} accepted sets: 12 next intervention: [0]
+[0.66666667 1.         1.         0.         0.5        0.5
+ 0.33333333 1.        ]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r) reached 9 > 8 iterations
+  (case_id: 2) done (4.63 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9400>, 'policy': <class 'src.policy.ProposedPolicyRF'>, 'policy_name': 'r', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 953959, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.  0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+ (case_id: 3, target: 0, truth: {3}, policy: r) 1 current estimate: set() accepted sets: 128 next intervention: [1]
+[0.  0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+ (case_id: 3, target: 0, truth: {3}, policy: r) 2 current estimate: set() accepted sets: 128 next intervention: [3]
+[0.  0.5 0.5 1.  0.5 0.5 0.5 0.5]
+  (case_id: 3) done (1.14 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf92b0>, 'policy': <class 'src.policy.ProposedPolicyRF'>, 'policy_name': 'r', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 92263, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r) 1 current estimate: set() accepted sets: 128 next intervention: [7]
+[0.5 0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r) 2 current estimate: set() accepted sets: 128 next intervention: [2]
+[0.5 0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r) 3 current estimate: set() accepted sets: 128 next intervention: [2]
+[0.5 0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r) 4 current estimate: set() accepted sets: 128 next intervention: [3]
+[0.5 0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r) 5 current estimate: set() accepted sets: 128 next intervention: [1]
+[0.5 1.  0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r) 6 current estimate: {1} accepted sets: 64 next intervention: [3]
+[0.5 1.  0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r) 7 current estimate: {1} accepted sets: 64 next intervention: [6]
+[0.5 1.  0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r) 8 current estimate: {1} accepted sets: 64 next intervention: [5]
+[0.5 1.  0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r) reached 9 > 8 iterations
+  (case_id: 4) done (10.99 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9748>, 'policy': <class 'src.policy.ProposedPolicyRF2'>, 'policy_name': 'r2', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 921522, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r2) 1 current estimate: set() accepted sets: 128 next intervention: [6]
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r2) 2 current estimate: set() accepted sets: 128 next intervention: [5]
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r2) 3 current estimate: set() accepted sets: 128 next intervention: [1]
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r2) 4 current estimate: set() accepted sets: 128 next intervention: [7]
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r2) 5 current estimate: set() accepted sets: 128 next intervention: [0]
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r2) 6 current estimate: set() accepted sets: 128 next intervention: [1]
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r2) 7 current estimate: set() accepted sets: 128 next intervention: [7]
+[0.50793651 0.49206349 0.         0.5        0.50793651 0.50793651
+ 0.49206349 0.49206349]
+ (case_id: 0, target: 2, truth: {4}, policy: r2) 8 current estimate: set() accepted sets: 126 next intervention: [3]
+[0.48780488 0.46341463 0.         0.47560976 0.6097561  0.53658537
+ 0.2195122  0.48780488]
+ (case_id: 0, target: 2, truth: {4}, policy: r2) reached 9 > 8 iterations
+  (case_id: 0) done (17.34 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf96d8>, 'policy': <class 'src.policy.ProposedPolicyRF2'>, 'policy_name': 'r2', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 535590, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 1, target: 3, truth: {0}, policy: r2) 1 current estimate: set() accepted sets: 128 next intervention: [2]
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 1, target: 3, truth: {0}, policy: r2) 2 current estimate: set() accepted sets: 128 next intervention: [1]
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 1, target: 3, truth: {0}, policy: r2) 3 current estimate: set() accepted sets: 128 next intervention: [1]
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 1, target: 3, truth: {0}, policy: r2) 4 current estimate: set() accepted sets: 128 next intervention: [0]
+[1.  0.5 0.5 0.  0.5 0.5 0.5 0.5]
+  (case_id: 1) done (3.27 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9550>, 'policy': <class 'src.policy.ProposedPolicyRF2'>, 'policy_name': 'r2', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 853938, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r2) 1 current estimate: set() accepted sets: 128 next intervention: [5]
+[0.5 0.5 0.5 0.  0.5 1.  0.5 0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r2) 2 current estimate: {5} accepted sets: 64 next intervention: [1]
+[0.5 1.  0.5 0.  0.5 1.  0.5 0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r2) 3 current estimate: {1, 5} accepted sets: 32 next intervention: [7]
+[0.5 1.  0.5 0.  0.6 1.  0.4 0.8]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r2) 4 current estimate: {1, 5} accepted sets: 20 next intervention: [2]
+[0.5 1.  1.  0.  0.6 1.  0.4 0.8]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r2) 5 current estimate: {1, 2, 5} accepted sets: 10 next intervention: [0]
+[0.625 1.    1.    0.    0.625 1.    0.25  0.75 ]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r2) 6 current estimate: {1, 2, 5} accepted sets: 8 next intervention: [4]
+[0.66666667 1.         1.         0.         0.5        1.
+ 0.33333333 1.        ]
+  (case_id: 2) done (1.79 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9400>, 'policy': <class 'src.policy.ProposedPolicyRF2'>, 'policy_name': 'r2', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 565445, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.  0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+ (case_id: 3, target: 0, truth: {3}, policy: r2) 1 current estimate: set() accepted sets: 128 next intervention: [2]
+[0.  0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+ (case_id: 3, target: 0, truth: {3}, policy: r2) 2 current estimate: set() accepted sets: 128 next intervention: [7]
+[0.         0.5        0.5        0.46666667 0.5        0.53333333
+ 0.46666667 0.53333333]
+ (case_id: 3, target: 0, truth: {3}, policy: r2) 3 current estimate: set() accepted sets: 120 next intervention: [1]
+[0.         0.52631579 0.50877193 0.45614035 0.5        0.52631579
+ 0.43859649 0.56140351]
+ (case_id: 3, target: 0, truth: {3}, policy: r2) 4 current estimate: set() accepted sets: 114 next intervention: [4]
+[0.         0.52252252 0.5045045  0.45045045 0.51351351 0.52252252
+ 0.42342342 0.57657658]
+ (case_id: 3, target: 0, truth: {3}, policy: r2) 5 current estimate: set() accepted sets: 111 next intervention: [2]
+[0.         0.51376147 0.51376147 0.44954128 0.51376147 0.52293578
+ 0.41284404 0.58715596]
+ (case_id: 3, target: 0, truth: {3}, policy: r2) 6 current estimate: set() accepted sets: 109 next intervention: [1]
+[0.         0.52336449 0.51401869 0.45794393 0.52336449 0.51401869
+ 0.40186916 0.59813084]
+ (case_id: 3, target: 0, truth: {3}, policy: r2) 7 current estimate: set() accepted sets: 107 next intervention: [5]
+[0.         0.52427184 0.51456311 0.46601942 0.51456311 0.50485437
+ 0.37864078 0.62135922]
+ (case_id: 3, target: 0, truth: {3}, policy: r2) 8 current estimate: set() accepted sets: 103 next intervention: [5]
+[0.         0.51485149 0.51485149 0.47524752 0.51485149 0.51485149
+ 0.36633663 0.63366337]
+ (case_id: 3, target: 0, truth: {3}, policy: r2) reached 9 > 8 iterations
+  (case_id: 3) done (15.41 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf92b0>, 'policy': <class 'src.policy.ProposedPolicyRF2'>, 'policy_name': 'r2', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 579205, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r2) 1 current estimate: set() accepted sets: 128 next intervention: [3]
+[0.5 0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r2) 2 current estimate: set() accepted sets: 128 next intervention: [1]
+[0.5 1.  0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r2) 3 current estimate: {1} accepted sets: 64 next intervention: [6]
+[0.5 1.  0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r2) 4 current estimate: {1} accepted sets: 64 next intervention: [0]
+[1.  1.  0.5 0.5 0.  0.5 0.5 0.5]
+  (case_id: 4) done (2.46 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9748>, 'policy': <class 'src.policy.ProposedPolicyRF3'>, 'policy_name': 'r3', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 223810, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.  0.5 0.5 0.5 0.5 0.5]
+ (case_id: 0, target: 2, truth: {4}, policy: r3) 1 current estimate: set() accepted sets: 128 next intervention: [3]
+[0.49565217 0.50434783 0.         0.55652174 0.47826087 0.54782609
+ 0.44347826 0.52173913]
+ (case_id: 0, target: 2, truth: {4}, policy: r3) 2 current estimate: set() accepted sets: 115 next intervention: [0]
+[0.63218391 0.50574713 0.         0.55172414 0.49425287 0.54022989
+ 0.26436782 0.50574713]
+ (case_id: 0, target: 2, truth: {4}, policy: r3) 3 current estimate: set() accepted sets: 87 next intervention: [4]
+[0.61904762 0.5        0.         0.57142857 1.         0.52380952
+ 0.23809524 0.52380952]
+  (case_id: 0) done (1.77 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf96d8>, 'policy': <class 'src.policy.ProposedPolicyRF3'>, 'policy_name': 'r3', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 96646, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 1, target: 3, truth: {0}, policy: r3) 1 current estimate: set() accepted sets: 128 next intervention: [2]
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 1, target: 3, truth: {0}, policy: r3) 2 current estimate: set() accepted sets: 128 next intervention: [2]
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 1, target: 3, truth: {0}, policy: r3) 3 current estimate: set() accepted sets: 128 next intervention: [0]
+[1.  0.5 0.5 0.  0.5 0.5 0.5 0.5]
+  (case_id: 1) done (1.66 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9550>, 'policy': <class 'src.policy.ProposedPolicyRF3'>, 'policy_name': 'r3', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 345266, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r3) 1 current estimate: set() accepted sets: 128 next intervention: [6]
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r3) 2 current estimate: set() accepted sets: 128 next intervention: [0]
+[0.5 0.5 0.5 0.  0.5 0.5 0.5 0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r3) 3 current estimate: set() accepted sets: 128 next intervention: [2]
+[0.5 0.5 1.  0.  0.5 0.5 0.  0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r3) 4 current estimate: {2} accepted sets: 32 next intervention: [5]
+[0.5 0.5 1.  0.  0.5 1.  0.  0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r3) 5 current estimate: {2, 5} accepted sets: 16 next intervention: [0]
+[0.5 0.5 1.  0.  0.5 1.  0.  0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r3) 6 current estimate: {2, 5} accepted sets: 16 next intervention: [1]
+[0.5 1.  1.  0.  0.5 1.  0.  0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r3) 7 current estimate: {1, 2, 5} accepted sets: 8 next intervention: [4]
+[0.5 1.  1.  0.  0.5 1.  0.  0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r3) 8 current estimate: {1, 2, 5} accepted sets: 8 next intervention: [4]
+[0.5 1.  1.  0.  0.5 1.  0.  0.5]
+ (case_id: 2, target: 3, truth: {1, 2, 5, 7}, policy: r3) reached 9 > 8 iterations
+  (case_id: 2) done (3.96 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf9400>, 'policy': <class 'src.policy.ProposedPolicyRF3'>, 'policy_name': 'r3', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 810951, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.  0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+ (case_id: 3, target: 0, truth: {3}, policy: r3) 1 current estimate: set() accepted sets: 128 next intervention: [6]
+[0.  0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+ (case_id: 3, target: 0, truth: {3}, policy: r3) 2 current estimate: set() accepted sets: 128 next intervention: [7]
+[0.  0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+ (case_id: 3, target: 0, truth: {3}, policy: r3) 3 current estimate: set() accepted sets: 128 next intervention: [6]
+[0.  0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+ (case_id: 3, target: 0, truth: {3}, policy: r3) 4 current estimate: set() accepted sets: 128 next intervention: [1]
+[0.  0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+ (case_id: 3, target: 0, truth: {3}, policy: r3) 5 current estimate: set() accepted sets: 128 next intervention: [2]
+[0.  0.5 0.5 0.5 0.5 0.5 0.5 0.5]
+ (case_id: 3, target: 0, truth: {3}, policy: r3) 6 current estimate: set() accepted sets: 128 next intervention: [3]
+[0.  0.5 0.5 1.  0.5 0.5 0.5 0.5]
+  (case_id: 3) done (8.52 seconds)
+{'case': <src.evaluation.TestCase object at 0x7f94f0cf92b0>, 'policy': <class 'src.policy.ProposedPolicyRF3'>, 'policy_name': 'r3', 'population': False, 'debug': True, 'max_iter': 8, 'intervention_mean': 10, 'intervention_var': 1, 'off_targets': 0, 'speedup': True, 'random_state': 490025, 'n_int': 5000, 'n_obs': 5000, 'alpha': 0.01}
+[0.5 0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r3) 1 current estimate: set() accepted sets: 128 next intervention: [6]
+[0.5 0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r3) 2 current estimate: set() accepted sets: 128 next intervention: [6]
+[0.5 0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r3) 3 current estimate: set() accepted sets: 128 next intervention: [3]
+[0.5 0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r3) 4 current estimate: set() accepted sets: 128 next intervention: [0]
+[1.  0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r3) 5 current estimate: {0} accepted sets: 64 next intervention: [7]
+[1.  0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r3) 6 current estimate: {0} accepted sets: 64 next intervention: [5]
+[1.  0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r3) 7 current estimate: {0} accepted sets: 64 next intervention: [6]
+[1.  0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r3) 8 current estimate: {0} accepted sets: 64 next intervention: [2]
+[1.  0.5 0.5 0.5 0.  0.5 0.5 0.5]
+ (case_id: 4, target: 4, truth: {0, 1}, policy: r3) reached 9 > 8 iterations
+  (case_id: 4) done (9.99 seconds)
+  20000/20 experiments completed (151.84 seconds)
+
+
+Finished experiments at 2020-04-15 17:11:56.093810 (elapsed 151.85 seconds)
+Saved to file "experiments/results_1586963516_k:3_G:5_runs:1_n_min:8_n_max:8_w_min:0_w_max:0.2_var_min:0_var_max:1_int_min:0_int_max:1_i_mean:10_i_var:1_random_state:42_finite:True_max_iter:-1_n:5000_alpha:0.01_nsp:False.pickle"
