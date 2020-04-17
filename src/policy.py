@@ -31,7 +31,11 @@
 import numpy as np
 from src import utils, population_icp
 from sklearn import linear_model
+from functools import reduce
 import warnings
+
+def intersection(sets):
+    return reduce(lambda s, acc: acc & s, sets)
 
 def ratios(p, accepted):    
     one_hot = np.zeros((len(accepted), p))
@@ -249,8 +253,10 @@ class ProposedPolicyMEF(Policy):
         return var
 
     def next(self, result):
-        last_intervention = self.interventions[-1]
+        # Remove accepted parents
+        self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy
+        last_intervention = self.interventions[-1]
         if set() in result.accepted:
             self.candidates.difference_update({last_intervention})
             # Pick next intervention
@@ -285,8 +291,8 @@ class ProposedPolicyMRF(Policy):
         return var
 
     def next(self, result):
-        self.current_ratios = ratios(self.p, result.accepted)
         # Pick next intervention
+        self.current_ratios = ratios(self.p, result.accepted)
         var = self.pick_intervention()
         selection = result.accepted if self.speedup else 'all'
         self.interventions.append(var)
@@ -298,7 +304,7 @@ class ProposedPolicyMRF(Policy):
         else:
             below_half = set()
             for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
+                if r < 0.5 or r == 1: # do not intervene on identified parents
                     below_half.add(i)
                     choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
@@ -328,8 +334,8 @@ class ProposedPolicyMERF(Policy):
 
     def next(self, result):
         self.current_ratios = ratios(self.p, result.accepted)
-        last_intervention = self.interventions[-1]
         # Empty-set strategy
+        last_intervention = self.interventions[-1]
         if set() in result.accepted:
             self.candidates.difference_update({last_intervention})
             # Pick next intervention
@@ -344,7 +350,7 @@ class ProposedPolicyMERF(Policy):
         else:
             below_half = set()
             for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
+                if r < 0.5 or r==1: # do not intervene on identified parents
                     below_half.add(i)
                     choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
@@ -369,8 +375,10 @@ class ProposedPolicyEF(Policy):
         return var
 
     def next(self, result):
-        last_intervention = self.interventions[-1]
+        # Remove accepted parents
+        self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy
+        last_intervention = self.interventions[-1]
         if set() in result.accepted:
             self.candidates.difference_update({last_intervention})
             # Pick next intervention
@@ -406,8 +414,8 @@ class ProposedPolicyERF(Policy):
 
     def next(self, result):
         self.current_ratios = ratios(self.p, result.accepted)
-        last_intervention = self.interventions[-1]
         # Empty-set strategy
+        last_intervention = self.interventions[-1]
         if set() in result.accepted:
             self.candidates.difference_update({last_intervention})
             # Pick next intervention
@@ -422,7 +430,7 @@ class ProposedPolicyERF(Policy):
         else:
             below_half = set()
             for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
+                if r < 0.5 or r == 1: # do not intervene on identified parents
                     below_half.add(i)
                     choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
@@ -463,7 +471,7 @@ class ProposedPolicyRF(Policy):
         else:
             below_half = set()
             for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
+                if r < 0.5 or r == 1: # do not intervene on identified parents
                     below_half.add(i)
                     choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
