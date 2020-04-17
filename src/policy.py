@@ -192,7 +192,7 @@ def markov_blanket(sample, target, tol=1e-3, debug=False):
         X = sample[:, predictors]
         Y = sample[:, target]
         coefs = np.zeros(p)
-        coefs[predictors] = linear_model.LassoCV(cv=5, normalize=True, max_iter=1000, verbose=debug).fit(X, Y).coef_
+        coefs[predictors] = linear_model.LassoCV(cv=10, normalize=True, max_iter=1000, verbose=debug).fit(X, Y).coef_
         return utils.nonzero(coefs, tol)
 
 class RandomPolicyF(Policy):
