@@ -35,7 +35,10 @@ from functools import reduce
 import warnings
 
 def intersection(sets):
-    return reduce(lambda s, acc: acc & s, sets)
+    if sets == []:
+        return set()
+    else:
+        return reduce(lambda s, acc: acc & s, sets)
 
 def ratios(p, accepted):    
     one_hot = np.zeros((len(accepted), p))
@@ -306,7 +309,7 @@ class ProposedPolicyMRF(Policy):
             for i,r in enumerate(self.current_ratios):
                 if r < 0.5 or r == 1: # do not intervene on identified parents
                     below_half.add(i)
-                    choice = set.difference(self.candidates, below_half)
+            choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
                 return np.random.choice(list(self.candidates))
             else:
@@ -352,7 +355,7 @@ class ProposedPolicyMERF(Policy):
             for i,r in enumerate(self.current_ratios):
                 if r < 0.5 or r==1: # do not intervene on identified parents
                     below_half.add(i)
-                    choice = set.difference(self.candidates, below_half)
+            choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
                 return np.random.choice(list(self.candidates))
             else:
@@ -432,7 +435,7 @@ class ProposedPolicyERF(Policy):
             for i,r in enumerate(self.current_ratios):
                 if r < 0.5 or r == 1: # do not intervene on identified parents
                     below_half.add(i)
-                    choice = set.difference(self.candidates, below_half)
+            choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
                 return np.random.choice(list(self.candidates))
             else:
@@ -473,7 +476,7 @@ class ProposedPolicyRF(Policy):
             for i,r in enumerate(self.current_ratios):
                 if r < 0.5 or r == 1: # do not intervene on identified parents
                     below_half.add(i)
-                    choice = set.difference(self.candidates, below_half)
+            choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
                 return np.random.choice(list(self.candidates))
             else:
