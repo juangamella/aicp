@@ -30,8 +30,9 @@
 
 import time
 import numpy as np
-from src import sampling, utils, icp, population_icp
+from src import utils, icp, population_icp
 import multiprocessing
+import sempler
 import os
 
 def gen_cases(n, P, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_max=0, random_state=39):
@@ -53,11 +54,11 @@ def gen_cases(n, P, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_ma
             p = np.random.randint(P[0], P[1]+1)
         else:
             p = P
-        W = sampling.dag_avg_deg(p, k, w_min, w_max)
+        W = sempler.dag_avg_deg(p, k, w_min, w_max)
         target = np.random.choice(range(p))
         parents,_,_,mb = utils.graph_info(target, W)
         if len(parents) > 0 and len(parents) != len(mb):
-            sem = sampling.LGSEM(W, (var_min, var_max), (int_min, int_max))
+            sem = sempler.LGANM(W, (var_min, var_max), (int_min, int_max))
             (truth, _, _, _) = utils.graph_info(target, W)
             cases.append(TestCase(i, sem, target, truth))
             i += 1
@@ -165,13 +166,13 @@ def run_policy(settings):
             targets = intervention_targets(next_intervention, case.target, case.sem.p, settings.off_targets)
             history.append((current_estimate, targets, len(selection), no_accepted))
             print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, no_accepted, targets)) if settings.debug else None
-            noise_interventions = np.array([[i, settings.intervention_mean, settings.intervention_var] for i in targets])
+            interventions = dict((i, (settings.intervention_mean, settings.intervention_var)) for i in targets)
             if settings.population:
-                new_env = case.sem.sample(population = True, noise_interventions = noise_interventions)
+                new_env = case.sem.sample(population = True, shift_interventions = interventions)
                 envs.append(new_env)
                 result = population_icp.population_icp(envs, case.target, selection=selection, debug=False)
             else:
-                new_env = case.sem.sample(n = settings.n_int, noise_interventions = noise_interventions)
+                new_env = case.sem.sample(n = settings.n_int, shift_interventions = interventions)
                 envs.add(next_intervention, new_env)
                 result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=settings.alpha, debug=False)
             current_estimate = result.estimate

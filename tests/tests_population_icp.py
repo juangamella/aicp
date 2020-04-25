@@ -36,8 +36,8 @@ import numpy as np
 
 from .context import src
 
-from src.normal_distribution import NormalDistribution
-from src import sampling
+from sempler import NormalDistribution
+import sempler
 from src import utils
 from src.utils import all_but, sampling_matrix
 
@@ -105,8 +105,8 @@ class PopulationICPTests(unittest.TestCase):
         np.random.seed(42)
         for p in range(2,8):
             #print("Testing random graph of size %d" %p)
-            W = sampling.dag_avg_deg(p,2.5,-1,1)
-            sem = sampling.LGSEM(W, (0.1,2))
+            W = sempler.dag_avg_deg(p,2.5,-1,1)
+            sem = sempler.LGANM(W, (0.1,2))
             dist = sem.sample(population=True)
             for i in range(p):
                 #print("Testing markov and stable blankets of X_%d" %i)
@@ -123,8 +123,8 @@ class PopulationICPTests(unittest.TestCase):
         np.random.seed(7)
         for p in range(2,8):
             #print("Testing random graph of size %d" %p)
-            W = sampling.dag_avg_deg(p,2.5,-1,1)
-            sem = sampling.LGSEM(W, (0.1,2))
+            W = sempler.dag_avg_deg(p,2.5,-1,1)
+            sem = sempler.LGANM(W, (0.1,2))
             dist = sem.sample(population=True)
             for i in range(p):
                 #print("Testing markov and stable blankets of X_%d" %i)
@@ -135,7 +135,7 @@ class PopulationICPTests(unittest.TestCase):
                 # blanket the same
                 if len(parents) > 0:
                     pa = np.random.choice(list(parents))
-                    dist_pa = sem.sample(population=True, noise_interventions = np.array([[pa, 1, 5]]))
+                    dist_pa = sem.sample(population=True, do_interventions = {pa: (1, 5)})
                     result = population_icp([dist, dist_pa], i, debug=False, selection='all')
                     sb_pa = stable_blanket(result.accepted, result.mses)
                     self.assertEqual(sb_0, sb_pa)
@@ -144,14 +144,14 @@ class PopulationICPTests(unittest.TestCase):
                 only_poc = poc.difference(children)
                 if len(only_poc) > 0:
                     pc = np.random.choice(list(only_poc))
-                    dist_pc = sem.sample(population=True, noise_interventions = np.array([[pc, 1, 5]]))
+                    dist_pc = sem.sample(population=True, do_interventions = {pc: (1, 5)})
                     result = population_icp([dist, dist_pc], i, debug=False, selection='all')
                     sb_pc = stable_blanket(result.accepted, result.mses)
                     self.assertEqual(sb_0, sb_pc)
                 # Intervening on a child should affect the stable blanket
                 if len(children) > 0:
                     ch = np.random.choice(list(children))
-                    dist_ch = sem.sample(population=True, noise_interventions = np.array([[ch, 1, 5]]))
+                    dist_ch = sem.sample(population=True, do_interventions = {ch: (1, 5)})
                     result = population_icp([dist, dist_ch], i, debug=False, selection='all')
                     sb_ch= stable_blanket(result.accepted, result.mses)
                     _, descendants, _, _ = utils.graph_info(ch, W)

@@ -31,10 +31,11 @@
 import pickle
 import time
 from datetime import datetime
-from src import evaluation, policy, sampling, utils
+from src import evaluation, policy, utils
 import argparse
 import os
 import numpy as np
+import sempler
 
 def parameter_string(args, excluded_keys):
     """Convert a Namespace object (from argparse) into a string, excluding
@@ -124,7 +125,7 @@ if args.load_dataset is not None:
     targets = [int(np.loadtxt(os.path.join(args.load_dataset, 'dags', 'dag%d' % i, 'target.txt'))) for i in range(G)]
     cases = []
     for i, W in enumerate(Ws):
-        sem = sampling.LGSEM(W, variances[i], means[i])
+        sem = sempler.LGANM(W, variances[i], means[i])
         truth = utils.graph_info(targets[i], W)[0]
         cases.append(evaluation.TestCase(i, sem, targets[i], truth))
     excluded_keys += ['k', 'w_min', 'w_max', 'var_min', 'var_max', 'int_min', 'int_max', 'random_state', 'n_min', 'n_max']

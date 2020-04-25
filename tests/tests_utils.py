@@ -37,7 +37,7 @@ import unittest
 import numpy as np
 
 from .context import src
-from src.sampling import dag_avg_deg
+from sempler import dag_avg_deg
 
 # Tested functions
 from src import utils
