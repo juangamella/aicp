@@ -481,37 +481,3 @@ class ProposedPolicyRF(Policy):
                 return np.random.choice(list(self.candidates))
             else:
                 return np.random.choice(list(choice))
-
-class EvaluationResult():
-    """Class to contain all information resulting from evaluating a policy
-    over a test case"""
-
-    def __init__(self, policy, estimate, history):
-        self.policy = policy
-        #self.case = case
-        # Info
-        self.estimate = estimate # estimate produced by the policy
-        self.history = history # interventions and intermediate results of the policy
-        #self.time = time # time used by the policy
-
-    def estimates(self):
-        """Return the parents estimated by the policy at each step"""
-        return list(map(lambda step: step[0].estimate, self.history))
-
-    def interventions(self):
-        """Return the interventions carried out by the policy"""
-        return list(map(lambda step: step[1], self.history))
-
-    def intervened_variables(self):
-        """Return the intervened variables"""
-        return list(map(lambda step: step[1][0,0], self.history))
-
-class TestCase():
-    """Object that represents a test case
-    ie. SCM + target + expected result
-    """
-    def __init__(self, id, sem, target, truth):
-        self.id = id
-        self.sem = sem
-        self.target = target
-        self.truth = truth
