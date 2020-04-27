@@ -119,7 +119,7 @@ def evaluate_policies(cases, policies, policy_names, runs, params, n_workers=Non
             batch = experiments[i*batch_size:(i+1)*batch_size]
         batch_start = time.time()
         if n_workers > 1:
-            result += pool.map(run_policy, batch, chunksize=1)
+            result += pool.map(run_policy, batch)
         else:
             result += list(map(run_policy, batch))
         batch_end = time.time()
@@ -155,6 +155,8 @@ def run_policy(settings):
     current_estimate = set()
     result = None
     no_accepted = int(2**(case.sem.p-1))
+    ratios = np.ones(case.sem.p) * 0.5
+    ratios[case.target] = 0
     selection = 'all' # on the first iteration, evaluate all possible candidate sets
     i = 1
 
@@ -164,7 +166,7 @@ def run_policy(settings):
             assert next_intervention != case.target
             # Perform intervention
             targets = intervention_targets(next_intervention, case.target, case.sem.p, settings.off_targets)
-            history.append((current_estimate, targets, len(selection), no_accepted))
+            history.append((current_estimate, targets, len(selection), no_accepted, ratios))
             print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, no_accepted, targets)) if settings.debug else None
             interventions = dict((i, (settings.intervention_mean, settings.intervention_var)) for i in targets)
             if settings.population:
@@ -177,6 +179,7 @@ def run_policy(settings):
                 result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=settings.alpha, debug=False)
             current_estimate = result.estimate
             no_accepted = len(result.accepted)
+            ratios = utils.ratios(case.sem.p, result.accepted)
             next_intervention, selection = policy.next(result)
         i += 1
 
@@ -270,17 +273,28 @@ class EvaluationResult():
         self.history = history # interventions and intermediate results of the policy
         #self.time = time # time used by the policy
 
+    #(current_estimate, targets, len(selection), no_accepted, ratios)
+
     def estimates(self):
         """Return the parents estimated by the policy at each step"""
-        return list(map(lambda step: step[0].estimate, self.history))
+        return [step[0] for step in self.history]
 
     def interventions(self):
-        """Return the interventions carried out by the policy"""
-        return list(map(lambda step: step[1], self.history))
-
-    def intervened_variables(self):
         """Return the intervened variables"""
-        return list(map(lambda step: step[1][0,0], self.history))
+        return [step[1] for step in self.history]
+
+    def len_selection(self):
+        """Return the number of sets passed to the next iteration, across iterations"""
+        return [step[2] for step in self.history]
+    
+    def no_accepted(self):
+        """Returns the number of accepted sets accross iterations"""
+        return [step[3] for step in self.history]
+    
+    def ratios(self):
+        """Return the progression of ratios across iterations"""
+        ratios = [step[4] for step in self.history]
+        return np.array(ratios)
             
 class Environments():
     """Class to hold samples from different environments, merging if they

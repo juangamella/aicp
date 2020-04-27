@@ -1,5 +1,6 @@
 import networkx as nxi
 import matplotlib.pyplot as plt
+import sempler
 from sempler import LGANM
 from src.icp import icp, t_test, f_test
 import numpy as np
@@ -35,7 +36,7 @@ def split_residuals(E, S, target, k=2, plot=False):
 def test(ra, rb):
     return t_test(ra, rb), f_test(ra, rb)
 
-W = sempler.dag_avg_deg(8, 3, 0.5, 1, random_state=51)
+W = sempler.dag_avg_deg(12, 3, 0.5, 1, random_state=50)
 p = len(W)
 #W = W * np.random.uniform(size=W.shape)
 sem = LGANM(W,(0,1))
@@ -57,15 +58,17 @@ def ei(i, n_samples=n):
 
 target = 5
 
-environments = [e, ei(0), ei(1), ei(7)] 
+environments = [e, ei(4)] 
 
-parents,_,_,mb = utils.graph_info(target, W)
+parents,children,pc,mb = utils.graph_info(target, W)
 print("Parents: %s" % parents)
+print("Children: %s" % children)
+print("Parents of Children: %s" % pc)
 print("Markov Blanket: %s" % mb)
 
 print("finite sample icp")
 start = time.time()
-result = icp(environments, target, alpha=0.01, max_predictors=None, selection = 'all', debug=True, stop_early=False)
+result = icp(environments, target, alpha=0.01, max_predictors=None, selection = 'all', debug=False, stop_early=False)
 end = time.time()
 print("done in %0.2f seconds" % (end-start))
 
@@ -79,10 +82,11 @@ print("Estimate: %s" % result.estimate)
 
 p = sem.p
 R = policy.ratios(p, result.accepted)
-print(R)
-for i,r in enumerate(R):
-    print("X%d = %d/%d=%0.4f" % (i, r*len(result.accepted), len(result.accepted), r))
+for i in range(p):
+    print("X_%d = %0.4f" % (i,R[i]))
+# for i,r in enumerate(R):
+#     print("X%d = %d/%d=%0.4f" % (i, r*len(result.accepted), len(result.accepted), r))
 
-[ra, rb] = split_residuals(environments, {0}, target, k=2, plot=True)
-test(ra, rb)
+# [ra, rb] = split_residuals(environments, {0}, target, k=2, plot=True)
+# test(ra, rb)
 

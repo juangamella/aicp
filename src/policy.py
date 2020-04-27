@@ -30,6 +30,7 @@
 
 import numpy as np
 from src import utils, population_icp
+from src.utils import ratios
 from sklearn import linear_model
 from functools import reduce
 import warnings
@@ -39,12 +40,6 @@ def intersection(sets):
         return set()
     else:
         return reduce(lambda s, acc: acc & s, sets)
-
-def ratios(p, accepted):    
-    one_hot = np.zeros((len(accepted), p))
-    for i,s in enumerate(accepted):
-        one_hot[i, list(s)] = 1
-    return one_hot.sum(axis=0) / len(accepted)
 
 class Policy():
     """Policy class, inherited by all policies. Defines first

@@ -140,7 +140,15 @@ def allclose(A, B, rtol=1e-5, atol=1e-8):
     the smallest element compared
     """
     return np.allclose(np.maximum(A,B), np.minimum(A,B), rtol, atol)
-    
+
+def ratios(p, accepted):
+    """Given a collection of sets of p predictors, return the ratio at
+    which each predictor appears"""
+    one_hot = np.zeros((len(accepted), p))
+    for i,s in enumerate(accepted):
+        one_hot[i, list(s)] = 1
+    return one_hot.sum(axis=0) / len(accepted)
+
 # Example graphs
 
 def eg1():
