@@ -28,6 +28,12 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+"""
+Scratch module were I ran preliminary tests for the dream4 dataset.
+
+TODO: Remove before publishing
+"""
+
 import pickle
 import numpy as np
 from src.icp import icp
