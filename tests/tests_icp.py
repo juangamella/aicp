@@ -1,8 +1,3 @@
-"""
-TO CHANGE BEFORE PUBLISHING:
-  - color output is not portable, so deactivate it
-"""
-
 # Copyright 2019 Juan Luis Gamella Martin
 
 # Redistribution and use in source and binary forms, with or without
@@ -43,7 +38,7 @@ import copy
 from .context import src
 
 # Tested functions
-from src.icp import Data, ConfIntervals, Result
+from src.icp import Data, Result
 
 class DataTests(unittest.TestCase):
 
@@ -124,38 +119,6 @@ class DataTests(unittest.TestCase):
             self.assertTrue((truth_rt == rt).all())
             self.assertTrue((truth_rd == rd).all())
             last += ne
-
-class ConfIntervalsTests(unittest.TestCase):
-    
-    def test_update(self):
-        p = 3
-        conf_intervals = ConfIntervals(p)
-        # Update 1
-        conf_intervals.update(set([2]), (np.array([-3, 0]), np.array([3, 0])))
-        print(conf_intervals.lower_bound())
-        self.assertTrue(nan_equal(conf_intervals.lower_bound(), np.array([np.nan, np.nan, -3, 0])))
-        self.assertTrue(nan_equal(conf_intervals.upper_bound(), np.array([np.nan, np.nan, 3, 0])))
-        self.assertTrue(nan_equal(conf_intervals.maxmin(), np.array([np.nan, np.nan, -3, 0])))
-        self.assertTrue(nan_equal(conf_intervals.minmax(), np.array([np.nan, np.nan, 3, 0])))
-        # Update 2
-        conf_intervals.update(set([0,1]), (np.array([-1,-1,-1]), np.array([.5, .5, .5])))
-        self.assertTrue(nan_equal(conf_intervals.lower_bound(), np.array([-1, -1, -3, -1])))
-        self.assertTrue(nan_equal(conf_intervals.upper_bound(), np.array([.5, .5, 3, .5])))
-        self.assertTrue(nan_equal(conf_intervals.maxmin(), np.array([-1, -1, -3, 0])))
-        self.assertTrue(nan_equal(conf_intervals.minmax(), np.array([.5, .5, 3, 0])))
-        # Update 4
-        conf_intervals.update(set([0,1,2]), (np.array([-4,-4,-4,-4]), np.array([1,1,1,1])))
-        self.assertTrue(nan_equal(conf_intervals.lower_bound(), np.ones(p + 1) * -4))
-        self.assertTrue(nan_equal(conf_intervals.upper_bound(), np.array([1, 1, 3, 1])))
-        self.assertTrue(nan_equal(conf_intervals.maxmin(), np.array([-1, -1, -3, 0])))
-        self.assertTrue(nan_equal(conf_intervals.minmax(), np.array([.5, .5, 1, 0])))
-
-def nan_equal(a,b):
-    try:
-        np.testing.assert_equal(a,b)
-    except AssertionError:
-        return False
-    return True
 
 class ResultTests(unittest.TestCase):
 
