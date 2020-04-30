@@ -10,7 +10,7 @@ The experiments can be run with different settings. To run the experiments, exec
 python -m src.run_experiments
 ```
 
-## Command-line arguments
+### Command-line arguments
 
 The experimental settings are controlled via command line arguments. The following give general control over how the experiments are run:
 
