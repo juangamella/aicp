@@ -28,6 +28,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+"""This module contains the "population setting" implementation of
+ICP. It relies on sempler's NormalDistribution class.
+
+TODO  BEFORE PUBLISHING:
+  - color output by termcolor is not portable to all OSs, so deactivate it
+"""
+
 import numpy as np
 import itertools
 from termcolor import colored

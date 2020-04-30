@@ -28,6 +28,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+"""Utility functions that contain code repeatedly used by other modules.
+
+TODO  BEFORE PUBLISHING:
+  - most of these functions are already contained in
+    sempler.utils. Refactor before publishing
+"""
+
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt

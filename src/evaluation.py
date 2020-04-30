@@ -28,6 +28,11 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+"""This module contains the code to perform experiments, including
+the code to generate test cases (gen_cases) and the multiprocessing
+logic (evaluate_policies), as well as auxiliary classes.
+"""
+
 import time
 import numpy as np
 from src import utils, icp, population_icp
@@ -102,7 +107,7 @@ def evaluate_policies(cases, policies, policy_names, runs, params, n_workers=Non
     print("  done (%0.2f seconds)" % (time.time() - start))
     n_exp = len(experiments)
     # Run experiments in batches to prevent memory explosion due to
-    # large interables with pool.map
+    # large iterables with pool.map
     if n_workers is None:
         n_workers = os.cpu_count() - 1
     print("Available cores: %d" % os.cpu_count())
@@ -150,7 +155,7 @@ def run_policy(settings):
         envs = Environments(case.sem.p, e)
     start = time.time()
 
-    # Initial iteration
+    # Initial iteration (only observational data)
     next_intervention = policy.first(e)
     current_estimate = set()
     result = None

@@ -1,8 +1,3 @@
-"""
-TO CHANGE BEFORE PUBLISHING:
-  - color output is not portable, so deactivate it
-"""
-
 # Copyright 2020 Juan Luis Gamella Martin
 
 # Redistribution and use in source and binary forms, with or without
@@ -32,6 +27,16 @@ TO CHANGE BEFORE PUBLISHING:
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+
+"""This module contains the finite sample implementation of Invariant
+Causal Prediction, with a two-sample t-test and f-test to check the
+invariance of the conditional distribution.
+
+TODO  BEFORE PUBLISHING:
+  - color output by termcolor is not portable to all OSs, so deactivate it
+
+"""
+
 
 import numpy as np
 
@@ -252,54 +257,6 @@ def pool(arrays, axis):
     else:
         stack_fun = np.vstack if axis==0 else np.hstack
         return reduce(lambda acc, array: stack_fun([acc, array]), arrays)
-
-
-#---------------------------------------------------------------------
-# Confidence intervals class
-class ConfIntervals():
-    """Class to keep and update confidence intervals for the regression
-    coefficients of every variable
-    
-    Parameters:
-    - 
-    """
-
-    def __init__(self, p):
-        """Initializes the arrays used to store the lower and upper bounds"""
-        self.p = p 
-        self.lwr = []
-        self.upr = []
-
-    def update(self, s, bounds):
-        """Given a set of variables s and new bounds, update the stored bounds
-        by taking the union. Note that "bounds" also include the bounds for
-        the intercept, although it is not specified in s
-        """
-        (lwr, upr) = bounds
-        supp = list(s) + [self.p] # support is predictor set s + intercept
-        lwr_new = np.ones(self.p+1)*np.nan
-        upr_new = np.ones(self.p+1)*np.nan
-        lwr_new[supp] = lwr
-        upr_new[supp] = upr
-        self.lwr.append(lwr_new)
-        self.upr.append(upr_new)
-        return (self.lwr, self.upr)
-
-    def lower_bound(self):
-        lower_bounds = np.array(self.lwr)
-        return np.nanmin(lower_bounds, axis=0)
-
-    def upper_bound(self):
-        upper_bounds = np.array(self.upr)
-        return np.nanmax(upper_bounds, axis=0)
-
-    def maxmin(self):
-        lower_bounds = np.array(self.lwr)
-        return np.nanmax(lower_bounds, axis=0)
-
-    def minmax(self):
-        upper_bounds = np.array(self.upr)
-        return np.nanmin(upper_bounds, axis=0)
 
 #---------------------------------------------------------------------
 # Results class

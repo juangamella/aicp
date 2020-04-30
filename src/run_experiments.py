@@ -28,6 +28,14 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+"""This module is the interface for running experiments. It parses the
+command line parameters, calls src.evaluation to generate test cases
+and evaluate the experiments, and writes the results to a file.
+
+Optionally it can save the generated cases following the structure
+employed by ABCD, so the method can run on the same test cases.
+"""
+
 import pickle
 import time
 from datetime import datetime
@@ -183,23 +191,25 @@ population = not args.finite
 
 # Select which policies will be evaluated
 if population:
-    policies = [policy.RandomPolicy, policy.MBPolicy, policy.EPolicy, policy.RatioPolicy]
-    names = ["random", "markov", "markov + e", "markov + e + r"]
+    # Note that in the population setting the empty-set strategy does
+    # nothing, as variables are only intervened on once
+    policies = [policy.PopRandom, policy.PopMarkov, policy.PopMarkovR] 
+    names = ["random", "markov", "markov + e + r"]
     excluded_keys += ['n', 'n_obs', 'alpha']
 elif args.abcd:
-    policies = [policy.RandomPolicyF,
-                policy.ProposedPolicyERF,
-                policy.ProposedPolicyMERF]
+    policies = [policy.Random,
+                policy.ER,
+                policy.MarkovER]
     names = ["random", "e + r", "markov + e + r"]
 else:
-    policies = [policy.RandomPolicyF,
-                policy.ProposedPolicyEF,
-                policy.ProposedPolicyRF,
-                policy.ProposedPolicyERF,
-                policy.MarkovPolicyF,
-                policy.ProposedPolicyMEF,
-                policy.ProposedPolicyMRF,
-                policy.ProposedPolicyMERF]
+    policies = [policy.Random,
+                policy.E,
+                policy.R,
+                policy.ER,
+                policy.Markov,
+                policy.MarkovE,
+                policy.MarkovR,
+                policy.MarkovER]
     names = ["random", "e", "r", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
 
 # Compose experimental parameters
