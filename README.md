@@ -10,9 +10,9 @@ The experiments can be run with different settings. To run the experiments, exec
 python -m src.run_experiments
 ```
 
-**The experimental settings are controlled via command line arguments**
+## Command-line arguments
 
-The following give general control over how the experiments are run:
+The experimental settings are controlled via command line arguments. The following give general control over how the experiments are run:
 
 - `n_workers`: Size of the process pool on which to run experiments in parallel. Setting it to `-1` uses as many workers as cores are visible to the parent python process. Default is `1`, ie. running experiments sequentially.
 - `batch_size`: Size of the experiment batches which are submitted to the worker pool. A lower batch size reduces the maximum size of allocated memory (useful if running experiments with large graphs, see [this post](https://stackoverflow.com/questions/26520781/multiprocessing-pool-whats-the-difference-between-map-async-and-imap)), but increases overhead. Defaults to `20000`.

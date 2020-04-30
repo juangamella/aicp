@@ -63,10 +63,16 @@ def parameter_string(args, excluded_keys):
 arguments = {
     'n_workers': {'default': 1, 'type': int},
     'batch_size': {'default': 20000, 'type': int},
-    'debug': {'default': False, 'type': bool},
-    'k': {'default': 3, 'type': float},
-    'G': {'default': 4, 'type': int},
     'runs': {'default': 1, 'type': int},
+    'max_iter': {'default': -1, 'type': int},
+    'random_state': {'default': 42, 'type': int},
+    'tag' : {'type': str},
+    'debug': {'default': False, 'type': bool},
+    'save_dataset': {'type': str},
+    'load_dataset': {'type': str},
+    'abcd': {'type': bool, 'default': False}, # ABCD settings: Run only random, e + r, markov + e + r
+    'G': {'default': 4, 'type': int},
+    'k': {'default': 3, 'type': float},
     'n_min': {'default': 8, 'type': int},
     'n_max': {'default': 8, 'type': int},
     'w_min': {'default': 0.1, 'type': float},
@@ -77,17 +83,11 @@ arguments = {
     'int_max': {'default': 1, 'type': float},
     'i_mean': {'default': 10, 'type': float},
     'i_var': {'default': 1, 'type': float},
-    'random_state': {'default': 42, 'type': int},
+    'ot': {'type': int, 'default': 0},
     'finite': {'default': False, 'type': bool},
-    'max_iter': {'default': -1, 'type': int},
     'n': {'default': 100, 'type': int},
     'n_obs': {'type': int},
     'alpha': {'default': 0.01, 'type': float},
-    'tag' : {'type': str},
-    'save_dataset': {'type': str},
-    'load_dataset': {'type': str},
-    'abcd': {'type': bool, 'default': False}, # ABCD settings: Run only random, e + r, r
-    'ot': {'type': int, 'default': 0},
     'nsp': {'type': bool, 'default': False}
 }
 
