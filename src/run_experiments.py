@@ -73,8 +73,8 @@ arguments = {
     'abcd': {'type': bool, 'default': False}, # ABCD settings: Run only random, e + r, markov + e + r
     'G': {'default': 4, 'type': int},
     'k': {'default': 3, 'type': float},
-    'p_min': {'default': 8, 'type': int},
-    'p_max': {'default': 8, 'type': int},
+    'n_min': {'default': 8, 'type': int},
+    'n_max': {'default': 8, 'type': int},
     'w_min': {'default': 0.1, 'type': float},
     'w_max': {'default': 1, 'type': float},
     'var_min': {'default': 0, 'type': float},
@@ -136,10 +136,10 @@ if args.load_dataset is not None:
         sem = sempler.LGANM(W, variances[i], means[i])
         truth = utils.graph_info(targets[i], W)[0]
         cases.append(evaluation.TestCase(i, sem, targets[i], truth))
-    excluded_keys += ['k', 'w_min', 'w_max', 'var_min', 'var_max', 'int_min', 'int_max', 'random_state', 'p_min', 'p_max']
+    excluded_keys += ['k', 'w_min', 'w_max', 'var_min', 'var_max', 'int_min', 'int_max', 'random_state', 'n_min', 'n_max']
 # Or generate dataset
 else:
-    P = args.p_min if args.p_min == args.p_max else (args.p_min, args.p_max)
+    P = args.n_min if args.n_min == args.n_max else (args.n_min, args.n_max)
     cases = evaluation.gen_cases(args.G,
                                  P,
                                  args.k,
@@ -214,7 +214,7 @@ else:
 
 # Compose experimental parameters
 if args.max_iter == -1:
-    max_iter = args.p_max
+    max_iter = args.n_max
 else:
     max_iter = args.max_iter
     
