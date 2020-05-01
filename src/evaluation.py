@@ -150,7 +150,7 @@ def run_policy(settings):
         e = case.sem.sample(population = True)
         envs = [e]
     else:
-        policy = settings.policy(case.target, case.sem.p, settings.policy_name, settings.speedup)
+        policy = settings.policy(case.target, case.sem.p, settings.policy_name)
         e = case.sem.sample(n = settings.n_obs)
         envs = Environments(case.sem.p, e)
     start = time.time()
@@ -182,10 +182,12 @@ def run_policy(settings):
                 new_env = case.sem.sample(n = settings.n_int, shift_interventions = interventions)
                 envs.add(next_intervention, new_env)
                 result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=settings.alpha, debug=False)
+            next_intervention = policy.next(result)
             current_estimate = result.estimate
             no_accepted = len(result.accepted)
+            selection = result.accepted if settings.speedup else 'all'
             ratios = utils.ratios(case.sem.p, result.accepted)
-            next_intervention, selection = policy.next(result)
+
         i += 1
 
     # Return result
