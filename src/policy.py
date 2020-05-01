@@ -234,8 +234,10 @@ class R(Policy):
         return var
 
     def next(self, result):
-        self.current_ratios = ratios(self.p, result.accepted)
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
         # Pick next intervention
+        self.current_ratios = ratios(self.p, result.accepted)
         var = self.pick_intervention()
         self.interventions.append(var)
         return var
@@ -246,7 +248,7 @@ class R(Policy):
         else:
             below_half = set()
             for i,r in enumerate(self.current_ratios):
-                if r < 0.5 or r == 1: # do not intervene on identified parents
+                if r < 0.5:
                     below_half.add(i)
             choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
@@ -272,12 +274,14 @@ class ER(Policy):
         return var
 
     def next(self, result):
-        self.current_ratios = ratios(self.p, result.accepted)
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy
         last_intervention = self.interventions[-1]
         if set() in result.accepted:
             self.candidates.difference_update({last_intervention})
         # Pick next intervention
+        self.current_ratios = ratios(self.p, result.accepted)
         var = self.pick_intervention()
         self.interventions.append(var)
         return var
@@ -288,7 +292,7 @@ class ER(Policy):
         else:
             below_half = set()
             for i,r in enumerate(self.current_ratios):
-                if r < 0.5 or r == 1: # do not intervene on identified parents
+                if r < 0.5:
                     below_half.add(i)
             choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
@@ -304,19 +308,22 @@ class Markov(Policy):
         Policy.__init__(self, target, p, name)
         
     def first(self, sample):
-        self.mb = markov_blanket(sample, self.target)
+        self.candidates = set(markov_blanket(sample, self.target))
         var = self.pick_intervention()
         return var
 
     def next(self, result):
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
+        # Pick next intervention
         var = self.pick_intervention()
         return var
     
     def pick_intervention(self):
-        if len(self.mb) == 0:
+        if len(self.candidates) == 0:
             return None
         else:
-            return np.random.choice(self.mb)
+            return np.random.choice(list(self.candidates))
 
 class MarkovE(Policy):
     """Markov + empty-set: selects variables at random from Markov blanket
@@ -368,6 +375,8 @@ class MarkovR(Policy):
         return var
 
     def next(self, result):
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
         # Pick next intervention
         self.current_ratios = ratios(self.p, result.accepted)
         var = self.pick_intervention()
@@ -380,7 +389,7 @@ class MarkovR(Policy):
         else:
             below_half = set()
             for i,r in enumerate(self.current_ratios):
-                if r < 0.5 or r == 1: # do not intervene on identified parents
+                if r < 0.5:
                     below_half.add(i)
             choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
@@ -407,12 +416,14 @@ class MarkovER(Policy):
         return var
 
     def next(self, result):
-        self.current_ratios = ratios(self.p, result.accepted)
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy
         last_intervention = self.interventions[-1]
         if set() in result.accepted:
             self.candidates.difference_update({last_intervention})
         # Pick next intervention
+        self.current_ratios = ratios(self.p, result.accepted)
         var = self.pick_intervention()
         self.interventions.append(var)
         return var
@@ -423,7 +434,7 @@ class MarkovER(Policy):
         else:
             below_half = set()
             for i,r in enumerate(self.current_ratios):
-                if r < 0.5 or r==1: # do not intervene on identified parents
+                if r < 0.5:
                     below_half.add(i)
             choice = set.difference(self.candidates, below_half)
             if len(choice) == 0:
