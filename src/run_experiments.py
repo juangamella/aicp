@@ -81,6 +81,7 @@ arguments = {
     'var_max': {'default': 1, 'type': float},
     'int_min': {'default': 0, 'type': float},
     'int_max': {'default': 1, 'type': float},
+    'do': {'default': False, 'type': bool},
     'i_mean': {'default': 10, 'type': float},
     'i_var': {'default': 1, 'type': float},
     'ot': {'type': int, 'default': 0},
@@ -164,6 +165,9 @@ if args.save_dataset is not None and args.load_dataset is None:
                'n',
                'n_obs',
                'alpha',
+               'do',
+               'i_mean',
+               'i_var',
                'save_dataset',
                'load_dataset',
                'ot',
@@ -177,7 +181,7 @@ if args.save_dataset is not None and args.load_dataset is None:
         sem = case.sem
         os.makedirs(os.path.join(dir_name, 'dags', 'dag%d' % i), exist_ok=True)
         np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'adjacency.txt'), sem.W)
-        np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'means.txt'), sem.intercepts)
+        np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'means.txt'), sem.means)
         np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'variances.txt'), sem.variances)
         np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'target.txt'), [case.target])
 
@@ -221,6 +225,7 @@ else:
 evaluation_params = {'population': population,
                      'debug': args.debug,
                      'max_iter': max_iter,
+                     'intervention_type': 'do' if args.do else 'shift',
                      'intervention_mean': args.i_mean,
                      'intervention_var': args.i_var,
                      'off_targets': args.ot,

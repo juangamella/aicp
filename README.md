@@ -39,8 +39,9 @@ Others control the generation of SCMs, i.e. test cases.
 - `int_max`: Upper bound for the means of the noise variables (intercepts), sampled uniformly at random. Defaults to `1`.
 
 The following give control over the interventions:
-- `i_mean`: Mean of the shift intervention. Defaults to `10`.
-- `i_var`: Variance of the shift intervention, defaults to `1`.
+- `do`: If present, the interventions are do interventions. If not, shift interventions are carried out (the default).
+- `i_mean`: Mean of the intervention. Defaults to `10`.
+- `i_var`: Variance of the intervention, defaults to `1`.
 - `ot`: Maximum number of off-target effects (defaults to `0`). If larger than zero, the number of off-target interventions is picked at random (up to `ot`), and the location of the interventions is then also picked at random (excluding the response).
 
 Additional parameters are available for experiments in the *finite regime*.

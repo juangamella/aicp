@@ -169,27 +169,28 @@ def run_policy(settings):
     while current_estimate != case.truth and i <= settings.max_iter:
         if next_intervention is not None:
             assert next_intervention != case.target
-            # Perform intervention
+            # Build interventions: targets, parameters and type
             targets = intervention_targets(next_intervention, case.target, case.sem.p, settings.off_targets)
+            interventions_params = dict((i, (settings.intervention_mean, settings.intervention_var)) for i in targets)
+            interventions = {settings.intervention_type + '_interventions': interventions_params}
+            # Perform interventions and run ICP on new environment
             history.append((current_estimate, targets, len(selection), no_accepted, ratios))
             print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, no_accepted, targets)) if settings.debug else None
-            interventions = dict((i, (settings.intervention_mean, settings.intervention_var)) for i in targets)
             if settings.population:
-                new_env = case.sem.sample(population = True, shift_interventions = interventions)
+                new_env = case.sem.sample(population = True, **interventions)
                 envs.append(new_env)
                 result = population_icp.population_icp(envs, case.target, selection=selection, debug=False)
             else:
-                new_env = case.sem.sample(n = settings.n_int, shift_interventions = interventions)
+                new_env = case.sem.sample(n = settings.n_int, **interventions)
                 envs.add(next_intervention, new_env)
                 result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=settings.alpha, debug=False)
+            # Pick next intervention
             next_intervention = policy.next(result)
             current_estimate = result.estimate
             no_accepted = len(result.accepted)
             selection = result.accepted if settings.speedup else 'all'
             ratios = utils.ratios(case.sem.p, result.accepted)
-
         i += 1
-
     # Return result
     end = time.time()
     if i > settings.max_iter:
@@ -238,6 +239,7 @@ class ExperimentSettings():
                  population,
                  debug,
                  max_iter,
+                 intervention_type,
                  intervention_mean,
                  intervention_var,
                  off_targets,
@@ -254,6 +256,7 @@ class ExperimentSettings():
         self.population = population
         self.debug = debug
         self.max_iter = max_iter
+        self.intervention_type = intervention_type
         self.intervention_mean = intervention_mean
         self.intervention_var = intervention_var
         self.off_targets = off_targets
