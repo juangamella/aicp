@@ -56,7 +56,7 @@ Additional parameters are available for experiments in the *finite regime*.
 Command-line arguments are passed by appending `--`. For example,
 
 ```
-python -m src.semester_project --n_workers -1 --avg_deg 3 --G 30 --runs 32 --p_min 8 --p_max 8 --w_min 0 --w_max 1 --var_min 0.1 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 50 --random_state 110 --alpha 0.001 --finite --n 1000 --tag exmple
+python -m src.run_experiments --n_workers -1 --k 3 --G 30 --runs 32 --p_min 8 --p_max 8 --w_min 0 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 50 --random_state 110 --alpha 0.001 --finite --n 1000 --tag exmple
 ```
 
 ### Result storage
@@ -64,7 +64,7 @@ python -m src.semester_project --n_workers -1 --avg_deg 3 --G 30 --runs 32 --p_m
 The results from running all experiments are pickled and stored in a file. The filename contains a timestamp and all parameters, so it is always possible to know which file contains which experiments. For example, executing the above example would produce the following file:
 
 ```
-results_1581038775_n_workers:-1_batch_size:20000_debug:False_avg_deg:3.0_G:30_runs:32_p_min:8_p_max:8_w_min:0.0_w_max:1.0_var_min:0.1_var_max:1.0_int_min:0.0_int_max:1.0_random_state:110_finite:True_max_iter:50_n:10_alpha:0.001_tag:exmple.pickle
+results_1581038775_n_workers:-1_batch_size:20000_debug:False_avg_deg:3.0_G:30_runs:32_p_min:8_p_max:8_w_min:0.0_w_max:1.0_var_min:0_var_max:1.0_int_min:0.0_int_max:1.0_random_state:110_finite:True_max_iter:50_n:10_alpha:0.001_tag:exmple.pickle
 ```
 
 ## Plotting results
