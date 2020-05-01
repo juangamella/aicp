@@ -243,18 +243,15 @@ class R(Policy):
         return var
     
     def pick_intervention(self):
-        if len(self.candidates) == 0:
-            return None
+        below_half = set()
+        for i,r in enumerate(self.current_ratios):
+            if r < 0.5:
+                below_half.add(i)
+        choice = set.difference(self.candidates, below_half)
+        if len(choice) == 0:
+            return np.random.choice(list(self.candidates))
         else:
-            below_half = set()
-            for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
-                    below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
-            if len(choice) == 0:
-                return np.random.choice(list(self.candidates))
-            else:
-                return np.random.choice(list(choice))
+            return np.random.choice(list(choice))
         
 class ER(Policy):
     """empty-set + ratio: selects variables with a stability ratio above
