@@ -185,7 +185,7 @@ def run_policy(settings):
                 envs.add(next_intervention, new_env)
                 result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=settings.alpha, debug=False)
             # Pick next intervention
-            next_intervention = policy.next(result)
+            next_intervention = policy.next(result, new_env)
             current_estimate = result.estimate
             no_accepted = len(result.accepted)
             selection = result.accepted if settings.speedup else 'all'

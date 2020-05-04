@@ -42,7 +42,7 @@ marked with "Pop".
 """
 
 import numpy as np
-from src import utils, population_icp
+from src import utils, population_icp, icp
 from src.utils import ratios
 from sklearn import linear_model
 from functools import reduce
@@ -89,7 +89,7 @@ class PopRandom(Policy):
         self.i = 0
         return self.random_intervention()
 
-    def next(self, result):
+    def next(self, result, _):
         return self.random_intervention()
 
     def random_intervention(self):
@@ -114,7 +114,7 @@ class PopMarkov(Policy):
             self.i = 0
         return self.pick_intervention()
 
-    def next(self, result):
+    def next(self, result, _):
         return self.pick_intervention()
     
     def pick_intervention(self):
@@ -139,7 +139,7 @@ class PopMarkovR(Policy):
             self.interventions.append(var)
         return var
 
-    def next(self, result):
+    def next(self, result, _):
         # Ratio strategy
         new_ratios = ratios(self.p, result.accepted)
         for i,r in enumerate(new_ratios):
@@ -180,7 +180,7 @@ class Random(Policy):
     def first(self, _):
         return self.pick_intervention()
 
-    def next(self, result):
+    def next(self, result, _):
         return self.pick_intervention()
 
     def pick_intervention(self):
@@ -200,7 +200,7 @@ class E(Policy):
         self.interventions.append(var)
         return var
 
-    def next(self, result):
+    def next(self, result, _):
         # Remove identified parents
         self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy
@@ -217,7 +217,40 @@ class E(Policy):
             return None
         else:
             return np.random.choice(list(self.candidates))
+        
+class E2(Policy):
+    """empty-set: selects variables at random, removing variables for
+    which, after being intervened, the empty set is accepted
+    """
+    def __init__(self, target, p, name):
+        self.interventions = []
+        Policy.__init__(self, target, p, name)
+        
+    def first(self, sample):
+        self.obs_sample = sample
+        self.candidates = set(utils.all_but(self.target, self.p))
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
 
+    def next(self, result, intervention_sample):
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
+        # Empty-set strategy 2.0
+        last_intervention = self.interventions[-1]
+        if set() in icp.icp([self.obs_sample, intervention_sample]).accepted:
+            self.candidates.difference_update({last_intervention})
+        # Pick next intervention
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
+    
+    def pick_intervention(self):
+        if len(self.candidates) == 0:
+            return None
+        else:
+            return np.random.choice(list(self.candidates))
+        
 class R(Policy):
     """ratio: selects variables with a stability ratio above 1/2."""
     def __init__(self, target, p, name):
@@ -232,7 +265,7 @@ class R(Policy):
         self.interventions.append(var)
         return var
 
-    def next(self, result):
+    def next(self, result, _):
         # Remove identified parents
         self.candidates.difference_update(intersection(result.accepted))
         # Pick next intervention
@@ -269,7 +302,7 @@ class ER(Policy):
         self.interventions.append(var)
         return var
 
-    def next(self, result):
+    def next(self, result, _):
         # Remove identified parents
         self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy
@@ -308,7 +341,7 @@ class Markov(Policy):
         var = self.pick_intervention()
         return var
 
-    def next(self, result):
+    def next(self, result, _):
         # Remove identified parents
         self.candidates.difference_update(intersection(result.accepted))
         # Pick next intervention
@@ -336,7 +369,7 @@ class MarkovE(Policy):
         self.interventions.append(var)
         return var
 
-    def next(self, result):
+    def next(self, result, _):
         # Remove identified parents
         self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy
@@ -370,7 +403,7 @@ class MarkovR(Policy):
         self.interventions.append(var)
         return var
 
-    def next(self, result):
+    def next(self, result, _):
         # Remove identified parents
         self.candidates.difference_update(intersection(result.accepted))
         # Pick next intervention
@@ -411,7 +444,7 @@ class MarkovER(Policy):
         self.interventions.append(var)
         return var
 
-    def next(self, result):
+    def next(self, result, _):
         # Remove identified parents
         self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy
