@@ -163,15 +163,16 @@ def run_policy(settings):
     ratios = np.ones(case.sem.p) * 0.5
     ratios[case.target] = 0
     selection = 'all' # on the first iteration, evaluate all possible candidate sets
-    empty_pool = False # To mark experiments in which the policy runs out of interventions
+    empty_pool = [] # To log iterations in which the policy runs out of interventions
     
     # Remaining iterations
     for i in range(settings.max_iter):
         assert next_intervention != case.target
         # Build interventions: targets, parameters and type
         if next_intervention is None:
-            empty_pool = True
-            interventions = {}
+            empty_pool.append(i)
+            policy.interventions.append(None)
+            targets, interventions = None, {}
         else:
             targets = intervention_targets(next_intervention, case.target, case.sem.p, settings.off_targets)
             interventions_params = dict((t, (settings.intervention_mean, settings.intervention_var)) for t in targets)

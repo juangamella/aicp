@@ -64,6 +64,7 @@ class Policy():
         self.p = p # no. of variables
         self.name = name
         self.alpha = alpha
+        self.interventions = []
 
     def first(self, observational_sample):
         """Returns the initial intervention"""
@@ -82,7 +83,6 @@ class PopRandom(Policy):
     of interventions.
     """
     def __init__(self, target, p, name):
-        self.interventions = []
         Policy.__init__(self, target, p, name)
         
     def first(self, _):
@@ -103,7 +103,6 @@ class PopMarkov(Policy):
     from the Markov blanket"""
 
     def __init__(self, target, p, name):
-        self.interventions = []
         Policy.__init__(self, target, p, name)
 
     def first(self, e):
@@ -127,7 +126,6 @@ class PopMarkovR(Policy):
     """Selects a previously unintervened variable from those in the Markov
     blanket which have a ratio above 1/2"""
     def __init__(self, target, p, name):
-        self.interventions = []
         Policy.__init__(self, target, p, name)
 
     def first(self, e):
@@ -192,7 +190,6 @@ class E(Policy):
     which, after being intervened, the empty set is accepted
     """
     def __init__(self, target, p, name, alpha):
-        self.interventions = []
         Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
@@ -224,7 +221,6 @@ class E2(Policy):
     which, after being intervened, the empty set is accepted
     """
     def __init__(self, target, p, name, alpha):
-        self.interventions = []
         Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
@@ -255,7 +251,6 @@ class E2(Policy):
 class R(Policy):
     """ratio: selects variables with a stability ratio above 1/2."""
     def __init__(self, target, p, name, alpha):
-        self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
         self.current_ratios[target] = 0
         Policy.__init__(self, target, p, name, alpha)
@@ -282,7 +277,7 @@ class R(Policy):
                 below_half.add(i)
         choice = set.difference(self.candidates, below_half)
         if len(choice) == 0:
-            return np.random.choice(list(self.candidates))
+            None
         else:
             return np.random.choice(list(choice))
         
@@ -292,7 +287,6 @@ class ER(Policy):
     empty set is accepted
     """
     def __init__(self, target, p, name, alpha):
-        self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
         self.current_ratios[target] = 0
         Policy.__init__(self, target, p, name, alpha)
@@ -317,18 +311,15 @@ class ER(Policy):
         return var
     
     def pick_intervention(self):
-        if len(self.candidates) == 0:
-            return None
+        below_half = set()
+        for i,r in enumerate(self.current_ratios):
+            if r < 0.5:
+                below_half.add(i)
+        choice = set.difference(self.candidates, below_half)
+        if len(choice) == 0:
+            None
         else:
-            below_half = set()
-            for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
-                    below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
-            if len(choice) == 0:
-                return np.random.choice(list(self.candidates))
-            else:
-                return np.random.choice(list(choice))
+            return np.random.choice(list(choice))
     
 class Markov(Policy):
     """Markov policy: selects variables at random from Markov blanket
@@ -361,7 +352,6 @@ class MarkovE(Policy):
     empty set is accepted
     """    
     def __init__(self, target, p, name, alpha):
-        self.interventions = []
         Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
@@ -393,7 +383,6 @@ class MarkovR(Policy):
     estimate, that have a stability ratio above 1/2.
     """
     def __init__(self, target, p, name, alpha):
-        self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
         self.current_ratios[target] = 0
         Policy.__init__(self, target, p, name, alpha)
@@ -414,18 +403,15 @@ class MarkovR(Policy):
         return var
     
     def pick_intervention(self):
-        if len(self.candidates) == 0:
-            return None
+        below_half = set()
+        for i,r in enumerate(self.current_ratios):
+            if r < 0.5:
+                below_half.add(i)
+        choice = set.difference(self.candidates, below_half)
+        if len(choice) == 0:
+            None
         else:
-            below_half = set()
-            for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
-                    below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
-            if len(choice) == 0:
-                return np.random.choice(list(self.candidates))
-            else:
-                return np.random.choice(list(choice))
+            return np.random.choice(list(choice))
 
 class MarkovER(Policy):
     """Markov + empty-set + ratio: selects variables at random from Markov
@@ -434,7 +420,6 @@ class MarkovER(Policy):
     accepted.
     """
     def __init__(self, target, p, name, alpha):
-        self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
         self.current_ratios[target] = 0
         Policy.__init__(self, target, p, name, alpha)
@@ -459,16 +444,13 @@ class MarkovER(Policy):
         return var
     
     def pick_intervention(self):
-        if len(self.candidates) == 0:
-            return None
+        below_half = set()
+        for i,r in enumerate(self.current_ratios):
+            if r < 0.5:
+                below_half.add(i)
+        choice = set.difference(self.candidates, below_half)
+        if len(choice) == 0:
+            None
         else:
-            below_half = set()
-            for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
-                    below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
-            if len(choice) == 0:
-                return np.random.choice(list(self.candidates))
-            else:
-                return np.random.choice(list(choice))
+            return np.random.choice(list(choice))
 
