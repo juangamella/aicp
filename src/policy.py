@@ -59,16 +59,17 @@ class Policy():
     """Policy class, inherited by all policies. Defines first
     (first_intervention) and next (next_intervention).
     """
-    def __init__(self, target, p, name=None):
+    def __init__(self, target, p, name, alpha=None):
         self.target = target
         self.p = p # no. of variables
         self.name = name
+        self.alpha = alpha
 
-    def first(self, observational_data):
+    def first(self, observational_sample):
         """Returns the initial intervention"""
         return None
 
-    def next(self, icp_results):
+    def next(self, icp_results, interventional_sample):
         """Returns the next intervention"""
         return None
 
@@ -174,8 +175,8 @@ def markov_blanket(sample, target, tol=1e-3, debug=False):
 class Random(Policy):
     """Random policy: selects variables at random.
     """
-    def __init__(self, target, p, name):
-        Policy.__init__(self, target, p, name)
+    def __init__(self, target, p, name, alpha):
+        Policy.__init__(self, target, p, name, alpha)
         
     def first(self, _):
         return self.pick_intervention()
@@ -190,9 +191,9 @@ class E(Policy):
     """empty-set: selects variables at random, removing variables for
     which, after being intervened, the empty set is accepted
     """
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, alpha):
         self.interventions = []
-        Policy.__init__(self, target, p, name)
+        Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
         self.candidates = set(utils.all_but(self.target, self.p))
@@ -222,9 +223,9 @@ class E2(Policy):
     """empty-set: selects variables at random, removing variables for
     which, after being intervened, the empty set is accepted
     """
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, alpha):
         self.interventions = []
-        Policy.__init__(self, target, p, name)
+        Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
         self.obs_sample = sample
@@ -238,7 +239,7 @@ class E2(Policy):
         self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy 2.0
         last_intervention = self.interventions[-1]
-        if set() in icp.icp([self.obs_sample, intervention_sample]).accepted:
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha).accepted:
             self.candidates.difference_update({last_intervention})
         # Pick next intervention
         var = self.pick_intervention()
@@ -253,11 +254,11 @@ class E2(Policy):
         
 class R(Policy):
     """ratio: selects variables with a stability ratio above 1/2."""
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, alpha):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
         self.current_ratios[target] = 0
-        Policy.__init__(self, target, p, name)
+        Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
         self.candidates = set(utils.all_but(self.target, self.p))
@@ -290,11 +291,11 @@ class ER(Policy):
     1/2, removing variables for which, after being intervened, the
     empty set is accepted
     """
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, alpha):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
         self.current_ratios[target] = 0
-        Policy.__init__(self, target, p, name)
+        Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
         self.candidates = set(utils.all_but(self.target, self.p))
@@ -333,8 +334,8 @@ class Markov(Policy):
     """Markov policy: selects variables at random from Markov blanket
     estimate.
     """
-    def __init__(self, target, p, name):
-        Policy.__init__(self, target, p, name)
+    def __init__(self, target, p, name, alpha):
+        Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
         self.candidates = set(markov_blanket(sample, self.target))
@@ -359,9 +360,9 @@ class MarkovE(Policy):
     estimate, removes variables for which, after being intervened, the
     empty set is accepted
     """    
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, alpha):
         self.interventions = []
-        Policy.__init__(self, target, p, name)
+        Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
         self.candidates = set(markov_blanket(sample, self.target))
@@ -391,11 +392,11 @@ class MarkovR(Policy):
     """Markov + ratio: selects variables from Markov blanket
     estimate, that have a stability ratio above 1/2.
     """
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, alpha):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
         self.current_ratios[target] = 0
-        Policy.__init__(self, target, p, name)
+        Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
         self.candidates = set(markov_blanket(sample, self.target)) # set(range(self.p))
@@ -432,11 +433,11 @@ class MarkovER(Policy):
     variables for which, after being intervened, the empty set is
     accepted.
     """
-    def __init__(self, target, p, name):
+    def __init__(self, target, p, name, alpha):
         self.interventions = []
         self.current_ratios = np.ones(p) * 0.5
         self.current_ratios[target] = 0
-        Policy.__init__(self, target, p, name)
+        Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
         self.candidates = set(markov_blanket(sample, self.target)) # set(range(self.p))
