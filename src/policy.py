@@ -101,9 +101,8 @@ class PopMarkov(Policy):
     """Markov Blanket policy: selects a previously unintervened variable
     from the Markov blanket"""
 
-    def __init__(self, target, p, name, alpha=0.01):
+    def __init__(self, target, p, name):
         self.interventions = []
-        self.alpha = alpha # significance level for estimating the MB
         Policy.__init__(self, target, p, name)
 
     def first(self, e):
