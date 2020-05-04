@@ -171,12 +171,11 @@ def run_policy(settings):
         # Build interventions: targets, parameters and type
         if next_intervention is None:
             empty_pool.append(i)
-            policy.interventions.append(None)
-            targets, interventions = None, {}
-        else:
-            targets = intervention_targets(next_intervention, case.target, case.sem.p, settings.off_targets)
-            interventions_params = dict((t, (settings.intervention_mean, settings.intervention_var)) for t in targets)
-            interventions = {settings.intervention_type + '_interventions': interventions_params}
+            next_intervention = np.random.choice(utils.all_but(case.target, case.sem.p))
+            policy.interventions.append(next_intervention)
+        targets = intervention_targets(next_intervention, case.target, case.sem.p, settings.off_targets)
+        interventions_params = dict((t, (settings.intervention_mean, settings.intervention_var)) for t in targets)
+        interventions = {settings.intervention_type + '_interventions': interventions_params}
         # Perform interventions and run ICP on new environment
         history.append((current_estimate, targets, len(selection), no_accepted, ratios))
         print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, no_accepted, targets)) if settings.debug else None
