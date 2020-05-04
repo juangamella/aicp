@@ -164,7 +164,7 @@ def run_policy(settings):
     ratios[case.target] = 0
     selection = 'all' # on the first iteration, evaluate all possible candidate sets
     empty_pool = False # To mark experiments in which the policy runs out of interventions
-    
+
     # Remaining iterations
     for i in range(settings.max_iter):
         assert next_intervention != case.target

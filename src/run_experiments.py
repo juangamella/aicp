@@ -197,8 +197,8 @@ population = not args.finite
 if population:
     # Note that in the population setting the empty-set strategy does
     # nothing, as variables are only intervened on once
-    policies = [policy.PopRandom, policy.PopMarkov, policy.PopMarkovR] 
-    names = ["random", "markov", "markov + e + r"]
+    policies = [policy.PopRandom] 
+    names = ["random"]
     excluded_keys += ['n', 'n_obs', 'alpha']
 elif args.abcd:
     policies = [policy.Random,
