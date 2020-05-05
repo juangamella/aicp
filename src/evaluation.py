@@ -182,7 +182,7 @@ def run_policy(settings):
         if settings.population:
             new_env = case.sem.sample(population = True, **interventions)
             envs.append(new_env)
-            result = population_icp.population_icp(envs, case.target, selection=selection, debug=False)
+            result = population_icp.population_icp(envs, case.target, selection='all', debug=False)
         else:
             new_env = case.sem.sample(n = settings.n_int, **interventions)
             envs.add(next_intervention, new_env)
