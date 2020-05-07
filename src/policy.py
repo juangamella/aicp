@@ -204,7 +204,7 @@ class E(Policy):
         self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy 2.0
         last_intervention = self.interventions[-1]
-        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha).accepted:
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha, selection=[set()]).accepted:
             self.candidates.difference_update({last_intervention})
         # Pick next intervention
         var = self.pick_intervention()
@@ -272,7 +272,7 @@ class ER(Policy):
         self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy 2.0
         last_intervention = self.interventions[-1]
-        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha).accepted:
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha, selection=[set()]).accepted:
             self.candidates.difference_update({last_intervention})
         # Pick next intervention
         self.current_ratios = ratios(self.p, result.accepted)
@@ -336,7 +336,7 @@ class MarkovE(Policy):
         self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy 2.0
         last_intervention = self.interventions[-1]
-        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha).accepted:
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha, selection=[set()]).accepted:
             self.candidates.difference_update({last_intervention})
         # Pick next intervention
         var = self.pick_intervention()
@@ -407,7 +407,7 @@ class MarkovER(Policy):
         self.candidates.difference_update(intersection(result.accepted))
         # Empty-set strategy 2.0
         last_intervention = self.interventions[-1]
-        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha).accepted:
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha, selection=[set()]).accepted:
             self.candidates.difference_update({last_intervention})
         # Pick next intervention
         self.current_ratios = ratios(self.p, result.accepted)
