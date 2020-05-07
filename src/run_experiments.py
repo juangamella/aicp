@@ -208,14 +208,13 @@ elif args.abcd:
 else:
     policies = [policy.Random,
                 policy.E,
-                policy.E2,
                 policy.R,
                 policy.ER,
                 policy.Markov,
                 policy.MarkovE,
                 policy.MarkovR,
                 policy.MarkovER]
-    names = ["random", "e", "e2", "r", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
+    names = ["random", "e", "r", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
 
 # Compose experimental parameters
 if args.max_iter == -1:

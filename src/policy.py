@@ -184,39 +184,8 @@ class Random(Policy):
 
     def pick_intervention(self):
         return np.random.choice(utils.all_but(self.target, self.p))
-
+ 
 class E(Policy):
-    """empty-set: selects variables at random, removing variables for
-    which, after being intervened, the empty set is accepted
-    """
-    def __init__(self, target, p, name, alpha):
-        Policy.__init__(self, target, p, name, alpha)
-        
-    def first(self, sample):
-        self.candidates = set(utils.all_but(self.target, self.p))
-        var = self.pick_intervention()
-        self.interventions.append(var)
-        return var
-
-    def next(self, result, _):
-        # Remove identified parents
-        self.candidates.difference_update(intersection(result.accepted))
-        # Empty-set strategy
-        last_intervention = self.interventions[-1]
-        if set() in result.accepted:
-            self.candidates.difference_update({last_intervention})
-        # Pick next intervention
-        var = self.pick_intervention()
-        self.interventions.append(var)
-        return var
-    
-    def pick_intervention(self):
-        if len(self.candidates) == 0:
-            return None
-        else:
-            return np.random.choice(list(self.candidates))
-        
-class E2(Policy):
     """empty-set: selects variables at random, removing variables for
     which, after being intervened, the empty set is accepted
     """
@@ -292,17 +261,18 @@ class ER(Policy):
         Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
+        self.obs_sample = sample
         self.candidates = set(utils.all_but(self.target, self.p))
         var = self.pick_intervention()
         self.interventions.append(var)
         return var
 
-    def next(self, result, _):
+    def next(self, result, intervention_sample):
         # Remove identified parents
         self.candidates.difference_update(intersection(result.accepted))
-        # Empty-set strategy
+        # Empty-set strategy 2.0
         last_intervention = self.interventions[-1]
-        if set() in result.accepted:
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha).accepted:
             self.candidates.difference_update({last_intervention})
         # Pick next intervention
         self.current_ratios = ratios(self.p, result.accepted)
@@ -355,17 +325,18 @@ class MarkovE(Policy):
         Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
+        self.obs_sample = sample
         self.candidates = set(markov_blanket(sample, self.target))
         var = self.pick_intervention()
         self.interventions.append(var)
         return var
 
-    def next(self, result, _):
+    def next(self, result, intervention_sample):
         # Remove identified parents
         self.candidates.difference_update(intersection(result.accepted))
-        # Empty-set strategy
+        # Empty-set strategy 2.0
         last_intervention = self.interventions[-1]
-        if set() in result.accepted:
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha).accepted:
             self.candidates.difference_update({last_intervention})
         # Pick next intervention
         var = self.pick_intervention()
@@ -425,17 +396,18 @@ class MarkovER(Policy):
         Policy.__init__(self, target, p, name, alpha)
         
     def first(self, sample):
+        self.obs_sample = sample
         self.candidates = set(markov_blanket(sample, self.target)) # set(range(self.p))
         var = self.pick_intervention()
         self.interventions.append(var)
         return var
 
-    def next(self, result, _):
+    def next(self, result, intervention_sample):
         # Remove identified parents
         self.candidates.difference_update(intersection(result.accepted))
-        # Empty-set strategy
+        # Empty-set strategy 2.0
         last_intervention = self.interventions[-1]
-        if set() in result.accepted:
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha).accepted:
             self.candidates.difference_update({last_intervention})
         # Pick next intervention
         self.current_ratios = ratios(self.p, result.accepted)
