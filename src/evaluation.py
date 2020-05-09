@@ -124,7 +124,7 @@ def evaluate_policies(cases, policies, policy_names, runs, params, n_workers=Non
             batch = experiments[i*batch_size:(i+1)*batch_size]
         batch_start = time.time()
         if n_workers > 1:
-            result += pool.map(run_policy, batch)
+            result += pool.map(run_policy, batch, chunksize = 100)
         else:
             result += list(map(run_policy, batch))
         batch_end = time.time()
