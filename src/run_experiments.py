@@ -203,7 +203,7 @@ if population:
 elif args.abcd:
     policies = [policy.Random,
                 policy.ER,
-                policy.MarkovER]
+                policy.E]
     names = ["random", "e + r", "markov + e + r"]
 else:
     policies = [policy.Random,
