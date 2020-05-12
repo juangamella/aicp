@@ -1,0 +1,25 @@
+# 9 jobs on the ABCD dataset
+
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 3 --i_var 1 --max_iter 50 --alpha 0.0002 --finite --n 10 --n_obs 100 --abcd --tag may11abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 5 --i_var 1 --max_iter 50 --alpha 0.0002 --finite --n 10 --n_obs 100 --abcd --tag may11abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 7 --i_var 1 --max_iter 50 --alpha 0.0002 --finite --n 10 --n_obs 100 --abcd --tag may11abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 3 --i_var 1 --max_iter 50 --alpha 0.0001 --finite --n 10 --n_obs 100 --abcd --tag may11abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 5 --i_var 1 --max_iter 50 --alpha 0.0001 --finite --n 10 --n_obs 100 --abcd --tag may11abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 7 --i_var 1 --max_iter 50 --alpha 0.0001 --finite --n 10 --n_obs 100 --abcd --tag may11abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 3 --i_var 1 --max_iter 50 --alpha 0.002 --finite --n 10 --n_obs 100 --abcd --tag may11abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 5 --i_var 1 --max_iter 50 --alpha 0.002 --finite --n 10 --n_obs 100 --abcd --tag may11abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 7 --i_var 1 --max_iter 50 --alpha 0.002 --finite --n 10 --n_obs 100 --abcd --tag may11abcd
+
+# 3 ABCD jobs
+
+cp -r dataset_3 dataset_3_0
+cp -r dataset_3 dataset_3_1
+cp -r dataset_3 dataset_3_2
+
+bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 3 --folder dataset_3_0 --strategy entropy --starting-samples 50
+bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 5 --folder dataset_3_1 --strategy entropy --starting-samples 50
+bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 7 --folder dataset_3_2 --strategy entropy --starting-samples 50
+
+
+
+###############################

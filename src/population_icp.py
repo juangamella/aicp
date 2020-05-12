@@ -46,6 +46,7 @@ def population_icp(distributions, target, debug=False, selection='all', atol=1e-
     """Perform ICP over a set of Gaussian Distributions, each
     representing a different environment
     """
+    assert len(distributions) > 1
     # Build set of candidates
     p = distributions[0].p
     if isinstance(selection, list):

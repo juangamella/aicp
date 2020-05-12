@@ -59,6 +59,7 @@ def icp(environments, target, alpha, selection='all', max_predictors=None, debug
     """
     ICP on the given target using data from the given environments
     """
+    assert len(environments) > 1
     data = Data(environments, target)
     # Build set of candidates
     if isinstance(selection, list):

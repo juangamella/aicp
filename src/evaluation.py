@@ -150,7 +150,7 @@ def run_policy(settings):
         e = case.sem.sample(population = True)
         envs = [e]
     else:
-        policy = settings.policy(case.target, case.sem.p, settings.policy_name, settings.speedup)
+        policy = settings.policy(case.target, case.sem.p, settings.policy_name, settings.alpha)
         e = case.sem.sample(n = settings.n_obs)
         envs = Environments(case.sem.p, e)
     start = time.time()
@@ -163,38 +163,41 @@ def run_policy(settings):
     ratios = np.ones(case.sem.p) * 0.5
     ratios[case.target] = 0
     selection = 'all' # on the first iteration, evaluate all possible candidate sets
-    i = 1
-
+    empty_pool = [] # To log iterations in which the policy runs out of interventions
+    
     # Remaining iterations
-    while current_estimate != case.truth and i <= settings.max_iter:
-        if next_intervention is not None:
-            assert next_intervention != case.target
-            # Perform intervention
-            targets = intervention_targets(next_intervention, case.target, case.sem.p, settings.off_targets)
-            history.append((current_estimate, targets, len(selection), no_accepted, ratios))
-            print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, no_accepted, targets)) if settings.debug else None
-            interventions = dict((i, (settings.intervention_mean, settings.intervention_var)) for i in targets)
-            if settings.population:
-                new_env = case.sem.sample(population = True, shift_interventions = interventions)
-                envs.append(new_env)
-                result = population_icp.population_icp(envs, case.target, selection=selection, debug=False)
-            else:
-                new_env = case.sem.sample(n = settings.n_int, shift_interventions = interventions)
-                envs.add(next_intervention, new_env)
-                result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=settings.alpha, debug=False)
-            current_estimate = result.estimate
-            no_accepted = len(result.accepted)
-            ratios = utils.ratios(case.sem.p, result.accepted)
-            next_intervention, selection = policy.next(result)
-        i += 1
-
+    for i in range(settings.max_iter):
+        assert next_intervention != case.target
+        # Build interventions: targets, parameters and type
+        if next_intervention is None:
+            empty_pool.append(i)
+            next_intervention = np.random.choice(utils.all_but(case.target, case.sem.p))
+            policy.interventions.append(next_intervention)
+        targets = intervention_targets(next_intervention, case.target, case.sem.p, settings.off_targets)
+        interventions_params = dict((t, (settings.intervention_mean, settings.intervention_var)) for t in targets)
+        interventions = {settings.intervention_type + '_interventions': interventions_params}
+        # Perform interventions and run ICP on new environment
+        history.append((current_estimate, targets, len(selection), no_accepted, ratios))
+        print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, no_accepted, targets)) if settings.debug else None
+        if settings.population:
+            new_env = case.sem.sample(population = True, **interventions)
+            envs.append(new_env)
+            result = population_icp.population_icp(envs, case.target, selection=selection, debug=False)
+        else:
+            new_env = case.sem.sample(n = settings.n_int, **interventions)
+            envs.add(next_intervention, new_env)
+            result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=settings.alpha, debug=False)
+        # Pick next intervention
+        next_intervention = policy.next(result, new_env)
+        current_estimate = result.estimate
+        no_accepted = len(result.accepted)
+        selection = result.accepted if settings.speedup else 'all'
+        ratios = utils.ratios(case.sem.p, result.accepted)
     # Return result
     end = time.time()
-    if i > settings.max_iter:
-        print(" (case_id: %s, target: %d, truth: %s, policy: %s) reached %d > %d iterations" % (case.id, case.target, case.truth, policy.name, i, settings.max_iter)) if settings.debug else None
     elapsed = end - start
     print("  (case_id: %s) done (%0.2f seconds)" % (case.id, elapsed)) if settings.debug else None
-    return EvaluationResult(policy.name, current_estimate, history)
+    return EvaluationResult(policy.name, current_estimate, history, empty_pool)
 
 def intervention_targets(target, response, p, max_off_targets):
     """Return intervention targets. If no off target effects are allowed
@@ -236,6 +239,7 @@ class ExperimentSettings():
                  population,
                  debug,
                  max_iter,
+                 intervention_type,
                  intervention_mean,
                  intervention_var,
                  off_targets,
@@ -252,6 +256,7 @@ class ExperimentSettings():
         self.population = population
         self.debug = debug
         self.max_iter = max_iter
+        self.intervention_type = intervention_type
         self.intervention_mean = intervention_mean
         self.intervention_var = intervention_var
         self.off_targets = off_targets
@@ -270,13 +275,12 @@ class EvaluationResult():
     """Class to contain all information resulting from evaluating a policy
     over a test case"""
 
-    def __init__(self, policy, estimate, history):
+    def __init__(self, policy, estimate, history, empty_pool):
         self.policy = policy
-        #self.case = case
         # Info
         self.estimate = estimate # estimate produced by the policy
         self.history = history # interventions and intermediate results of the policy
-        #self.time = time # time used by the policy
+        self.empty_pool = empty_pool # If the policy ran out of possible interventions
 
     #(current_estimate, targets, len(selection), no_accepted, ratios)
 

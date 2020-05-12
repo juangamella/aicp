@@ -73,14 +73,15 @@ arguments = {
     'abcd': {'type': bool, 'default': False}, # ABCD settings: Run only random, e + r, markov + e + r
     'G': {'default': 4, 'type': int},
     'k': {'default': 3, 'type': float},
-    'n_min': {'default': 8, 'type': int},
-    'n_max': {'default': 8, 'type': int},
+    'p_min': {'default': 8, 'type': int},
+    'p_max': {'default': 8, 'type': int},
     'w_min': {'default': 0.1, 'type': float},
     'w_max': {'default': 1, 'type': float},
     'var_min': {'default': 0, 'type': float},
     'var_max': {'default': 1, 'type': float},
     'int_min': {'default': 0, 'type': float},
     'int_max': {'default': 1, 'type': float},
+    'do': {'default': False, 'type': bool},
     'i_mean': {'default': 10, 'type': float},
     'i_var': {'default': 1, 'type': float},
     'ot': {'type': int, 'default': 0},
@@ -136,10 +137,10 @@ if args.load_dataset is not None:
         sem = sempler.LGANM(W, variances[i], means[i])
         truth = utils.graph_info(targets[i], W)[0]
         cases.append(evaluation.TestCase(i, sem, targets[i], truth))
-    excluded_keys += ['k', 'w_min', 'w_max', 'var_min', 'var_max', 'int_min', 'int_max', 'random_state', 'n_min', 'n_max']
+    excluded_keys += ['k', 'w_min', 'w_max', 'var_min', 'var_max', 'int_min', 'int_max', 'random_state', 'p_min', 'p_max']
 # Or generate dataset
 else:
-    P = args.n_min if args.n_min == args.n_max else (args.n_min, args.n_max)
+    P = args.p_min if args.p_min == args.p_max else (args.p_min, args.p_max)
     cases = evaluation.gen_cases(args.G,
                                  P,
                                  args.k,
@@ -164,6 +165,9 @@ if args.save_dataset is not None and args.load_dataset is None:
                'n',
                'n_obs',
                'alpha',
+               'do',
+               'i_mean',
+               'i_var',
                'save_dataset',
                'load_dataset',
                'ot',
@@ -177,7 +181,7 @@ if args.save_dataset is not None and args.load_dataset is None:
         sem = case.sem
         os.makedirs(os.path.join(dir_name, 'dags', 'dag%d' % i), exist_ok=True)
         np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'adjacency.txt'), sem.W)
-        np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'means.txt'), sem.intercepts)
+        np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'means.txt'), sem.means)
         np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'variances.txt'), sem.variances)
         np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'target.txt'), [case.target])
 
@@ -194,13 +198,14 @@ if population:
     # Note that in the population setting the empty-set strategy does
     # nothing, as variables are only intervened on once
     policies = [policy.PopRandom, policy.PopMarkov, policy.PopMarkovR] 
-    names = ["random", "markov", "markov + e + r"]
+    names = ["random", "markov", "markov + r"]
     excluded_keys += ['n', 'n_obs', 'alpha']
 elif args.abcd:
     policies = [policy.Random,
                 policy.ER,
-                policy.MarkovER]
-    names = ["random", "e + r", "markov + e + r"]
+                policy.E,
+                policy.R]
+    names = ["random", "e + r", "e", "r"]
 else:
     policies = [policy.Random,
                 policy.E,
@@ -214,13 +219,14 @@ else:
 
 # Compose experimental parameters
 if args.max_iter == -1:
-    max_iter = args.n_max
+    max_iter = args.p_max
 else:
     max_iter = args.max_iter
     
 evaluation_params = {'population': population,
                      'debug': args.debug,
                      'max_iter': max_iter,
+                     'intervention_type': 'do' if args.do else 'shift',
                      'intervention_mean': args.i_mean,
                      'intervention_var': args.i_var,
                      'off_targets': args.ot,
