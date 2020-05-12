@@ -118,7 +118,7 @@ def ancestors(i, W):
     G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
     return nx.algorithms.dag.ancestors(G, i)
 
-def plot_graph(W, block=False):
+def plot_graph(W, block=False, figure=True):
     G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
     try:
         pos = nx.drawing.layout.planar_layout(G, scale=0.5)
@@ -128,7 +128,9 @@ def plot_graph(W, block=False):
     p = len(W)
     node_labels = dict(zip(np.arange(p), map(lambda i: "$X_{%d}$" %i, range(p))))
     # Plot
-    fig = plt.figure()
+    if figure:
+        fig = plt.figure()
+        fig.set_facecolor("white")
     params = {'node_color': 'white',
               'edgecolors': 'black',
               'node_size': 900,
@@ -139,7 +141,6 @@ def plot_graph(W, block=False):
               'min_target_margin': 1000,
               'labels': node_labels}
     nx.draw(G,pos, **params)
-    fig.set_facecolor("white")
     plt.show(block = block)
 
 def allclose(A, B, rtol=1e-5, atol=1e-8):
