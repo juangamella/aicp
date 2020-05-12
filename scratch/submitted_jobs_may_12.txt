@@ -1,0 +1,8 @@
+# 6 jobs on the ABCD dataset, changing the observational sample size to see if this has an effect on the ratio strategy
+
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 3 --i_var 1 --max_iter 50 --alpha 0.0002 --finite --n 10 --n_obs 10 --abcd --tag may12abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 5 --i_var 1 --max_iter 50 --alpha 0.0002 --finite --n 10 --n_obs 10 --abcd --tag may12abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 7 --i_var 1 --max_iter 50 --alpha 0.0002 --finite --n 10 --n_obs 10 --abcd --tag may12abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 3 --i_var 1 --max_iter 50 --alpha 0.0002 --finite --n 10 --n_obs 1000 --abcd --tag may12abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 5 --i_var 1 --max_iter 50 --alpha 0.0002 --finite --n 10 --n_obs 1000 --abcd --tag may12abcd
+bsub -n 50 -W 24:00 python -m src.run_experiments --load_dataset dataset_3 --n_workers 49 --runs 4 --batch_size 20000 --i_mean 7 --i_var 1 --max_iter 50 --alpha 0.0002 --finite --n 10 --n_obs 1000 --abcd --tag may12abcd

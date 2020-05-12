@@ -19,3 +19,7 @@ cp -r dataset_3 dataset_3_2
 bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 3 --folder dataset_3_0 --strategy entropy --starting-samples 50
 bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 5 --folder dataset_3_1 --strategy entropy --starting-samples 50
 bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 7 --folder dataset_3_2 --strategy entropy --starting-samples 50
+
+
+
+###############################
