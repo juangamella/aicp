@@ -23,9 +23,9 @@ The experimental settings are controlled via command line arguments. The followi
 - `tag`: User-defined label appended to the filename. It has no effect on the experiments, and is disabled by default.
 - `random_state`: Sets the random seed, to allow for reproducibility. Consecutive calls with the same parameters should yield the same results. Defaults to `42`.
 - `debug`: If the experiments should output debug messages.
-- `save_dataset`: Will set the generated test cases into disk, following the directory structure that the ABCD-strategy ([Agrawal et. al 2018](https://arxiv.org/abs/1902.10347)) implementation can read. Note that this prevents the experiments from running, i.e. the program stops after the dataset is generated.
+- `save_dataset`: Will set the generated test cases into disk, following the directory structure that the [implementation](https://github.com/juangamella/active_learning) for the ABCD-strategy ([Agrawal et. al 2018](https://arxiv.org/abs/1902.10347)) can read. Note that this prevents the experiments from running, i.e. the program stops after the dataset is generated.
 - `load_dataset`: Instead of generating new test cases, loads the dataset from the given directory.
-- `abcd`: If present, only the Random, e+r and markov+e+r policies are run, for the comparison with ABCD.
+- `abcd`: If present, only the Random, e, r and e+r policies are run, for the comparison with ABCD.
 
 Others control the generation of SCMs, i.e. test cases.
 
@@ -78,7 +78,7 @@ The plots can be generated with the plotting notebooks, i.e. `plots_*`. Edit the
 
 The commands to run the experiments can be found in the `experiments/` directory. In particular,
 
-- [`experiments/population_experiments.sh`](experiments/population_experiments.sh) for the population setting experiments,
+- [`experiments/population_experiments.sh`](./experiments/population_experiments.sh) for the population setting experiments,
 - [`experiments/finite_experiments.sh`](experiments/finite_experiments.sh) for the experiments for the finite regime, and
 - [`experiments/intervention_strength_experiments.sh`](experiments/intervention_strength_experiments.sh) for the experiments comparing intervention strengths.
 
