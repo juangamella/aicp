@@ -2,6 +2,15 @@
 
 This repository contains the code to run the experiments and plot the results. This README is not intended to be completely self-explanatory, and should be read alongside the manuscript.
 
+## Installing dependencies
+
+You will need at least Python 3.6. All dependencies are specified in [`requirements.txt`](requirements.txt). To create a virtual environment and install them, run:
+
+```
+virtualenv --no-site-packages venv
+pip install -r requirements.txt
+```
+
 ## Running experiments
 
 The experiments can be run with different settings. To run the experiments, execute the following in a terminal:
