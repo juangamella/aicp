@@ -78,7 +78,7 @@ The plots can be generated with the plotting notebooks, i.e. `plots_*`. Edit the
 
 The commands to run the experiments can be found in the `experiments/` directory. In particular,
 
-- [`experiments/population_experiments.sh`](./experiments/population_experiments.sh) for the population setting experiments,
+- [`experiments/population_experiments.sh`](experiments/population_experiments.sh) for the population setting experiments,
 - [`experiments/finite_experiments.sh`](experiments/finite_experiments.sh) for the experiments for the finite regime, and
 - [`experiments/intervention_strength_experiments.sh`](experiments/intervention_strength_experiments.sh) for the experiments comparing intervention strengths.
 
