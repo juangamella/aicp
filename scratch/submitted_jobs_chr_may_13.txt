@@ -1,7 +1,0 @@
-
-
-# Running with even stronger interventions, shift and do interventions
-
-bsub -n 50 -W 4:00 python -m src.run_experiments --n_workers -1 --k 3 --G 100 --runs 4 --p_min 12 --p_max 12 --w_min 0.5 --w_max 1 --var_min 0.5 --var_max 1 --int_min 0 --int_max 0 --i_mean 50 --i_var 5 --batch_size 20000 --max_iter 20 --alpha 0.0005 --finite --n 100 --random_state 0 --tag may13_shift
-
-bsub -n 50 -W 4:00 python -m src.run_experiments --n_workers -1 --k 3 --G 100 --runs 4 --p_min 12 --p_max 12 --w_min 0.5 --w_max 1 --var_min 0.5 --var_max 1 --int_min 0 --int_max 0 --i_mean 50 --i_var 5 --do --batch_size 20000 --max_iter 20 --alpha 0.0005 --finite --n 100 --random_state 0 --tag may13_do
