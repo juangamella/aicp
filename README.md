@@ -72,11 +72,17 @@ results_1581038775_n_workers:-1_batch_size:20000_debug:False_avg_deg:3.0_G:30_ru
 
 ## Plotting results
 
-The plots can be generated with the notebooks [plots_population.ipynb](plots_population.ipynb), [plots_finite.ipynb](plots_finite.ipynb) and [plots_abcd.ipynb](plots_abcd.ipynb). Edit the notebook to select the desired result file and execute. The result files used to generate the plots in the report are set by default and shipped in the repo, so the notebooks can be executed directly.
+The plots can be generated with the plotting notebooks, i.e. `plots_*`. Edit the notebook to add the path to the desired result files and execute.
 
 ## Reproducing the results<a name="rep"></a>
 
+The commands to run the experiments can be found in the `experiments/` directory. In particular,
 
+- [`experiments/population_experiments.sh`](experiments/population_experiments.sh) for the population setting experiments,
+- [`experiments/finite_experiments.sh`](experiments/finite_experiments.sh) for the experiments for the finite regime, and
+- [`experiments/intervention_strength_experiments.sh`](experiments/intervention_strength_experiments.sh) for the experiments comparing intervention strengths.
+
+The commands to run A-ICP vs. ABCD experiments can be found in [`experiments/abcd_experiments.sh`](experiments/population_experiments.sh). These commands generate a dataset and execute A-ICP on it. To execute ABCD, the dataset must be then copied over to the [repository](https://github.com/juangamella/active_learning) that contains the ABCD implementation. Exact instructions on how to run ABCD can be found in that repository.
 
 ## Feedback
 
