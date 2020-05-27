@@ -10,7 +10,7 @@ The experiments can be run with different settings. To run the experiments, exec
 python -m src.run_experiments
 ```
 
-The exact commands to reproduce the results presented in the paper are given [below](#rep)
+The exact commands to reproduce the results presented in the paper are given [below](#rep).
 
 ### Command-line arguments
 
@@ -75,7 +75,6 @@ results_1581038775_n_workers:-1_batch_size:20000_debug:False_avg_deg:3.0_G:30_ru
 The plots can be generated with the notebooks [plots_population.ipynb](plots_population.ipynb), [plots_finite.ipynb](plots_finite.ipynb) and [plots_abcd.ipynb](plots_abcd.ipynb). Edit the notebook to select the desired result file and execute. The result files used to generate the plots in the report are set by default and shipped in the repo, so the notebooks can be executed directly.
 
 ## Reproducing the results<a name="rep"></a>
-
 
 
 
