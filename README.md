@@ -1,6 +1,6 @@
-# Towards active ICP: experiment selection through stability
+# Active Invariant Causal Prediction: Experiment Selection through Stability
 
-This repository contains the code to run the experiments and plot the results. This README is not intended to be completely self-explanatory, and should be read alongside the [manuscript](semester_project_juan_gamella.pdf).
+This repository contains the code to run the experiments and plot the results. This README is not intended to be completely self-explanatory, and should be read alongside the manuscript](semester_project_juan_gamella.pdf).
 
 ## Running the experiments
 
