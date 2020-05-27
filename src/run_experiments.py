@@ -122,7 +122,6 @@ print(args) # For debugging
 # --------------------------------------------------------------------
 # Generate (or load) test cases
 
-
 # Load dataset
 if args.load_dataset is not None:
     print("\nLoading test cases from %s" % args.load_dataset)
@@ -183,71 +182,72 @@ if args.save_dataset is not None and args.load_dataset is None:
         np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'adjacency.txt'), sem.W)
         np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'means.txt'), sem.means)
         np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'variances.txt'), sem.variances)
-        np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'target.txt'), [case.target])
-
-# --------------------------------------------------------------------
-# Run experiments
-
-start = time.time()
-print("\n\nBeggining experiments on %d graphs at %s\n\n" % (len(cases), datetime.now()))
-
-population = not args.finite
-
-# Select which policies will be evaluated
-if population:
-    # Note that in the population setting the empty-set strategy does
-    # nothing, as variables are only intervened on once
-    policies = [policy.PopRandom, policy.PopMarkov, policy.PopMarkovR] 
-    names = ["random", "markov", "markov + r"]
-    excluded_keys += ['n', 'n_obs', 'alpha']
-elif args.abcd:
-    policies = [policy.Random,
-                policy.ER,
-                policy.E,
-                policy.R]
-    names = ["random", "e + r", "e", "r"]
+        np.savetxt(os.path.join(dir_name, 'dags', 'dag%d' % i, 'target.txt'), [case.target])    
 else:
-    policies = [policy.Random,
-                policy.E,
-                policy.R,
-                policy.ER,
-                policy.Markov,
-                policy.MarkovE,
-                policy.MarkovR,
-                policy.MarkovER]
-    names = ["random", "e", "r", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
 
-# Compose experimental parameters
-if args.max_iter == -1:
-    max_iter = args.p_max
-else:
-    max_iter = args.max_iter
-    
-evaluation_params = {'population': population,
-                     'debug': args.debug,
-                     'max_iter': max_iter,
-                     'intervention_type': 'do' if args.do else 'shift',
-                     'intervention_mean': args.i_mean,
-                     'intervention_var': args.i_var,
-                     'off_targets': args.ot,
-                     'speedup': not args.nsp,
-                     'n_int': args.n,
-                     'n_obs': args.n if args.n_obs is None else args.n_obs,
-                     'alpha': args.alpha}
+    # --------------------------------------------------------------------
+    # Run experiments
 
-n_workers = None if args.n_workers == -1 else args.n_workers
+    start = time.time()
+    print("\n\nBeggining experiments on %d graphs at %s\n\n" % (len(cases), datetime.now()))
 
-results = evaluation.evaluate_policies(cases, policies, names, args.runs, evaluation_params, n_workers, args.batch_size)
-end = time.time()
-print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
+    population = not args.finite
 
-# --------------------------------------------------------------------
-# Save results
+    # Select which policies will be evaluated
+    if population:
+        # Note that in the population setting the empty-set strategy does
+        # nothing, as variables are only intervened on once
+        policies = [policy.PopRandom, policy.PopMarkov, policy.PopMarkovR] 
+        names = ["random", "markov", "markov + r"]
+        excluded_keys += ['n', 'n_obs', 'alpha']
+    elif args.abcd:
+        policies = [policy.Random,
+                    policy.ER,
+                    policy.E,
+                    policy.R]
+        names = ["random", "e + r", "e", "r"]
+    else:
+        policies = [policy.Random,
+                    policy.E,
+                    policy.R,
+                    policy.ER,
+                    policy.Markov,
+                    policy.MarkovE,
+                    policy.MarkovR,
+                    policy.MarkovER]
+        names = ["random", "e", "r", "e + r", "markov", "markov + e", "markov + r", "markov + e + r"]
 
-# Compose filename
-filename = "experiments/results_%d" % end
-filename = filename + parameter_string(args, excluded_keys) + ".pickle"
+    # Compose experimental parameters
+    if args.max_iter == -1:
+        max_iter = args.p_max
+    else:
+        max_iter = args.max_iter
 
-# Pickle results
-pickle.dump([cases] + results, open(filename, "wb"))
-print("Saved to file \"%s\"" % filename)
+    evaluation_params = {'population': population,
+                         'debug': args.debug,
+                         'max_iter': max_iter,
+                         'intervention_type': 'do' if args.do else 'shift',
+                         'intervention_mean': args.i_mean,
+                         'intervention_var': args.i_var,
+                         'off_targets': args.ot,
+                         'speedup': not args.nsp,
+                         'n_int': args.n,
+                         'n_obs': args.n if args.n_obs is None else args.n_obs,
+                         'alpha': args.alpha}
+
+    n_workers = None if args.n_workers == -1 else args.n_workers
+
+    results = evaluation.evaluate_policies(cases, policies, names, args.runs, evaluation_params, n_workers, args.batch_size)
+    end = time.time()
+    print("\n\nFinished experiments at %s (elapsed %0.2f seconds)" % (datetime.now(), end-start))
+
+    # --------------------------------------------------------------------
+    # Save results
+
+    # Compose filename
+    filename = "experiments/results_%d" % end
+    filename = filename + parameter_string(args, excluded_keys) + ".pickle"
+
+    # Pickle results
+    pickle.dump([cases] + results, open(filename, "wb"))
+    print("Saved to file \"%s\"" % filename)
