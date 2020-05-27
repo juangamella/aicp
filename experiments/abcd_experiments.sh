@@ -34,7 +34,8 @@
 # Commands to run the experiments on the same dataset as ABCD
 
 # First, generate the dataset
-python -m src.run_experiments --save_dataset data --p_min 12 --p_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --random_state 0
+python -m src.run_experiments --save_dataset dataset --p_min 12 --p_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --random_state 0
+mv dataset_* dataset
 
 # It must be copied over to the ABCD repository to run ABCD on it; instructions can be found there.
 
