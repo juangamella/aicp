@@ -8,6 +8,7 @@ You will need at least Python 3.6. All dependencies are specified in [`requireme
 
 ```
 virtualenv --no-site-packages venv
+. venv/bin/activate
 pip install -r requirements.txt
 ```
 
