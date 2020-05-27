@@ -37,13 +37,21 @@ import unittest
 import numpy as np
 
 from .context import src
-from src.sampling import dag_avg_deg
+from sempler import dag_avg_deg
 
 # Tested functions
 from src import utils
 from src.utils import matrix_block, sampling_matrix, nonzero, all_but, graph_info, stable_blanket
 
 class UtilsTests(unittest.TestCase):
+
+    def test_combinations(self):
+        for p in range(2, 10):
+            target = np.random.choice(p)
+            combinations = utils.combinations(p, target)
+            self.assertEqual(int(2**(p-1)), len(combinations))
+            [self.assertTrue(target not in s) for s in combinations]
+    
     def test_matrix_block(self):
         M = np.array([[11, 12, 13, 14],
                       [21, 22, 23, 24],
@@ -77,7 +85,7 @@ class UtilsTests(unittest.TestCase):
                           [0,1,0,0],
                           [1,1,1,0],
                           [1,1,1,1]])
-        self.assertTrue((truth == sampling_matrix(W, range(4))).all())
+        self.assertTrue((truth == sampling_matrix(W)).all())
 
     def test_nonzero(self):
         tol = 1e-12
@@ -97,7 +105,6 @@ class UtilsTests(unittest.TestCase):
                       [0., 0., 0., 0., 0., 0., 0., 0.],
                       [1., 0., 0., 0., 0., 0., 0., 0.],
                       [1., 0., 0., 0., 1., 1., 0., 0.]])
-        ordering = np.array([7, 4, 2, 3, 6, 5, 0, 1])
         true_parents = [{4,6,7},
                         {0,2,3},
                         set(),
@@ -142,7 +149,7 @@ class UtilsTests(unittest.TestCase):
     def test_graph_info_2(self):
         graphs = [utils.eg1(), utils.eg2(), utils.eg3(), utils.eg4(), utils.eg5(), utils.eg6()]
         for k,graph in enumerate(graphs):
-            (W, ordering, true_parents, true_mb) = graph
+            (W, true_parents, true_mb) = graph
             for i in range(len(W)):
                 #print("%d Testing info for node %d" % (k+1,i))
                 (parents, children, poc, mb) = graph_info(i, W)
@@ -151,7 +158,7 @@ class UtilsTests(unittest.TestCase):
                 self.assertEqual(mb, set(true_mb[i]))
 
     def test_stable_blanket(self):
-        W, _, _, markov_blanket = utils.eg5()
+        W, _, markov_blanket = utils.eg5()
         target = 3
         intervened_variables = [set(), {2}, {7}, {6}, {5}]
         truth = [markov_blanket,

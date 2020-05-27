@@ -1,4 +1,4 @@
-2# Copyright 2020 Juan Luis Gamella Martin
+# Copyright 2020 Juan Luis Gamella Martin
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -28,6 +28,13 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+"""This module contains the "population setting" implementation of
+ICP. It relies on sempler's NormalDistribution class.
+
+TODO  BEFORE PUBLISHING:
+  - color output by termcolor is not portable to all OSs, so deactivate it
+"""
+
 import numpy as np
 import itertools
 from termcolor import colored
@@ -39,6 +46,7 @@ def population_icp(distributions, target, debug=False, selection='all', atol=1e-
     """Perform ICP over a set of Gaussian Distributions, each
     representing a different environment
     """
+    assert len(distributions) > 1
     # Build set of candidates
     p = distributions[0].p
     if isinstance(selection, list):

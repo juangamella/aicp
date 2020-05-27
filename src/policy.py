@@ -28,202 +28,81 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import time
+"""This module contains the intervention selection policies (as classes).
+
+Policies are named after the strategies they employ:
+  - Markov: Markov blanket strategy
+  - E: empty-set strategy
+  - R: ratio strategy
+
+Population policies have a slightly different behaviour,
+e.g. variables are only intervened on once, and are
+marked with "Pop".
+
+"""
+
 import numpy as np
-from functools import reduce
-from termcolor import colored
-from src import icp, population_icp, utils, normal_distribution
-import networkx as nx
+from src import utils, population_icp, icp
+from src.utils import ratios
 from sklearn import linear_model
+from functools import reduce
 import warnings
 
-# --------------------------------------------------------------------
-# Policy evaluation        
-
-def evaluate_policy(policy, cases, name=None, n=round(1e5), alpha=0.01, population=False, max_iter=100, random_state=42, debug=False):
-    """Evaluate a policy over the given test cases, in a sequential manner"""
-    results = []
-    start = time.time()
-    print("Evaluating policy \"%s\" sequentially..." % name)
-    for i,case in enumerate(cases):
-        print("%0.2f%% Evaluating policy \"%s\" on test case %d (truth = %s)..." % (i/len(cases)*100, name, case.id, case.truth)) if debug else None
-        result = run_policy(policy, case, name=name, n=n, population=population, max_iter=max_iter, debug=debug, random_state=random_state)
-        if debug:
-            msg = " done (%0.2f seconds). truth: %s estimate: %s" % (result.time, case.truth, result.estimate)
-            color = "green" if case.truth == result.estimate else "red"
-            print(colored(msg, color))
-        results.append(result)
-    end = time.time()
-    print("  done (%0.2f seconds)" % (end-start))
-    return results
-
-def run_policy(policy, case, name=None, n=round(1e5), alpha=0.005, max_iter=100, population=True, debug=False, random_state=42):
-    """Execute a policy over a given test case, returning a returning a
-    PolicyEvaluationResults object containing the result"""
-    # Initialization
-    if random_state is not None:
-        np.random.seed(random_state)
-    policy = policy(case.target, case.sem.p, name=name)
-    algorithm = population_icp.population_icp if population else icp.icp
-    history = [] # store the ICP result and next intervention
-    # Generate observational samples
-    e = case.sem.sample(n, population)
-    envs = [e] if population else Environments(case.sem.p, e)
-    start = time.time()
-    # Initial iteration
-    next_intervention = policy.first(e)
-    current_estimate = set()
-    result = None
-    selection = 'all' # on the first iteration, evaluate all possible candidate sets
-    i = 1
-    ####
-    parents, _, _, _ = utils.graph_info(case.target, case.sem.W)
-    ####
-    while current_estimate != case.truth and i <= max_iter:
-        history.append((current_estimate, next_intervention, len(selection)))
-        print(" (case_id: %s, target: %d, truth: %s, policy: %s) %d current estimate: %s accepted sets: %d next intervention: %s" % (case.id, case.target, case.truth, policy.name, i, current_estimate, len(selection), next_intervention)) if debug else None
-        if next_intervention is not None:
-            # Perform intervention
-            new_env = case.sem.sample(n, population, noise_interventions = np.array([[next_intervention, 10, 1]]))
-            envs.append(new_env) if population else envs.add(next_intervention, new_env)
-            # Run ICP
-            if population:
-                result = population_icp.population_icp(envs, case.target, selection=selection, debug=False)
-            else:
-                result = icp.icp(envs.to_list(), case.target, selection=selection, alpha=alpha, debug=False)
-            current_estimate = result.estimate
-            selection = result.accepted # in each iteration we only need to run ICP on the sets accepted in the previous one
-            next_intervention, selection = policy.next(result)
-        ###### Check hypothesis
-        if population:
-            var_ratios = ratios(case.sem.p, result.accepted)
-            for j,r in enumerate(var_ratios):
-                if j in parents and r < 0.5:
-                    print(parents)
-                    print(var_ratios)
-                    print("Hypothesis is false! (case_id: %s, target: %d, interventions: %s)" % (case.id, case.target, history))
-        ######
-        i += 1
-    end = time.time()
-    if i > max_iter:
-        print(" (case_id: %s, target: %d, truth: %s, policy: %s) reached %d > %d iterations" % (case.id, case.target, case.truth, policy.name, i, max_iter)) if debug else None
-    elapsed = end - start
-    print("  (case_id: %s) done (%0.2f seconds)" % (case.id, elapsed)) if debug else None
-    # Return result
-    return EvaluationResult(policy.name, current_estimate, history)
-
-class Environments():
-    def __init__(self, p, e):
-        self.envs = dict([(i,[]) for i in range(p)])
-        self.envs[None] = e
-
-    def add(self, target, env):
-        if self.envs[target] == []:
-            self.envs[target] = env
-        else:
-            self.envs[target] = np.vstack([env, self.envs[target]])
-
-    def to_list(self):
-        envs = []
-        for env in self.envs.values():
-            if env != []:
-                envs.append(env)
-        return envs
-
-def jaccard_distance(A, B):
-    """Compute the jaccard distance between sets A and B"""
-    if len(A) == 0 and len(B) == 0:
-        return 1
+def intersection(sets):
+    """Return the intersection of a collection of sets"""
+    if sets == []:
+        return set()
     else:
-        return len(set.intersection(A,B)) / len(set.union(A,B))
-
-def ratios(p, accepted):    
-    one_hot = np.zeros((len(accepted), p))
-    for i,s in enumerate(accepted):
-        one_hot[i, list(s)] = 1
-    return one_hot.sum(axis=0) / len(accepted)
-
-class EvaluationResult():
-    """Class to contain all information resulting from evaluating a policy
-    over a test case"""
-
-    def __init__(self, policy, estimate, history):
-        self.policy = policy
-        #self.case = case
-        # Info
-        self.estimate = estimate # estimate produced by the policy
-        self.history = history # interventions and intermediate results of the policy
-        #self.time = time # time used by the policy
-
-    def estimates(self):
-        """Return the parents estimated by the policy at each step"""
-        return list(map(lambda step: step[0].estimate, self.history))
-
-    def interventions(self):
-        """Return the interventions carried out by the policy"""
-        return list(map(lambda step: step[1], self.history))
-
-    def intervened_variables(self):
-        """Return the intervened variables"""
-        return list(map(lambda step: step[1][0,0], self.history))
-    
-class TestCase():
-    """Object that represents a test case
-    ie. SEM + target + expected result
-    """
-    def __init__(self, id, sem, target, truth):
-        self.id = id
-        self.sem = sem
-        self.target = target
-        self.truth = truth
-
-# --------------------------------------------------------------------
-# Policies
+        return reduce(lambda s, acc: acc & s, sets)
 
 class Policy():
-    def __init__(self, target, p, name=None):
+    """Policy class, inherited by all policies. Defines first
+    (first_intervention) and next (next_intervention).
+    """
+    def __init__(self, target, p, name, alpha=None):
         self.target = target
         self.p = p # no. of variables
         self.name = name
+        self.alpha = alpha
+        self.interventions = []
 
-    def first(self, observational_data):
+    def first(self, observational_sample):
         """Returns the initial intervention"""
         return None
 
-    def next(self, icp_results):
+    def next(self, icp_results, interventional_sample):
         """Returns the next intervention"""
         return None
 
-# Population setting
-class RandomPolicy(Policy):
+# --------------------------------------------------------------------
+# Population setting policies
+
+class PopRandom(Policy):
     """Random policy: selects a previously unintervened variable at
     random. Once all variables have been intervened once, repeats the order
     of interventions.
     """
     def __init__(self, target, p, name):
-        self.interventions = []
         Policy.__init__(self, target, p, name)
-    
+        
     def first(self, _):
         self.idx = np.random.permutation(utils.all_but(self.target, self.p))
         self.i = 0
         return self.random_intervention()
 
-    def next(self, result):
-        return (self.random_intervention(), result.accepted)
+    def next(self, result, _):
+        return self.random_intervention()
 
     def random_intervention(self):
         var = self.idx[self.i]
         self.i = (self.i+1) % len(self.idx)
         return var
 
-class MBPolicy(Policy):
-    """Markov Blanket policy: only considers subsets (and intervenes on
-    variables) of the Markov blanket """
+class PopMarkov(Policy):
+    """Markov Blanket policy: selects a previously unintervened variable
+    from the Markov blanket"""
 
-    def __init__(self, target, p, name, alpha=0.01):
-        self.interventions = []
-        self.alpha = alpha # significance level for estimating the MB
+    def __init__(self, target, p, name):
         Policy.__init__(self, target, p, name)
 
     def first(self, e):
@@ -232,22 +111,21 @@ class MBPolicy(Policy):
             self.mb = np.random.permutation(utils.all_but(self.target, self.p))
         else:
             self.mb = np.random.permutation(mb)
-        self.i = 0
+            self.i = 0
         return self.pick_intervention()
 
-    def next(self, result):
-        return (self.pick_intervention(), result.accepted)
+    def next(self, result, _):
+        return self.pick_intervention()
     
     def pick_intervention(self):
         var = self.mb[self.i]
         self.i = (self.i+1) % len(self.mb)
         return var
 
-class RatioPolicy(Policy):
-
+class PopMarkovR(Policy):
+    """Selects a previously unintervened variable from those in the Markov
+    blanket which have a ratio above 1/2"""
     def __init__(self, target, p, name):
-        self.interventions = []
-        self.current_ratios = np.zeros(p)
         Policy.__init__(self, target, p, name)
 
     def first(self, e):
@@ -257,26 +135,16 @@ class RatioPolicy(Policy):
             var = np.random.choice(utils.all_but(self.target, self.p))
         else:
             var = np.random.choice(list(self.mb))
-        self.interventions.append(var)
+            self.interventions.append(var)
         return var
 
-    def next(self, result):
-        #print("ratios = %s candidates = %s, interventions = %s" % (self.current_ratios, self.candidates, self.interventions))
+    def next(self, result, _):
+        # Ratio strategy
         new_ratios = ratios(self.p, result.accepted)
-        #print(new_ratios)
-        to_remove = []
         for i,r in enumerate(new_ratios):
             if r < 0.5 and i in self.candidates:
-                to_remove.append(i)
                 self.candidates.remove(i)
-        self.current_ratios = new_ratios
-        # Filter new selection
-        selection = result.accepted
-        if set() in result.accepted:
-            last_intervention = self.interventions[-1]
-            selection = [s for s in selection if last_intervention not in s]
-        selection = [s for s in selection if len(set.intersection(s, set(to_remove))) == 0]
-        return (self.pick_intervention(), selection)
+        return self.pick_intervention()
 
     def pick_intervention(self):
         choice = set.difference(self.candidates, set(self.interventions))
@@ -286,8 +154,9 @@ class RatioPolicy(Policy):
             var = np.random.choice(list(choice))
             self.interventions.append(var)
             return var
-    
-# Finite sample setting
+        
+# --------------------------------------------------------------------
+# Finite sample setting policies
 
 def markov_blanket(sample, target, tol=1e-3, debug=False):
     """Use the Lasso estimator to return an estimate of the Markov Blanket"""
@@ -298,75 +167,181 @@ def markov_blanket(sample, target, tol=1e-3, debug=False):
         X = sample[:, predictors]
         Y = sample[:, target]
         coefs = np.zeros(p)
-        coefs[predictors] = linear_model.LassoCV(cv=5, normalize=True, max_iter=1000, verbose=debug).fit(X, Y).coef_
+        coefs[predictors] = linear_model.LassoCV(cv=10, normalize=True, max_iter=1000, verbose=debug).fit(X, Y).coef_
         return utils.nonzero(coefs, tol)
 
-class RandomPolicyF(Policy):
+class Random(Policy):
     """Random policy: selects variables at random.
     """
-    def __init__(self, target, p, name):
-        Policy.__init__(self, target, p, name)
-    
+    def __init__(self, target, p, name, alpha):
+        Policy.__init__(self, target, p, name, alpha)
+        
     def first(self, _):
         return self.pick_intervention()
 
-    def next(self, result):
-        return (self.pick_intervention(), result.accepted)
+    def next(self, result, _):
+        return self.pick_intervention()
 
     def pick_intervention(self):
         return np.random.choice(utils.all_but(self.target, self.p))
+ 
+class E(Policy):
+    """empty-set: selects variables at random, removing variables for
+    which, after being intervened, the empty set is accepted
+    """
+    def __init__(self, target, p, name, alpha):
+        Policy.__init__(self, target, p, name, alpha)
+        
+    def first(self, sample):
+        self.obs_sample = sample
+        self.candidates = set(utils.all_but(self.target, self.p))
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
 
-class MarkovPolicyF(Policy):
+    def next(self, result, intervention_sample):
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
+        # Empty-set strategy 2.0
+        last_intervention = self.interventions[-1]
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha, selection=[set()]).accepted:
+            self.candidates.difference_update({last_intervention})
+        # Pick next intervention
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
+    
+    def pick_intervention(self):
+        if len(self.candidates) == 0:
+            return None
+        else:
+            return np.random.choice(list(self.candidates))
+        
+class R(Policy):
+    """ratio: selects variables with a stability ratio above 1/2."""
+    def __init__(self, target, p, name, alpha):
+        self.current_ratios = np.ones(p) * 0.5
+        self.current_ratios[target] = 0
+        Policy.__init__(self, target, p, name, alpha)
+        
+    def first(self, sample):
+        self.candidates = set(utils.all_but(self.target, self.p))
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
+
+    def next(self, result, _):
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
+        # Pick next intervention
+        self.current_ratios = ratios(self.p, result.accepted)
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
+    
+    def pick_intervention(self):
+        below_half = set()
+        for i,r in enumerate(self.current_ratios):
+            if r < 0.5:
+                below_half.add(i)
+        choice = set.difference(self.candidates, below_half)
+        if len(choice) == 0:
+            None
+        else:
+            return np.random.choice(list(choice))
+        
+class ER(Policy):
+    """empty-set + ratio: selects variables with a stability ratio above
+    1/2, removing variables for which, after being intervened, the
+    empty set is accepted
+    """
+    def __init__(self, target, p, name, alpha):
+        self.current_ratios = np.ones(p) * 0.5
+        self.current_ratios[target] = 0
+        Policy.__init__(self, target, p, name, alpha)
+        
+    def first(self, sample):
+        self.obs_sample = sample
+        self.candidates = set(utils.all_but(self.target, self.p))
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
+
+    def next(self, result, intervention_sample):
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
+        # Empty-set strategy 2.0
+        last_intervention = self.interventions[-1]
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha, selection=[set()]).accepted:
+            self.candidates.difference_update({last_intervention})
+        # Pick next intervention
+        self.current_ratios = ratios(self.p, result.accepted)
+        var = self.pick_intervention()
+        self.interventions.append(var)
+        return var
+    
+    def pick_intervention(self):
+        below_half = set()
+        for i,r in enumerate(self.current_ratios):
+            if r < 0.5:
+                below_half.add(i)
+        choice = set.difference(self.candidates, below_half)
+        if len(choice) == 0:
+            None
+        else:
+            return np.random.choice(list(choice))
+    
+class Markov(Policy):
     """Markov policy: selects variables at random from Markov blanket
     estimate.
     """
-    def __init__(self, target, p, name):
-        Policy.__init__(self, target, p, name)
-    
+    def __init__(self, target, p, name, alpha):
+        Policy.__init__(self, target, p, name, alpha)
+        
     def first(self, sample):
-        self.mb = markov_blanket(sample, self.target)
+        self.candidates = set(markov_blanket(sample, self.target))
         var = self.pick_intervention()
         return var
 
-    def next(self, result):
+    def next(self, result, _):
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
+        # Pick next intervention
         var = self.pick_intervention()
-        return (var, result.accepted)
+        return var
     
     def pick_intervention(self):
-        if len(self.mb) == 0:
+        if len(self.candidates) == 0:
             return None
         else:
-            return np.random.choice(self.mb)
+            return np.random.choice(list(self.candidates))
 
-
-class ProposedPolicyMEF(Policy):
-    """Proposed policy 1: selects variables at random from Markov blanket
-    estimate, removes variables which accept the empty set
-
+class MarkovE(Policy):
+    """Markov + empty-set: selects variables at random from Markov blanket
+    estimate, removes variables for which, after being intervened, the
+    empty set is accepted
     """    
-    def __init__(self, target, p, name):
-        self.interventions = []
-        Policy.__init__(self, target, p, name)
-    
+    def __init__(self, target, p, name, alpha):
+        Policy.__init__(self, target, p, name, alpha)
+        
     def first(self, sample):
+        self.obs_sample = sample
         self.candidates = set(markov_blanket(sample, self.target))
         var = self.pick_intervention()
         self.interventions.append(var)
         return var
 
-    def next(self, result):
+    def next(self, result, intervention_sample):
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
+        # Empty-set strategy 2.0
         last_intervention = self.interventions[-1]
-        to_remove = set()
-        # Prune candidate set
-        if set() in result.accepted:
-            to_remove.add(last_intervention)
-        self.candidates.difference_update(to_remove)
-        # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha, selection=[set()]).accepted:
+            self.candidates.difference_update({last_intervention})
         # Pick next intervention
         var = self.pick_intervention()
         self.interventions.append(var)
-        return (var, selection)
+        return var
     
     def pick_intervention(self):
         if len(self.candidates) == 0:
@@ -374,206 +349,80 @@ class ProposedPolicyMEF(Policy):
         else:
             return np.random.choice(list(self.candidates))
 
-class ProposedPolicyMRF(Policy):
-    """Proposed policy 2: selects variables at random from Markov blanket
-    estimate, removes variables which accept the empty set or have
-    ratio < 1/2
-
+class MarkovR(Policy):
+    """Markov + ratio: selects variables from Markov blanket
+    estimate, that have a stability ratio above 1/2.
     """
-    def __init__(self, target, p, name):
-        self.interventions = []
+    def __init__(self, target, p, name, alpha):
         self.current_ratios = np.ones(p) * 0.5
-        Policy.__init__(self, target, p, name)
-    
-    def first(self, sample):
-        self.candidates = set(markov_blanket(sample, self.target)) # set(range(self.p))
-        var = self.pick_intervention()
-        self.interventions.append(var)
-        return var
-
-    def next(self, result):
-        self.current_ratios = ratios(self.p, result.accepted)
-        # Pick next intervention
-        var = self.pick_intervention()
-        self.interventions.append(var)
-        return (var, result.accepted)
-    
-    def pick_intervention(self):
-        if len(self.candidates) == 0:
-            return None
-        else:
-            below_half = set()
-            for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
-                    below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
-            if len(choice) == 0:
-                return np.random.choice(list(self.candidates))
-            else:
-                return np.random.choice(list(choice))
-
+        self.current_ratios[target] = 0
+        Policy.__init__(self, target, p, name, alpha)
         
-class ProposedPolicyMERF(Policy):
-    """Proposed policy 2: selects variables at random from Markov blanket
-    estimate, removes variables which accept the empty set or have
-    ratio < 1/2
-
-    """
-    def __init__(self, target, p, name):
-        self.interventions = []
-        self.current_ratios = np.ones(p) * 0.5
-        Policy.__init__(self, target, p, name)
-    
     def first(self, sample):
         self.candidates = set(markov_blanket(sample, self.target)) # set(range(self.p))
         var = self.pick_intervention()
         self.interventions.append(var)
         return var
 
-    def next(self, result):
-        self.current_ratios = ratios(self.p, result.accepted)
-        last_intervention = self.interventions[-1]
-        to_remove = set()
-        # Prune candidate set
-        if set() in result.accepted:
-            to_remove.add(last_intervention)
-        self.candidates.difference_update(to_remove)
-        # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
+    def next(self, result, _):
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
         # Pick next intervention
-        var = self.pick_intervention()
-        self.interventions.append(var)
-        return (var, selection)
-    
-    def pick_intervention(self):
-        if len(self.candidates) == 0:
-            return None
-        else:
-            below_half = set()
-            for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
-                    below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
-            if len(choice) == 0:
-                return np.random.choice(list(self.candidates))
-            else:
-                return np.random.choice(list(choice))
-
-class ProposedPolicyEF(Policy):
-    """Proposed policy 1: selects variables at random from Markov blanket
-    estimate, removes variables which accept the empty set
-
-    """    
-    def __init__(self, target, p, name):
-        self.interventions = []
-        Policy.__init__(self, target, p, name)
-    
-    def first(self, sample):
-        self.candidates = set(utils.all_but(self.target, self.p))
+        self.current_ratios = ratios(self.p, result.accepted)
         var = self.pick_intervention()
         self.interventions.append(var)
         return var
-
-    def next(self, result):
-        last_intervention = self.interventions[-1]
-        to_remove = set()
-        # Prune candidate set
-        if set() in result.accepted:
-            to_remove.add(last_intervention)
-        self.candidates.difference_update(to_remove)
-        # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
-        # Pick next intervention
-        var = self.pick_intervention()
-        self.interventions.append(var)
-        return (var, selection)
     
     def pick_intervention(self):
-        if len(self.candidates) == 0:
-            return None
+        below_half = set()
+        for i,r in enumerate(self.current_ratios):
+            if r < 0.5:
+                below_half.add(i)
+        choice = set.difference(self.candidates, below_half)
+        if len(choice) == 0:
+            None
         else:
-            return np.random.choice(list(self.candidates))
-    
-class ProposedPolicyERF(Policy):
-    """Proposed policy 2: selects variables at random from Markov blanket
-    estimate, removes variables which accept the empty set or have
-    ratio < 1/2
+            return np.random.choice(list(choice))
 
+class MarkovER(Policy):
+    """Markov + empty-set + ratio: selects variables at random from Markov
+    blanket estimate which have a stability ratio above 1/2. Removes
+    variables for which, after being intervened, the empty set is
+    accepted.
     """
-    def __init__(self, target, p, name):
-        self.interventions = []
+    def __init__(self, target, p, name, alpha):
         self.current_ratios = np.ones(p) * 0.5
-        Policy.__init__(self, target, p, name)
-    
+        self.current_ratios[target] = 0
+        Policy.__init__(self, target, p, name, alpha)
+        
     def first(self, sample):
-        self.candidates = set(utils.all_but(self.target, self.p))
+        self.obs_sample = sample
+        self.candidates = set(markov_blanket(sample, self.target)) # set(range(self.p))
         var = self.pick_intervention()
         self.interventions.append(var)
         return var
 
-    def next(self, result):
-        self.current_ratios = ratios(self.p, result.accepted)
+    def next(self, result, intervention_sample):
+        # Remove identified parents
+        self.candidates.difference_update(intersection(result.accepted))
+        # Empty-set strategy 2.0
         last_intervention = self.interventions[-1]
-        to_remove = set()
-        # Prune candidate set
-        if set() in result.accepted:
-            to_remove.add(last_intervention)
-        self.candidates.difference_update(to_remove)
-        # Prune accepted sets
-        selection = [s for s in result.accepted if len(set.intersection(s, to_remove)) == 0]
+        if set() in icp.icp([self.obs_sample, intervention_sample], self.target, self.alpha, selection=[set()]).accepted:
+            self.candidates.difference_update({last_intervention})
         # Pick next intervention
-        var = self.pick_intervention()
-        self.interventions.append(var)
-        return (var, selection)
-    
-    def pick_intervention(self):
-        if len(self.candidates) == 0:
-            return None
-        else:
-            below_half = set()
-            for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
-                    below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
-            if len(choice) == 0:
-                return np.random.choice(list(self.candidates))
-            else:
-                return np.random.choice(list(choice))
-
-class ProposedPolicyRF(Policy):
-    """Proposed policy 2: selects variables at random from Markov blanket
-    estimate, removes variables which accept the empty set or have
-    ratio < 1/2
-
-    """
-    def __init__(self, target, p, name):
-        self.interventions = []
-        self.current_ratios = np.ones(p) * 0.5
-        Policy.__init__(self, target, p, name)
-    
-    def first(self, sample):
-        self.candidates = set(utils.all_but(self.target, self.p))
+        self.current_ratios = ratios(self.p, result.accepted)
         var = self.pick_intervention()
         self.interventions.append(var)
         return var
-
-    def next(self, result):
-        self.current_ratios = ratios(self.p, result.accepted)
-        # Pick next intervention
-        var = self.pick_intervention()
-        self.interventions.append(var)
-        return (var, result.accepted)
     
     def pick_intervention(self):
-        if len(self.candidates) == 0:
-            return None
+        below_half = set()
+        for i,r in enumerate(self.current_ratios):
+            if r < 0.5:
+                below_half.add(i)
+        choice = set.difference(self.candidates, below_half)
+        if len(choice) == 0:
+            None
         else:
-            below_half = set()
-            for i,r in enumerate(self.current_ratios):
-                if r < 0.5:
-                    below_half.add(i)
-            choice = set.difference(self.candidates, below_half)
-            if len(choice) == 0:
-                return np.random.choice(list(self.candidates))
-            else:
-                return np.random.choice(list(choice))
+            return np.random.choice(list(choice))
+

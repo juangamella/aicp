@@ -1,0 +1,14 @@
+# Summary
+
+- 9 jobs for the finite regime at different levels
+
+
+bsub -n 48 -W 48:00 python -m src.run_experiments --n_workers -1 --k 3 --G 500 --runs 8 --n_min 12 --n_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 20 --alpha 0.0005 --finite --n 10 --random_state 0 --tag apr20l
+bsub -n 48 -W 48:00 python -m src.run_experiments --n_workers -1 --k 3 --G 500 --runs 8 --n_min 12 --n_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 20 --alpha 0.0005 --finite --n 100 --random_state 0 --tag apr20l
+bsub -n 48 -W 48:00 python -m src.run_experiments --n_workers -1 --k 3 --G 500 --runs 8 --n_min 12 --n_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 20 --alpha 0.0005 --finite --n 1000 --random_state 0 --tag apr20l
+bsub -n 48 -W 48:00 python -m src.run_experiments --n_workers -1 --k 3 --G 500 --runs 8 --n_min 12 --n_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 20 --alpha 0.0025 --finite --n 10 --random_state 0 --tag apr20m
+bsub -n 48 -W 48:00 python -m src.run_experiments --n_workers -1 --k 3 --G 500 --runs 8 --n_min 12 --n_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 20 --alpha 0.0025 --finite --n 100 --random_state 0 --tag apr20m
+bsub -n 48 -W 48:00 python -m src.run_experiments --n_workers -1 --k 3 --G 500 --runs 8 --n_min 12 --n_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 20 --alpha 0.0025 --finite --n 1000 --random_state 0 --tag apr20m
+bsub -n 48 -W 48:00 python -m src.run_experiments --n_workers -1 --k 3 --G 500 --runs 8 --n_min 12 --n_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 20 --alpha 0.005 --finite --n 10 --random_state 0 --tag apr20h
+bsub -n 48 -W 48:00 python -m src.run_experiments --n_workers -1 --k 3 --G 500 --runs 8 --n_min 12 --n_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 20 --alpha 0.005 --finite --n 100 --random_state 0 --tag apr20h
+bsub -n 48 -W 48:00 python -m src.run_experiments --n_workers -1 --k 3 --G 500 --runs 8 --n_min 12 --n_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 20 --alpha 0.005 --finite --n 1000 --random_state 0 --tag apr20h

@@ -1,3 +1,5 @@
+#!/bin/bash -l
+
 # Copyright 2020 Juan Luis Gamella Martin
 
 # Redistribution and use in source and binary forms, with or without
@@ -28,7 +30,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-# Compatibility with old result files
-# TODO: Remove before publishing
+# -------------------------------------------------------------------------
+# Commands to run the population setting experiments presented in the paper
 
-from sempler import LGANM as LGSEM
+python -m src.run_experiments --n_workers -1 --k 3 --G 500 --runs 8 --p_min 15 --p_max 15 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --random_state 0 --tag pop
+python -m src.run_experiments --n_workers -1 --k 3 --G 500 --runs 8 --p_min 15 --p_max 15 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --random_state 1 --tag pop

@@ -1,4 +1,4 @@
-# Copyright 2020 Juan Luis Gamella Martin
+# Copyright 2019 Juan Luis Gamella Martin
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -28,7 +28,33 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-# Compatibility with old result files
-# TODO: Remove before publishing
+#---------------------------------------------------------------------
+# Unit tests for module icp.py
 
-from sempler import LGANM as LGSEM
+import unittest
+import numpy as np
+
+from .context import src
+
+# Tested functions
+from src.evaluation import intervention_targets
+
+class HelperTests(unittest.TestCase):
+
+    def test_intervention_targets_1(self):
+        P = np.random.randint(10, 20, size=50)
+        for p in P:
+            [response, target] = np.random.choice(p, size=2, replace=False)
+            targets = intervention_targets(target, response, p, 0)
+            self.assertTrue([target] == targets)
+
+    def test_intervention_targets_2(self):
+        P = np.random.randint(10, 20, size=50)
+        for p in P:
+            max_off_targets = np.random.randint(10)
+            [response, target] = np.random.choice(p, size=2, replace=False)
+            targets = intervention_targets(target, response, p, max_off_targets)
+            self.assertTrue(target in targets)
+            self.assertTrue(response not in targets)
+            self.assertTrue(len(targets) <= max_off_targets + 1)
+            self.assertTrue(len(np.unique(np.array(targets))) == len(targets))

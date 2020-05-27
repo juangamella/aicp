@@ -1,0 +1,16 @@
+bsub -n 48 -W 120:00 python -m src.run_experiments --n_workers -1 --k 3 --G 100 --runs 16 --n_min 12 --n_max 12 --w_min 0 --w_max 1 --var_min 0.1 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 100 --alpha 0.0001 --finite --n 5 --tag apr14 --random_state 1 --sp
+bsub -n 48 -W 120:00 python -m src.run_experiments --n_workers -1 --k 3 --G 100 --runs 16 --n_min 12 --n_max 12 --w_min 0 --w_max 1 --var_min 0.1 --var_max 1 --int_min 0 --int_max 1 --batch_size 20000 --max_iter 100 --alpha 0.0001 --finite --n 2 --tag apr14 --random_state 1 --sp
+
+bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 2 --folder dataset_3_6 --strategy entropy --starting-samples 50
+bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 2 --folder dataset_3_7 --strategy entropy --starting-samples 100
+bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 2 --folder dataset_3_8 --strategy entropy --starting-samples 1000
+bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 2 --folder dataset_3_9 --strategy entropy --starting-samples 50
+bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 2 --folder dataset_3_10 --strategy entropy --starting-samples 100
+bsub -n 48 -W 100:00 -R "rusage[mem=3000]" python3 run_experiments.py -n 500 -b 50 -k 1 --boot 100 -s 2 --folder dataset_3_11 --strategy entropy --starting-samples 1000
+
+cp -r dataset_3 dataset_3_6
+cp -r dataset_3 dataset_3_7
+cp -r dataset_3 dataset_3_8
+cp -r dataset_3 dataset_3_9
+cp -r dataset_3 dataset_3_10
+cp -r dataset_3 dataset_3_11

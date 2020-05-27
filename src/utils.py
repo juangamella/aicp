@@ -28,9 +28,17 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+"""Utility functions that contain code repeatedly used by other modules.
+
+TODO  BEFORE PUBLISHING:
+  - most of these functions are already contained in
+    sempler.utils. Refactor before publishing
+"""
+
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import itertools
 
 def matrix_block(M, rows, cols):
     """
@@ -41,24 +49,28 @@ def matrix_block(M, rows, cols):
     idx_cols = np.tile(cols, (len(rows),1)).flatten()
     return M[idx_rows, idx_cols].reshape(len(rows), len(cols))
 
-def sampling_matrix(W, ordering):
-    """Given the weighted adjacency matrix and ordering of a DAG, return
+def sampling_matrix(W):
+    """Given the weighted adjacency matrix of a DAG, return
     the matrix A such that the DAG generates samples
       A @ diag(var)^1/2 @ Z + mu
     where Z is an isotropic normal, and var/mu are the variances/means
     of the noise variables of the graph.
     """
     p = len(W)
-    A = np.eye(p)
-    W = W + A # set diagonal of W to 1
-    for i in ordering:
-        A[i,:] = np.sum(W[:,[i]] * A, axis=0)
-    return A
+    return np.linalg.inv(np.eye(p) - W.T)
 
 def all_but(k,p):
     """Return [0,...,p-1] without k"""
     k = np.atleast_1d(k)
     return [i for i in range(p) if not i in k]
+
+def combinations(p, target):
+    """Return all possible subsets of the set {0...p-1} \ {target}"""
+    base = set(range(p)) - {target}
+    sets = []
+    for size in range(p):
+        sets += [set(s) for s in itertools.combinations(base, size)]
+    return sets
 
 def nonzero(A, tol=1e-12):
     """Return the indices of the nonzero (up to tol) elements in A"""
@@ -106,7 +118,7 @@ def ancestors(i, W):
     G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
     return nx.algorithms.dag.ancestors(G, i)
 
-def plot_graph(W, block=False):
+def plot_graph(W, block=False, figure=True):
     G = nx.from_numpy_matrix(W, create_using = nx.DiGraph)
     try:
         pos = nx.drawing.layout.planar_layout(G, scale=0.5)
@@ -116,7 +128,9 @@ def plot_graph(W, block=False):
     p = len(W)
     node_labels = dict(zip(np.arange(p), map(lambda i: "$X_{%d}$" %i, range(p))))
     # Plot
-    fig = plt.figure()
+    if figure:
+        fig = plt.figure()
+        fig.set_facecolor("white")
     params = {'node_color': 'white',
               'edgecolors': 'black',
               'node_size': 900,
@@ -127,7 +141,6 @@ def plot_graph(W, block=False):
               'min_target_margin': 1000,
               'labels': node_labels}
     nx.draw(G,pos, **params)
-    fig.set_facecolor("white")
     plt.show(block = block)
 
 def allclose(A, B, rtol=1e-5, atol=1e-8):
@@ -135,7 +148,15 @@ def allclose(A, B, rtol=1e-5, atol=1e-8):
     the smallest element compared
     """
     return np.allclose(np.maximum(A,B), np.minimum(A,B), rtol, atol)
-    
+
+def ratios(p, accepted):
+    """Given a collection of sets of p predictors, return the ratio at
+    which each predictor appears"""
+    one_hot = np.zeros((len(accepted), p))
+    for i,s in enumerate(accepted):
+        one_hot[i, list(s)] = 1
+    return one_hot.sum(axis=0) / len(accepted)
+
 # Example graphs
 
 def eg1():
@@ -154,8 +175,7 @@ def eg1():
                [0],
                [1,2],
                [3]]
-    ordering = np.arange(5)
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
 def eg2():
     W = np.array([[0, 1, -1, 0, 0, 0],
@@ -176,8 +196,7 @@ def eg2():
                [1,2],
                [3,5],
                []]
-    ordering = np.arange(6)
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
 def eg3():
     W = np.array([[0, 1, -1, 0, 0, 0, 0, 0],
@@ -204,8 +223,7 @@ def eg3():
                [],
                [5],
                [4]]
-    ordering = np.arange(8)
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
 def eg4():
     W = np.array([[0,0,1,0],
@@ -220,8 +238,7 @@ def eg4():
                [],
                [0,1],
                [2]]
-    ordering = np.arange(4)
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
 def eg5():
     W = np.array([[0., 1., 0., 0., 0., 0., 0., 0.],
@@ -257,7 +274,7 @@ def eg5():
                        [2,3,7],
                        [3,4,0,7],
                        [0,4,5,2,3,6]]
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
 def eg6():
     W = np.array([[0, 0, 1, 0, 1],
@@ -265,7 +282,6 @@ def eg6():
                   [0, 0, 0, 1, 0],
                   [0, 0, 0, 0, 1],
                   [0, 0, 0, 0, 0]])
-    ordering = np.arange(len(W))
     parents = [[],
                [],
                [0,1],
@@ -281,5 +297,5 @@ def eg6():
                        [0,1,3],
                        [2,4,0,1],
                        [0,1,3]]
-    return W, ordering, parents, markov_blankets
+    return W, parents, markov_blankets
 
