@@ -8,6 +8,7 @@ You will need at least Python 3.6. All dependencies are specified in [`requireme
 
 ```
 virtualenv --no-site-packages venv
+. venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -92,6 +93,8 @@ The commands to reproduce the results from the paper can be found in the `experi
 - [`experiments/intervention_strength_experiments.sh`](experiments/intervention_strength_experiments.sh) for the experiments comparing intervention strengths.
 
 The commands to reproduce the A-ICP vs. ABCD results can be found in [`experiments/abcd_experiments.sh`](experiments/abcd_experiments.sh). These commands generate a dataset and execute A-ICP on it. To execute ABCD, the dataset must be then copied over to the [repository](https://github.com/juangamella/active_learning) that contains the ABCD implementation. Exact instructions on how to run ABCD to reproduce the experiments can be found in that repository.
+
+The evaluation of the Markov-blanket estimation is carried out in the [`mb_estimation_analysis.ipynb`](mb_estimation_analysis.ipynb) notebook.
 
 ## Feedback
 
