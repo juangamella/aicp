@@ -12,15 +12,13 @@ virtualenv --no-site-packages venv
 pip install -r requirements.txt
 ```
 
-To run the notebooks from the virtual environment, create a new local kernel:
+To run the notebooks from the virtual environment, create a new local kernel (while the environment is active):
 
 ```
 ipython kernel install --user --name=.venv
 ```
 
 and once inside the notebook select the kernel: `Kernel -> Change kernel -> .venv`.
-
-*Note: Before running the above, make sure you're not already inside a virtual environment.*
 
 ## Running experiments
 
@@ -45,7 +43,7 @@ The experimental settings are controlled via command line arguments. The followi
 - `debug`: If the experiments should output debug messages.
 - `save_dataset`: Will set the generated test cases into disk, following the directory structure that the [implementation](https://github.com/juangamella/active_learning) for the ABCD-strategy ([Agrawal et. al 2018](https://arxiv.org/abs/1902.10347)) can read. Note that this prevents the experiments from running, i.e. the program stops after the dataset is generated.
 - `load_dataset`: Instead of generating new test cases, loads the dataset from the given directory.
-- `abcd`: If present, only the Random, e, r and e+r policies are run, for the comparison with ABCD.
+- `abcd`: If present, only the random, e, r and e+r policies are run, for the comparison with ABCD.
 
 Others control the generation of SCMs, i.e. test cases.
 
@@ -94,7 +92,7 @@ results_1581038775_n_workers:-1_batch_size:20000_debug:False_avg_deg:3.0_G:30_ru
 
 The commands to reproduce the results from the paper can be found in the `experiments/` directory. In particular,
 
-- [`experiments/population_experiments.sh`](experiments/population_experiments.sh) for the population setting experiments,
+- [`experiments/population_experiments.sh`](experiments/population_experiments.sh) contains the commands for the population setting experiments,
 - [`experiments/finite_experiments.sh`](experiments/finite_experiments.sh) for the experiments for the finite regime, and
 - [`experiments/intervention_strength_experiments.sh`](experiments/intervention_strength_experiments.sh) for the experiments comparing intervention strengths.
 
@@ -104,7 +102,7 @@ The evaluation of the Markov-blanket estimation is carried out in the [`mb_estim
 
 ### Plotting
 
-The plots can be generated with the plotting notebooks, i.e. `plots_*`. Edit the notebook to add the path to the desired result files and execute.
+The plots can be generated with the plotting notebooks, i.e. `plots_*.ipynb`. Edit the notebook to add the path to the desired result files and execute.
 
 ## Feedback
 
