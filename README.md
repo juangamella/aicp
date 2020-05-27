@@ -12,9 +12,19 @@ virtualenv --no-site-packages venv
 pip install -r requirements.txt
 ```
 
+To run the notebooks from the virtual environments, create a new local kernel:
+
+```
+ipython kernel install --user --name=.venv
+```
+
+and once inside the notebook select the kernel: `Kernel -> Change kernel -> .venv`.
+
+*Note: Before running the above, make sure you're not already inside a virtual environment. Run `deactivate` *
+
 ## Running experiments
 
-The experiments can be run with different settings. To run the experiments, execute the following in a terminal:
+The experiments can be run with different settings. To run the experiments with default settings, execute the following in a terminal:
 
 ```
 python -m src.run_experiments
@@ -80,10 +90,6 @@ The results from running all experiments are pickled and stored in a file. The f
 results_1581038775_n_workers:-1_batch_size:20000_debug:False_avg_deg:3.0_G:30_runs:32_p_min:8_p_max:8_w_min:0.0_w_max:1.0_var_min:0_var_max:1.0_int_min:0.0_int_max:1.0_random_state:110_finite:True_max_iter:50_n:10_alpha:0.001_tag:exmple.pickle
 ```
 
-## Plotting results
-
-The plots can be generated with the plotting notebooks, i.e. `plots_*`. Edit the notebook to add the path to the desired result files and execute.
-
 ## Reproducing the results<a name="rep"></a>
 
 The commands to reproduce the results from the paper can be found in the `experiments/` directory. In particular,
@@ -95,6 +101,10 @@ The commands to reproduce the results from the paper can be found in the `experi
 The commands to reproduce the A-ICP vs. ABCD results can be found in [`experiments/abcd_experiments.sh`](experiments/abcd_experiments.sh). These commands generate a dataset and execute A-ICP on it. To execute ABCD, the dataset must be then copied over to the [repository](https://github.com/juangamella/active_learning) that contains the ABCD implementation. Exact instructions on how to run ABCD to reproduce the experiments can be found in that repository.
 
 The evaluation of the Markov-blanket estimation is carried out in the [`mb_estimation_analysis.ipynb`](mb_estimation_analysis.ipynb) notebook.
+
+### Plotting
+
+The plots can be generated with the plotting notebooks, i.e. `plots_*`. Edit the notebook to add the path to the desired result files and execute.
 
 ## Feedback
 
