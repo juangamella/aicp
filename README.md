@@ -12,7 +12,7 @@ virtualenv --no-site-packages venv
 pip install -r requirements.txt
 ```
 
-To run the notebooks from the virtual environments, create a new local kernel:
+To run the notebooks from the virtual environment, create a new local kernel:
 
 ```
 ipython kernel install --user --name=.venv
@@ -20,7 +20,7 @@ ipython kernel install --user --name=.venv
 
 and once inside the notebook select the kernel: `Kernel -> Change kernel -> .venv`.
 
-*Note: Before running the above, make sure you're not already inside a virtual environment. Run `deactivate` *
+*Note: Before running the above, make sure you're not already inside a virtual environment.*
 
 ## Running experiments
 
