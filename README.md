@@ -2,7 +2,7 @@
 
 This repository contains the code to run the experiments and plot the results. This README is not intended to be completely self-explanatory, and should be read alongside the manuscript.
 
-## Running the experiments
+## Running experiments
 
 The experiments can be run with different settings. To run the experiments, execute the following in a terminal:
 
