@@ -36,7 +36,7 @@ The experimental settings are controlled via command line arguments. The followi
 
 - `n_workers`: Size of the process pool on which to run experiments in parallel. Setting it to `-1` uses as many workers as cores are visible to the parent python process. Default is `1`, ie. running experiments sequentially.
 - `batch_size`: Size of the experiment batches which are submitted to the worker pool. A lower batch size reduces the maximum size of allocated memory (useful if running experiments with large graphs, see [this post](https://stackoverflow.com/questions/26520781/multiprocessing-pool-whats-the-difference-between-map-async-and-imap)), but increases overhead. Defaults to `20000`.
-- `runs`: Number of runs performed over each test case, each initialized with different random seeds. Default is `1`.
+- `runs`: Number of times the policies are run over each SCM, each initialized with a different random seed. Default is `1`.
 - `max_iter`: Maximum number of iterations for which to run each experiment, i.e. maximum number of interventions performed by each policy. Defaults to `-1`, which sets this value to `p_max` (see below).
 - `tag`: User-defined label appended to the filename. It has no effect on the experiments, and is disabled by default.
 - `random_state`: Sets the random seed, to allow for reproducibility. Consecutive calls with the same parameters should yield the same results. Defaults to `42`.
@@ -69,7 +69,7 @@ Additional parameters are available for experiments in the *finite regime*.
 - `finite`: If present, experiments are performed in the finite regime, with a sample size specified by parameter `n`. Defaults to `False`.
 - `n`: Size of the sample collected in each intervention. Only used if `finite` is present. Defaults to `100`.
 - `n_obs`: Size of the initial observational sample. If not specified, this is the same as `n`.
-- `alpha`: Level at which ICP is run (not adjusted for the number of iterations). Only used if `finite` is present. Defaults to `0.01`.
+- `alpha`: Level at which ICP is run (not adjusted for the number of iterations). Only used if `finite` is present. Defaults to `0.001`.
 - `nsp`: If present, disables the use of the speedup introduced in corollary 3.1.
 
 ### Example

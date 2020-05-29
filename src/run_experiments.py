@@ -88,7 +88,7 @@ arguments = {
     'finite': {'default': False, 'type': bool},
     'n': {'default': 100, 'type': int},
     'n_obs': {'type': int},
-    'alpha': {'default': 0.01, 'type': float},
+    'alpha': {'default': 0.001, 'type': float},
     'nsp': {'type': bool, 'default': False}
 }
 
@@ -189,7 +189,7 @@ else:
     # Run experiments
 
     start = time.time()
-    print("\n\nBeggining experiments on %d graphs at %s\n\n" % (len(cases), datetime.now()))
+    print("\n\nBeginning experiments on %d graphs at %s\n\n" % (len(cases), datetime.now()))
 
     population = not args.finite
 
