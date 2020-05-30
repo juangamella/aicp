@@ -119,6 +119,9 @@ excluded_keys += ['nsp'] if not args.nsp else []
 
 print(args) # For debugging
 
+# Set random seed
+np.random.seed(args.random_state)
+
 # --------------------------------------------------------------------
 # Generate (or load) test cases
 
@@ -148,8 +151,7 @@ else:
                                  args.var_min,
                                  args.var_max,
                                  args.int_min,
-                                 args.int_max,
-                                 args.random_state)
+                                 args.int_max)
     excluded_keys += ['load_dataset']
 
 # (Optionally) Save dataset according to format used by ABCD
