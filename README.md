@@ -102,7 +102,7 @@ The evaluation of the Markov-blanket estimation is carried out in the [`mb_estim
 
 ### Plotting
 
-The plots can be generated with the plotting notebooks, i.e. `plots_*.ipynb`. Edit the notebook to add the path to the desired result files and execute.
+The plots can be generated with the plotting notebooks, i.e. `plots_*.ipynb`. Edit the notebook to add the path to the desired result files and execute. The generated figures are saved in the `figures/` directory.
 
 ## Feedback
 
