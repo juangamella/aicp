@@ -88,7 +88,7 @@ arguments = {
     'finite': {'default': False, 'type': bool},
     'n': {'default': 100, 'type': int},
     'n_obs': {'type': int},
-    'alpha': {'default': 0.01, 'type': float},
+    'alpha': {'default': 0.001, 'type': float},
     'nsp': {'type': bool, 'default': False}
 }
 
@@ -119,6 +119,9 @@ excluded_keys += ['nsp'] if not args.nsp else []
 
 print(args) # For debugging
 
+# Set random seed
+np.random.seed(args.random_state)
+
 # --------------------------------------------------------------------
 # Generate (or load) test cases
 
@@ -148,8 +151,7 @@ else:
                                  args.var_min,
                                  args.var_max,
                                  args.int_min,
-                                 args.int_max,
-                                 args.random_state)
+                                 args.int_max)
     excluded_keys += ['load_dataset']
 
 # (Optionally) Save dataset according to format used by ABCD
@@ -189,7 +191,7 @@ else:
     # Run experiments
 
     start = time.time()
-    print("\n\nBeggining experiments on %d graphs at %s\n\n" % (len(cases), datetime.now()))
+    print("\n\nBeginning experiments on %d graphs at %s\n\n" % (len(cases), datetime.now()))
 
     population = not args.finite
 

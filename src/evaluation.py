@@ -40,7 +40,7 @@ import multiprocessing
 import sempler
 import os
 
-def gen_cases(n, P, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_max=0, random_state=39):
+def gen_cases(n, P, k, w_min=1, w_max=1, var_min=1, var_max=1, int_min=0, int_max=0, random_state=None):
     """
     Generate random experimental cases (ie. linear SEMs). Parameters:
       - n: total number of cases
