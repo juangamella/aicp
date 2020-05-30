@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-# Copyright 2020 Juan Luis Gamella Martin
+# Copyright 2020 Juan L Gamella
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -32,7 +32,7 @@
 
 # ----------------------------------------------------------------------------
 # Commands to run the finite-sample setting experiments presented in the paper
-# 9 total: 3 sample sizes (10,100,1000) x 3 levels (0.01, 0.05, 0.1)
+# 3 total: 1 for each sample size (10,100,1000)
 
 python -m src.run_experiments --n_workers -1 --k 3 --G 300 --runs 8 --p_min 12 --p_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --max_iter 50 --alpha 0.0002 --finite --n 10 --random_state 0 --tag fin
 python -m src.run_experiments --n_workers -1 --k 3 --G 300 --runs 8 --p_min 12 --p_max 12 --w_min 0.5 --w_max 1 --var_min 0 --var_max 1 --int_min 0 --int_max 1 --max_iter 50 --alpha 0.0002 --finite --n 100 --random_state 0 --tag fin
