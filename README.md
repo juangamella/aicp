@@ -41,7 +41,7 @@ The experimental settings are controlled via command line arguments. The followi
 - `tag`: User-defined label appended to the filename. It has no effect on the experiments, and is disabled by default.
 - `random_state`: Sets the random seed, to allow for reproducibility. Consecutive calls with the same parameters should yield the same results. Defaults to `42`.
 - `debug`: If the experiments should output debug messages.
-- `save_dataset`: Will set the generated test cases into disk, following the directory structure that the [implementation](https://github.com/juangamella/active_learning) for the ABCD-strategy ([Agrawal et. al 2018](https://arxiv.org/abs/1902.10347)) can read. Note that this prevents the experiments from running, i.e. the program stops after the dataset is generated.
+- `save_dataset`: Will set the generated test cases into disk, following the directory structure that the implementation for the ABCD-strategy ([Agrawal et. al 2018](https://arxiv.org/abs/1902.10347)) can read. Note that this prevents the experiments from running, i.e. the program stops after the dataset is generated.
 - `load_dataset`: Instead of generating new test cases, loads the dataset from the given directory.
 - `abcd`: If present, only the random, e, r and e+r policies are run, for the comparison with ABCD.
 
@@ -96,7 +96,7 @@ The commands to reproduce the results from the paper can be found in the `experi
 - [`experiments/finite_experiments.sh`](experiments/finite_experiments.sh) for the experiments for the finite regime, and
 - [`experiments/intervention_strength_experiments.sh`](experiments/intervention_strength_experiments.sh) for the experiments comparing intervention strengths.
 
-The commands to reproduce the A-ICP vs. ABCD results can be found in [`experiments/abcd_experiments.sh`](experiments/abcd_experiments.sh). These commands generate a dataset and execute A-ICP on it. To execute ABCD, the dataset must be then copied over to the [repository](https://github.com/juangamella/active_learning) that contains the ABCD implementation. Exact instructions on how to run ABCD to reproduce the experiments can be found in that repository.
+The commands to reproduce the A-ICP vs. ABCD results can be found in [`experiments/abcd_experiments.sh`](experiments/abcd_experiments.sh). These commands generate a dataset and execute A-ICP on it. To execute ABCD, the dataset must be then copied over to the repository that contains the ABCD implementation. Exact instructions on how to run ABCD to reproduce the experiments can be found in that repository.
 
 The evaluation of the Markov-blanket estimation is carried out in the [`mb_estimation_analysis.ipynb`](mb_estimation_analysis.ipynb) notebook.
 
@@ -106,4 +106,4 @@ The plots can be generated with the plotting notebooks, i.e. `plots_*.ipynb`. Ed
 
 ## Feedback
 
-If you need assistance or have feedback, you are more than welcome to write an email to [gajuan@ethz.ch](mailto:gajuan@ethz.ch)!.
+If you need assistance or have feedback, you are more than welcome to write an email to XXX!.
