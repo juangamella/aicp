@@ -1,4 +1,4 @@
-# Copyright 2019 Juan Luis Gamella Martin
+# Copyright 2019 Juan L Gamella
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -27,8 +27,6 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-
-#os.chdir('/home/juan/ETH/code_semester_project/src')
 
 #---------------------------------------------------------------------
 # Unit testing for module utils
