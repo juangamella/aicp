@@ -42,6 +42,6 @@ mv dataset_* dataset
 # Run A-ICP on the dataset
 # 3 jobs for the different initial sample sizes (50,100,100)
 
-python -m src.run_experiments --load_dataset dataset --n_workers -1 --runs 4 --i_mean 7 --i_var 1 --do --max_iter 50 --alpha 0.002 --finite --n 10 --n_obs 50 --abcd --tag abcd
-python -m src.run_experiments --load_dataset dataset --n_workers -1 --runs 4 --i_mean 7 --i_var 1 --do --max_iter 50 --alpha 0.002 --finite --n 10 --n_obs 100 --abcd --tag abcd
-python -m src.run_experiments --load_dataset dataset --n_workers -1 --runs 4 --i_mean 7 --i_var 1 --do --max_iter 50 --alpha 0.002 --finite --n 10 --n_obs 1000 --abcd --tag abcd
+python -m src.run_experiments --load_dataset dataset --n_workers -1 --runs 4 --i_mean 7 --i_var 1 --max_iter 50 --alpha 0.002 --finite --n 10 --n_obs 50 --abcd --tag abcd
+python -m src.run_experiments --load_dataset dataset --n_workers -1 --runs 4 --i_mean 7 --i_var 1 --max_iter 50 --alpha 0.002 --finite --n 10 --n_obs 100 --abcd --tag abcd
+python -m src.run_experiments --load_dataset dataset --n_workers -1 --runs 4 --i_mean 7 --i_var 1 --max_iter 50 --alpha 0.002 --finite --n 10 --n_obs 1000 --abcd --tag abcd
